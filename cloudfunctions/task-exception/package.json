@@ -1,0 +1,9 @@
+{
+  "name": "task-exception",
+  "version": "1.0.0",
+  "description": "任务异常上报",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}
