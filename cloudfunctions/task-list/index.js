@@ -25,26 +25,23 @@ exports.main = async (event, context) => {
       pageSize = 20
     } = event
     
-    // 构建查询条件 - 同时查询我是执行人和我是发布人的任务
-    let baseQuery = _.or([
+    // 构建查询条件数组
+    const conditions = []
+    
+    // 查询我是执行人或发布人的任务
+    conditions.push(_.or([
       { executor_id: OPENID },
       { publisher_id: OPENID }
-    ])
+    ]))
     
     // 按状态筛选
     if (status) {
-      baseQuery = _.and([
-        baseQuery,
-        { status: status }
-      ])
+      conditions.push({ status: status })
     }
     
     // 按优先级筛选
     if (priority) {
-      baseQuery = _.and([
-        baseQuery,
-        { priority: priority }
-      ])
+      conditions.push({ priority: priority })
     }
     
     // 按时间筛选
@@ -53,57 +50,53 @@ exports.main = async (event, context) => {
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
     
     if (time_filter === 'today') {
-      baseQuery = _.and([
-        baseQuery,
-        { require_date: todayStr }
-      ])
+      conditions.push({ require_date: todayStr })
     } else if (time_filter === 'week') {
       const monday = new Date(today)
       monday.setDate(monday.getDate() - today.getDay() + 1)
       const mondayStr = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`
-      baseQuery = _.and([
-        baseQuery,
-        { require_date: _.gte(mondayStr) }
-      ])
+      conditions.push({ require_date: _.gte(mondayStr) })
     } else if (time_filter === 'month') {
       const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
       const firstDayStr = `${firstDay.getFullYear()}-${String(firstDay.getMonth() + 1).padStart(2, '0')}-${String(firstDay.getDate()).padStart(2, '0')}`
-      baseQuery = _.and([
-        baseQuery,
-        { require_date: _.gte(firstDayStr) }
-      ])
+      conditions.push({ require_date: _.gte(firstDayStr) })
     }
     
-    console.log('[task-list] 查询条件:', JSON.stringify(baseQuery))
+    // 构建最终查询条件
+    const query = conditions.length > 1 ? _.and(conditions) : conditions[0]
+    
+    console.log('[task-list] 查询条件:', JSON.stringify(query))
     
     // 查询数据库
     const result = await db.collection('tasks')
-      .where(baseQuery)
+      .where(query)
       .orderBy('created_at', 'desc')
       .skip((page - 1) * pageSize)
       .limit(pageSize)
       .get()
     
     console.log('[task-list] 查询到的任务数:', result.data.length)
+    console.log('[task-list] 任务数据:', JSON.stringify(result.data))
     
     // 获取总数
-    const countResult = await db.collection('tasks').where(baseQuery).count()
+    const countResult = await db.collection('tasks').where(query).count()
     
     // 格式化返回数据
     const tasks = result.data.map(task => ({
+      _id: task._id,
       task_id: task._id,
       task_name: task.task_name,
-      task_description: task.task_description,
+      task_description: task.task_description || '',
       status: task.status,
       priority: task.priority,
-      category: task.category,
+      category: task.category || '',
       publisher_id: task.publisher_id,
       executor_id: task.executor_id,
-      executor_name: task.executor_name,
+      executor_name: task.executor_name || '',
       require_date: formatDate(task.require_date),
       complete_date: task.complete_date ? formatDate(task.complete_date) : null,
       score: task.score,
-      score_note: task.score_note,
+      score_note: task.score_note || '',
       learnings: task.learnings || '',
       delay_reason: task.delay_reason || '',
       improvements: task.improvements || '',

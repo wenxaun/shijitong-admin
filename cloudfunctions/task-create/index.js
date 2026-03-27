@@ -13,6 +13,9 @@ exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext()
   const { OPENID } = wxContext
   
+  console.log('[task-create] 开始创建任务, OPENID:', OPENID)
+  console.log('[task-create] 参数:', event)
+  
   try {
     const {
       task_name,
@@ -20,6 +23,7 @@ exports.main = async (event, context) => {
       priority = 'P1',
       category,
       executor_id,
+      executor_name,
       require_date
     } = event
     
@@ -36,8 +40,9 @@ exports.main = async (event, context) => {
     
     // 如果没有指定执行人，默认为创建者自己
     const finalExecutorId = executor_id || OPENID
+    const finalExecutorName = executor_name || ''
     
-    // 创建任务记录
+    // 创建任务记录 - 统一使用字符串格式存储日期
     const result = await db.collection('tasks').add({
       data: {
         task_name,
@@ -47,7 +52,8 @@ exports.main = async (event, context) => {
         category: category || '',
         publisher_id: OPENID,
         executor_id: finalExecutorId,
-        require_date: new Date(require_date),
+        executor_name: finalExecutorName,
+        require_date: require_date, // 保持字符串格式 YYYY-MM-DD
         complete_date: null,
         score: null,
         score_note: '',
@@ -61,23 +67,23 @@ exports.main = async (event, context) => {
       }
     })
     
+    console.log('[task-create] 任务创建成功, task_id:', result._id)
+    
     // TODO: 发送通知给执行人（后续可通过订阅消息实现）
     
     return {
       success: true,
       message: '任务创建成功' + (executor_id ? '，已分配给执行人' : ''),
-      task_id: result._id,
       data: {
         task_id: result._id,
         task_name,
         status: 'pending',
-        executor_id: finalExecutorId,
-        created_at: now
+        executor_id: finalExecutorId
       }
     }
     
   } catch (err) {
-    console.error('创建任务失败:', err)
+    console.error('[task-create] 创建任务失败:', err)
     return {
       success: false,
       message: '创建任务失败：' + err.message,

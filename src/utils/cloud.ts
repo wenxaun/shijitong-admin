@@ -371,6 +371,53 @@ const mockCloudFunction = async (name: string, data?: any): Promise<any> => {
       };
     }
     
+    case 'team-create': {
+      // 创建新团队
+      const newTeam = {
+        _id: `team_${Date.now()}`,
+        name: data?.name || '新团队',
+        description: data?.description || '',
+        leader_id: 'mock_openid',
+        leader_name: '测试用户',
+        members: ['mock_openid'],
+        member_details: [
+          { openid: 'mock_openid', nickname: '测试用户', role: 'owner', permissions: { can_create_task: true, can_assign_task: true, can_view_all_tasks: true, can_edit_team: true, can_invite_member: true, can_remove_member: true }, joined_at: new Date().toISOString() }
+        ],
+        invite_code: 'ABC' + Math.random().toString(36).substr(2, 3).toUpperCase(),
+        created_at: new Date().toISOString()
+      };
+      
+      // 保存到本地存储
+      const storedTeams = Taro.getStorageSync('mock_teams') || '[]';
+      const teams = JSON.parse(storedTeams);
+      teams.push(newTeam);
+      Taro.setStorageSync('mock_teams', JSON.stringify(teams));
+      
+      return {
+        success: true,
+        message: '创建成功',
+        data: { team_id: newTeam._id }
+      };
+    }
+    
+    case 'team-list': {
+      // 从本地存储读取团队数据
+      const storedTeams = Taro.getStorageSync('mock_teams') || '[]';
+      const teams = JSON.parse(storedTeams);
+      
+      // 筛选我是成员的团队
+      const myTeams = teams.filter((team: any) => 
+        team.members?.includes('mock_openid') || 
+        team.member_details?.some((m: any) => m.openid === 'mock_openid')
+      );
+      
+      return {
+        success: true,
+        message: '获取成功',
+        data: { teams: myTeams }
+      };
+    }
+    
     case 'team-detail': {
       // 返回团队详情
       return {

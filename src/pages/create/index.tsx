@@ -102,13 +102,10 @@ export default function Create() {
 
       if (res.success) {
         Taro.showToast({ title: '创建成功', icon: 'success' });
-        // 清空表单
-        setTaskName('');
-        setTaskDescription('');
-        setPriority('P1');
-        setCategory('');
-        setRequireDate('');
-        setExecutorIndex(-1);
+        // 延迟跳转到首页
+        setTimeout(() => {
+          Taro.switchTab({ url: '/pages/index/index' });
+        }, 1000);
       } else {
         Taro.showToast({ title: res.message || '创建失败', icon: 'none' });
       }
