@@ -378,7 +378,7 @@ export default function Detail() {
         </View>
       )}
 
-      <ScrollView className="flex-1" scrollY style={{ height: "calc(100vh - 50px)" }}>
+      <ScrollView className="h-screen" scrollY>
         {/* 任务信息卡片 */}
         <Card className="mx-3 mt-3">
           <CardContent className="p-4">

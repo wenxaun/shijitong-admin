@@ -188,7 +188,7 @@ export default function Exception() {
 
   return (
     <View className="min-h-screen bg-gray-50">
-      <ScrollView className="flex-1" scrollY style={{ height: "calc(100vh - 50px)" }}>
+      <ScrollView className="h-screen" scrollY>
         {/* 任务信息 */}
         <Card className="mx-3 mt-3">
           <CardContent className="p-4">

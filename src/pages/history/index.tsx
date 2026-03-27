@@ -265,7 +265,7 @@ export default function History() {
       </View>
 
       {/* 任务列表 */}
-      <ScrollView className="flex-1" scrollY style={{ height: "calc(100vh - 50px)" }}>
+      <ScrollView className="h-screen" scrollY>
         <View className="px-4 pt-4 pb-24">
           {loading && tasks.length === 0 ? (
             <View className="space-y-3">
