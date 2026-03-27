@@ -120,6 +120,47 @@ export default function TeamEdit() {
     try {
       // H5 端模拟
       if (Taro.getEnv() !== Taro.ENV_TYPE.WEAPP) {
+        // 从本地存储获取现有团队
+        const storedTeams = Taro.getStorageSync('mock_teams') || '[]';
+        const teams = JSON.parse(storedTeams);
+        
+        if (teamId) {
+          // 更新现有团队
+          const index = teams.findIndex((t: Team) => t._id === teamId);
+          if (index >= 0) {
+            teams[index] = {
+              ...teams[index],
+              name: teamName,
+              description: teamDesc
+            };
+          }
+        } else {
+          // 创建新团队
+          const newTeam: Team = {
+            _id: `team_${Date.now()}`,
+            name: teamName,
+            description: teamDesc,
+            leader_id: openid || 'mock_user',
+            leader_name: '我',
+            members: [openid || 'mock_user'],
+            member_details: [
+              {
+                openid: openid || 'mock_user',
+                nickname: '我',
+                role: 'owner',
+                permissions: DEFAULT_PERMISSIONS.owner,
+                joined_at: new Date().toISOString()
+              }
+            ],
+            invite_code: generateInviteCode(),
+            created_at: new Date().toISOString()
+          };
+          teams.push(newTeam);
+        }
+        
+        // 保存到本地存储
+        Taro.setStorageSync('mock_teams', JSON.stringify(teams));
+        
         Taro.showToast({ title: '保存成功', icon: 'success' });
         setTimeout(() => Taro.navigateBack(), 1500);
         setSaving(false);

@@ -22,33 +22,44 @@ export default function TeamPage() {
     try {
       // H5 端模拟数据
       if (Taro.getEnv() !== Taro.ENV_TYPE.WEAPP) {
-        setTeams([
-          { 
-            _id: '1', 
-            name: '产品研发组', 
-            leader_id: openid, 
-            leader_name: '我',
-            members: [openid, 'user2', 'user3'], 
-            member_details: [
-              { openid, nickname: '我', role: 'owner', permissions: { can_create_task: true, can_assign_task: true, can_view_all_tasks: true, can_edit_team: true, can_invite_member: true, can_remove_member: true }, joined_at: new Date().toISOString() },
-              { openid: 'user2', nickname: '张三', role: 'admin', permissions: { can_create_task: true, can_assign_task: true, can_view_all_tasks: true, can_edit_team: false, can_invite_member: true, can_remove_member: false }, joined_at: new Date().toISOString() },
-              { openid: 'user3', nickname: '李四', role: 'member', permissions: { can_create_task: true, can_assign_task: false, can_view_all_tasks: false, can_edit_team: false, can_invite_member: false, can_remove_member: false }, joined_at: new Date().toISOString() }
-            ],
-            created_at: new Date().toISOString() 
-          },
-          { 
-            _id: '2', 
-            name: '运营团队', 
-            leader_id: 'other', 
-            leader_name: '王五',
-            members: [openid, 'other'], 
-            member_details: [
-              { openid: 'other', nickname: '王五', role: 'owner', permissions: { can_create_task: true, can_assign_task: true, can_view_all_tasks: true, can_edit_team: true, can_invite_member: true, can_remove_member: true }, joined_at: new Date().toISOString() },
-              { openid, nickname: '我', role: 'member', permissions: { can_create_task: true, can_assign_task: false, can_view_all_tasks: false, can_edit_team: false, can_invite_member: false, can_remove_member: false }, joined_at: new Date().toISOString() }
-            ],
-            created_at: new Date().toISOString() 
-          }
-        ]);
+        // 从本地存储读取团队数据
+        const storedTeams = Taro.getStorageSync('mock_teams') || '[]';
+        let teamList = JSON.parse(storedTeams);
+        
+        // 如果没有团队数据，初始化默认团队
+        if (teamList.length === 0) {
+          teamList = [
+            { 
+              _id: '1', 
+              name: '产品研发组', 
+              leader_id: openid, 
+              leader_name: '我',
+              members: [openid, 'user2', 'user3'], 
+              member_details: [
+                { openid, nickname: '我', role: 'owner', permissions: { can_create_task: true, can_assign_task: true, can_view_all_tasks: true, can_edit_team: true, can_invite_member: true, can_remove_member: true }, joined_at: new Date().toISOString() },
+                { openid: 'user2', nickname: '张三', role: 'admin', permissions: { can_create_task: true, can_assign_task: true, can_view_all_tasks: true, can_edit_team: false, can_invite_member: true, can_remove_member: false }, joined_at: new Date().toISOString() },
+                { openid: 'user3', nickname: '李四', role: 'member', permissions: { can_create_task: true, can_assign_task: false, can_view_all_tasks: false, can_edit_team: false, can_invite_member: false, can_remove_member: false }, joined_at: new Date().toISOString() }
+              ],
+              created_at: new Date().toISOString() 
+            },
+            { 
+              _id: '2', 
+              name: '运营团队', 
+              leader_id: 'other', 
+              leader_name: '王五',
+              members: [openid, 'other'], 
+              member_details: [
+                { openid: 'other', nickname: '王五', role: 'owner', permissions: { can_create_task: true, can_assign_task: true, can_view_all_tasks: true, can_edit_team: true, can_invite_member: true, can_remove_member: true }, joined_at: new Date().toISOString() },
+                { openid, nickname: '我', role: 'member', permissions: { can_create_task: true, can_assign_task: false, can_view_all_tasks: false, can_edit_team: false, can_invite_member: false, can_remove_member: false }, joined_at: new Date().toISOString() }
+              ],
+              created_at: new Date().toISOString() 
+            }
+          ];
+          // 保存默认团队到本地存储
+          Taro.setStorageSync('mock_teams', JSON.stringify(teamList));
+        }
+        
+        setTeams(teamList);
         setLoading(false);
         return;
       }

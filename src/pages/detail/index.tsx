@@ -490,18 +490,8 @@ export default function Detail() {
                   </Text>
                 </View>
                 {task.score_note && (
-                  <Text className="text-sm text-gray-500 mb-3">{task.score_note}</Text>
+                  <Text className="text-sm text-gray-500">{task.score_note}</Text>
                 )}
-                
-                {/* 评分规则说明 */}
-                <View className="mt-3 pt-3 border-t border-gray-200">
-                  <Text className="text-xs text-gray-400 mb-2">评分规则：</Text>
-                  <Text className="text-xs text-gray-400">• 提前完成：100分</Text>
-                  <Text className="text-xs text-gray-400">• 按时完成：80分</Text>
-                  <Text className="text-xs text-gray-400">• 逾期≤3天：80分</Text>
-                  <Text className="text-xs text-gray-400">• 逾期大于3天且未上报异常：60分</Text>
-                  <Text className="text-xs text-gray-400">• 有异常上报：按原截止日期评分</Text>
-                </View>
               </View>
             )}
           </CardContent>
