@@ -35,19 +35,21 @@ export default function SubtaskCreate() {
     if (!parentTaskId) return;
 
     try {
-      if (Taro.getEnv() !== Taro.ENV_TYPE.WEAPP) {
-        setMaxDate('2025-12-31');
-        return;
-      }
+      const res = await callFunction<{ success: boolean; data?: { task: { require_date?: string } } }>(
+        'task-detail',
+        { task_id: parentTaskId }
+      );
 
-      // @ts-ignore
-      const db = wx.cloud.database();
-      const res = await db.collection('tasks').doc(parentTaskId).get();
-      if (res.data && res.data.require_date) {
-        setMaxDate(res.data.require_date);
+      if (res.success && res.data?.task?.require_date) {
+        setMaxDate(res.data.task.require_date);
+      } else {
+        // 默认截止日期为 30 天后
+        setMaxDate(new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0]);
       }
     } catch (err) {
       console.error('加载主任务截止日期失败:', err);
+      // 设置默认截止日期
+      setMaxDate(new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0]);
     }
   }, [parentTaskId]);
 
@@ -56,45 +58,38 @@ export default function SubtaskCreate() {
     if (!openid) return;
 
     try {
-      if (Taro.getEnv() !== Taro.ENV_TYPE.WEAPP) {
-        setExecutorList([
-          { openid: 'test1', nickname: '张三' },
-          { openid: 'test2', nickname: '李四' }
-        ]);
-        setExecutorIndex(0);
-        return;
-      }
+      // 使用统一接口获取团队成员
+      const res = await callFunction<{ success: boolean; data?: { members: Executor[] } }>(
+        'team-members',
+        { openid }
+      );
 
-      // @ts-ignore
-      const db = wx.cloud.database();
-      const userRes = await db.collection('users').where({ openid }).get();
-
-      if (userRes.data.length > 0) {
-        const user = userRes.data[0];
-        if (user.organization_id) {
-          const membersRes = await db.collection('users')
-            .where({ organization_id: user.organization_id })
-            .field({ openid: true, nickname: true })
-            .get();
-
-          setExecutorList(membersRes.data);
-          if (membersRes.data.length > 0) {
-            setExecutorIndex(0);
-          }
-        } else {
-          setExecutorList([{ openid, nickname: '我' }]);
+      if (res.success && res.data?.members) {
+        setExecutorList(res.data.members);
+        if (res.data.members.length > 0) {
           setExecutorIndex(0);
         }
+      } else {
+        // 默认成员
+        setExecutorList([{ openid, nickname: '我' }]);
+        setExecutorIndex(0);
       }
     } catch (err) {
       console.error('加载团队成员失败:', err);
+      // 默认成员
+      setExecutorList([{ openid, nickname: '我' }]);
+      setExecutorIndex(0);
     }
   }, [openid]);
 
   useEffect(() => {
-    loadParentTaskDeadline();
-    loadTeamMembers();
-  }, [loadParentTaskDeadline, loadTeamMembers]);
+    if (parentTaskId) {
+      loadParentTaskDeadline();
+    }
+    if (openid) {
+      loadTeamMembers();
+    }
+  }, [parentTaskId, openid, loadParentTaskDeadline, loadTeamMembers]);
 
   // 创建子任务
   const createSubtask = async () => {
@@ -173,13 +168,15 @@ export default function SubtaskCreate() {
         <Card>
           <CardContent className="p-3">
             <Text className="text-sm text-gray-700 mb-2">任务描述</Text>
-            <Textarea
-              className="bg-gray-50"
-              placeholder="请输入任务描述（可选）"
-              value={taskDescription}
-              onInput={(e) => setTaskDescription(e.detail.value)}
-              maxlength={500}
-            />
+            <View className="bg-gray-50 rounded-xl p-3">
+              <Textarea
+                style={{ width: '100%', minHeight: '80px', backgroundColor: 'transparent' }}
+                placeholder="请输入任务描述（可选）"
+                value={taskDescription}
+                onInput={(e) => setTaskDescription(e.detail.value)}
+                maxlength={500}
+              />
+            </View>
           </CardContent>
         </Card>
 
@@ -209,17 +206,20 @@ export default function SubtaskCreate() {
         {/* 截止日期 */}
         <Card>
           <CardContent className="p-3">
-            <Text className="text-sm text-gray-700 mb-2">截止日期</Text>
+            <View className="flex items-center mb-2">
+              <Text className="text-red-500">*</Text>
+              <Text className="text-sm text-gray-700 ml-1">截止日期</Text>
+            </View>
             <Picker
               mode="date"
-              value={requireDate}
+              value={requireDate || minDate}
               start={minDate}
-              end={maxDate || undefined}
+              end={maxDate || new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0]}
               onChange={(e) => setRequireDate(e.detail.value)}
             >
               <View className="bg-gray-50 rounded-lg px-3 py-2 flex items-center justify-between border border-gray-200">
                 <Text className={requireDate ? 'text-gray-800' : 'text-gray-400'}>
-                  {requireDate || '选择截止日期'}
+                  {requireDate || '请选择截止日期'}
                 </Text>
                 <Text className="text-gray-400">▼</Text>
               </View>

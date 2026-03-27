@@ -54,66 +54,30 @@ export default function SubtaskDetail() {
 
     setLoading(true);
     try {
-      if (Taro.getEnv() !== Taro.ENV_TYPE.WEAPP) {
-        // H5 模拟数据
-        setSubtask({
-          _id: subtaskId,
-          task_name: '示例子任务',
-          task_description: '这是一个示例子任务描述',
-          status: 'in_progress',
-          priority: 'P1',
-          executor_name: '张三',
-          require_date: new Date().toISOString().split('T')[0],
-          checklist: [
-            { id: '1', title: '完成设计稿', completed: true, completed_at: Date.now() },
-            { id: '2', title: '开发页面', completed: false }
-          ]
-        });
-        setChecklist([
-          { id: '1', title: '完成设计稿', completed: true, completed_at: Date.now() },
-          { id: '2', title: '开发页面', completed: false }
-        ]);
-        setChecklistProgress(50);
-        setLoading(false);
-        return;
-      }
+      const res = await callFunction<CloudResponse<{ subtask: SubtaskDetail }>>(
+        'subtask-detail',
+        { subtask_id: subtaskId }
+      );
 
-      // @ts-ignore
-      const db = wx.cloud.database();
-      const res = await db.collection('tasks').doc(subtaskId).get();
-
-      if (res.data && res.data.is_subtask) {
-        const task = res.data;
-
-        // 获取执行人名称
-        let executorName = '未分配';
-        if (task.executor_id) {
-          const userRes = await db.collection('users')
-            .where({ openid: task.executor_id })
-            .field({ nickname: true })
-            .get();
-          if (userRes.data.length > 0) {
-            executorName = userRes.data[0].nickname;
-          }
-        }
+      if (res.success && res.data?.subtask) {
+        const subtaskData = res.data.subtask;
 
         // 检查逾期
         const today = new Date();
-        const requireDate = task.require_date ? new Date(task.require_date) : null;
-        const overdue = requireDate && requireDate < today && task.status !== 'completed';
+        const requireDate = subtaskData.require_date ? new Date(subtaskData.require_date) : null;
+        const overdue = requireDate && requireDate < today && subtaskData.status !== 'completed';
 
         // 处理清单
-        const list = task.checklist || [];
+        const list = subtaskData.checklist || [];
         const completedCount = list.filter((i: ChecklistItem) => i.completed).length;
         const progress = list.length > 0 ? Math.round((completedCount / list.length) * 100) : 0;
 
-        setSubtask({
-          ...task,
-          executor_name: executorName
-        });
+        setSubtask(subtaskData);
         setIsOverdue(!!overdue);
         setChecklist(list);
         setChecklistProgress(progress);
+      } else {
+        Taro.showToast({ title: '子任务不存在', icon: 'none' });
       }
     } catch (err) {
       console.error('加载子任务失败:', err);
@@ -126,6 +90,13 @@ export default function SubtaskDetail() {
   useEffect(() => {
     loadSubtask();
   }, [loadSubtask]);
+
+  // 页面显示时刷新
+  Taro.useDidShow(() => {
+    if (subtaskId) {
+      loadSubtask();
+    }
+  });
 
   // 完成子任务
   const completeSubtask = () => {

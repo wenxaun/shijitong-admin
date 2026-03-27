@@ -77,9 +77,13 @@ export default function Index() {
 
       if (res.success && res.data) {
         const newTasks = res.data.tasks || [];
-        setTasks(refresh ? newTasks : [...tasks, ...newTasks]);
+        if (refresh) {
+          setTasks(newTasks);
+          setPage(1);
+        } else {
+          setTasks(prev => [...prev, ...newTasks]);
+        }
         setHasMore(res.data.hasMore);
-        setPage(currentPage);
       }
     } catch (err) {
       console.error('加载任务失败:', err);
@@ -87,7 +91,7 @@ export default function Index() {
     } finally {
       setLoading(false);
     }
-  }, [openid, statusFilter, timeFilter, page, tasks]);
+  }, [openid, statusFilter, timeFilter, page]);
 
   // 初始化加载
   useEffect(() => {
@@ -95,6 +99,13 @@ export default function Index() {
       loadTasks(true);
     }
   }, [openid]);
+
+  // 页面显示时刷新数据
+  Taro.useDidShow(() => {
+    if (openid) {
+      loadTasks(true);
+    }
+  });
 
   // 筛选变化时重新加载
   useEffect(() => {

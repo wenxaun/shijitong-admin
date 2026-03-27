@@ -148,6 +148,14 @@ export default function Detail() {
     loadSubtasks();
   }, [loadTask, loadSubtasks]);
 
+  // 页面显示时刷新数据
+  Taro.useDidShow(() => {
+    if (taskId) {
+      loadTask();
+      loadSubtasks();
+    }
+  });
+
   useEffect(() => {
     if (currentTab === 'comment') {
       loadComments();
@@ -216,26 +224,7 @@ export default function Detail() {
 
   // 异常上报
   const reportException = () => {
-    Taro.showModal({
-      title: '异常上报',
-      content: '请说明异常情况...',
-      success: async (res) => {
-        if (res.confirm) {
-          try {
-            const result = await callFunction<CloudResponse>(
-              'task-exception',
-              { task_id: taskId }
-            );
-
-            if (result.success) {
-              Taro.showToast({ title: '上报成功', icon: 'success' });
-            }
-          } catch (err) {
-            Taro.showToast({ title: '操作失败', icon: 'none' });
-          }
-        }
-      }
-    });
+    Taro.navigateTo({ url: `/pages/exception/index?id=${taskId}` });
   };
 
   // 编辑任务

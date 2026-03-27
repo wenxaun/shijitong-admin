@@ -210,6 +210,21 @@ const mockCloudFunction = async (name: string, data?: any): Promise<any> => {
       };
     }
     
+    case 'subtask-detail': {
+      const subtask = mockSubtasks.find(s => s._id === data?.subtask_id);
+      if (subtask) {
+        return {
+          success: true,
+          message: '获取成功',
+          data: { subtask }
+        };
+      }
+      return {
+        success: false,
+        message: '子任务不存在'
+      };
+    }
+    
     case 'subtask-update': {
       const subtaskIndex = mockSubtasks.findIndex(s => s._id === data?.subtask_id);
       if (subtaskIndex >= 0) {
@@ -262,6 +277,51 @@ const mockCloudFunction = async (name: string, data?: any): Promise<any> => {
         success: true,
         message: '获取成功',
         data: { comments: [] }
+      };
+    
+    case 'team-members':
+      return {
+        success: true,
+        message: '获取成功',
+        data: {
+          members: [
+            { openid: 'mock_openid', nickname: '测试用户' },
+            { openid: 'mock_user_1', nickname: '张三' },
+            { openid: 'mock_user_2', nickname: '李四' }
+          ]
+        }
+      };
+    
+    case 'task-exception': {
+      // 异常上报 - 更新任务状态
+      const taskIndex = mockTasks.findIndex(t => t.task_id === data?.task_id || t._id === data?.task_id);
+      if (taskIndex >= 0) {
+        mockTasks[taskIndex] = {
+          ...mockTasks[taskIndex],
+          exception_type: data?.exception_type,
+          exception_reason: data?.reason,
+          new_deadline: data?.new_deadline,
+          assist_user_id: data?.assist_user_id,
+          status: 'exception',
+          updated_at: new Date().toISOString()
+        };
+        return {
+          success: true,
+          message: '异常上报成功'
+        };
+      }
+      return {
+        success: false,
+        message: '任务不存在'
+      };
+    }
+    
+    case 'send-notification':
+      // 发送通知（模拟）
+      console.log('[Cloud Mock] 发送通知:', data);
+      return {
+        success: true,
+        message: '通知发送成功'
       };
     
     default:
