@@ -570,12 +570,23 @@ export const getDatabase = () => {
  */
 export const getOpenId = async (): Promise<string | null> => {
   try {
-    const res = await callFunction<{ success: boolean; data?: { openid: string }; openid?: string }>('login');
-    // login 云函数返回格式：{ success: true, data: { openid: '...' } }
-    // 兼容两种格式
-    const openid = res.data?.openid || res.openid;
-    console.log('[Cloud] 获取到的 OpenID:', openid);
-    return openid || null;
+    console.log('[Cloud] 开始获取 OpenID...');
+    const res = await callFunction<{ 
+      success: boolean; 
+      data?: { openid: string; userId: string };
+      code?: string;
+      message?: string;
+    }>('login');
+    
+    console.log('[Cloud] login 云函数返回:', JSON.stringify(res));
+    
+    if (res.success && res.data?.openid) {
+      console.log('[Cloud] 获取到的 OpenID:', res.data.openid);
+      return res.data.openid;
+    }
+    
+    console.error('[Cloud] login 云函数返回失败:', res.message || res.code);
+    return null;
   } catch (err) {
     console.error('[Cloud] 获取 OpenID 失败:', err);
     return null;

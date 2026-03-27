@@ -1,6 +1,7 @@
 // cloudfunctions/login/index.js
 // 事绩通 - 用户登录验证云函数
-// 功能：微信登录 code 换 openid + 用户会话创建
+// 功能：微信登录 + 用户会话创建
+// 注意：云函数可直接通过 cloud.getWXContext() 获取 OPENID，code 参数可选
 
 const cloud = require('wx-server-sdk');
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
@@ -10,31 +11,30 @@ const _ = db.command;
 
 // 主函数
 exports.main = async (event, context) => {
+  console.log('===== login 云函数开始执行 =====');
+  console.log('[login] 接收参数:', JSON.stringify(event));
+  
   const { code, userInfo, phoneData } = event;
   
-  // 1. 参数验证
-  if (!code) {
-    return {
-      success: false,
-      code: 'INVALID_CODE',
-      message: '登录 code 不能为空'
-    };
-  }
-
   try {
-    // 2. 微信登录 code 换 openid
-    const { OPENID, APPID } = cloud.getWXContext();
+    // 1. 通过云函数上下文获取 OPENID（推荐方式，不需要 code）
+    const wxContext = cloud.getWXContext();
+    const OPENID = wxContext.OPENID;
+    const APPID = wxContext.APPID;
+    
+    console.log('[login] 获取到 OPENID:', OPENID);
     
     if (!OPENID) {
-      // code 换 openid（备用方案）
-      const wxResult = await wxCodeToOpenid(code);
-      if (!wxResult.success) {
-        return wxResult;
-      }
-      OPENID = wxResult.openid;
+      console.error('[login] 无法获取 OPENID');
+      return {
+        success: false,
+        code: 'NO_OPENID',
+        message: '无法获取用户标识，请重试'
+      };
     }
 
-    // 3. 查询用户是否存在
+    // 2. 查询用户是否存在
+    console.log('[login] 查询用户...');
     const userResult = await db.collection('users')
       .where({ openid: OPENID })
       .limit(1)
@@ -45,22 +45,24 @@ exports.main = async (event, context) => {
 
     if (userResult.data.length > 0) {
       // 老用户 - 更新信息
+      console.log('[login] 用户已存在，更新信息');
       user = userResult.data[0];
       await updateUser(user._id, userInfo);
     } else {
       // 新用户 - 创建记录
+      console.log('[login] 新用户，创建记录');
       isNewUser = true;
       user = await createUser(OPENID, userInfo);
     }
 
-    // 4. 生成会话 token
+    // 3. 生成会话 token
     const sessionToken = generateSessionToken(OPENID);
     
-    // 5. 更新会话
+    // 4. 更新会话
     await updateSession(user._id, sessionToken);
 
-    // 6. 返回登录结果
-    // 已注册用户直接登录，不强制绑定手机/加入组织（可在个人页完善）
+    // 5. 返回登录结果
+    console.log('[login] 登录成功，返回结果');
     return {
       success: true,
       code: 'LOGIN_SUCCESS',
@@ -76,14 +78,13 @@ exports.main = async (event, context) => {
           hasOrg: user.org_id ? true : false
         },
         isNewUser: isNewUser,
-        // 已注册用户直接登录，只有真正新用户才需要完善信息
-        needBindPhone: false,  // 不再强制绑定手机
-        needJoinOrg: false     // 不再强制加入组织
+        needBindPhone: false,
+        needJoinOrg: false
       }
     };
 
   } catch (error) {
-    console.error('登录失败:', error);
+    console.error('[login] 登录失败:', error);
     return {
       success: false,
       code: 'LOGIN_ERROR',
@@ -96,37 +97,6 @@ exports.main = async (event, context) => {
 /**
  * 微信 code 换 openid（备用方案）
  */
-async function wxCodeToOpenid(code) {
-  const { APPID, APPSECRET } = cloud.getAppConfig();
-  
-  const url = `https://api.weixin.qq.com/sns/jscode2session?appid=${APPID}&secret=${APPSECRET}&js_code=${code}&grant_type=authorization_code`;
-  
-  try {
-    const res = await cloud.request({ url });
-    const data = res.data;
-    
-    if (data.errcode) {
-      return {
-        success: false,
-        code: 'WX_API_ERROR',
-        message: `微信接口错误：${data.errmsg}`
-      };
-    }
-    
-    return {
-      success: true,
-      openid: data.openid,
-      session_key: data.session_key
-    };
-  } catch (error) {
-    return {
-      success: false,
-      code: 'REQUEST_ERROR',
-      message: '网络请求失败'
-    };
-  }
-}
-
 /**
  * 创建新用户
  */
