@@ -21,35 +21,48 @@ const ATTRIBUTION_TAGS = [
   { id: 'external', label: '外部因素' }
 ];
 
-// 计算自动评分
-// completeDays: 负数表示提前完成天数，0表示按时完成，正数表示逾期天数
+/**
+ * 计算自动评分
+ * 
+ * 评分规则：
+ * 1. 提前完成（completeDays < 0）：100分
+ * 2. 按时完成（completeDays = 0）：80分
+ * 3. 逾期完成（completeDays > 0）：
+ *    - 有异常上报：80分（按原截止日期评分）
+ *    - 无异常上报，延期≤3天：80分
+ *    - 无异常上报，延期>3天：60分
+ * 
+ * 额外扣分：
+ * - 子任务未完成：按比例扣分（最多10分）
+ */
 const calculateScore = (
-  completeDays: number,
+  completeDays: number, // 负数=提前，0=按时，正数=逾期
+  hasException: boolean,
   subtaskProgress: number,
   hasSubtasks: boolean
 ): number => {
   let score = 80; // 基础分：按时完成80分
 
   if (completeDays < 0) {
-    // 提前完成：加分（最多加20分，达到100分）
-    const earlyDays = Math.abs(completeDays);
-    if (earlyDays >= 7) {
-      score = 100; // 提前7天以上，满分
-    } else if (earlyDays >= 3) {
-      score = 95; // 提前3-6天，95分
-    } else if (earlyDays >= 1) {
-      score = 90; // 提前1-2天，90分
-    }
-  } else if (completeDays > 0) {
-    // 逾期完成：扣分
-    if (completeDays <= 1) {
-      score -= 5; // 逾期1天扣5分
-    } else if (completeDays <= 3) {
-      score -= 10; // 逾期2-3天扣10分
-    } else if (completeDays <= 7) {
-      score -= 15; // 逾期4-7天扣15分
+    // 提前完成：100分
+    score = 100;
+  } else if (completeDays === 0) {
+    // 按时完成：80分
+    score = 80;
+  } else {
+    // 逾期完成
+    if (hasException) {
+      // 有异常上报：按原截止日期评分（80分）
+      score = 80;
     } else {
-      score -= 20; // 逾期超过7天扣20分
+      // 无异常上报
+      if (completeDays <= 3) {
+        // 延期≤3天：80分
+        score = 80;
+      } else {
+        // 延期>3天：60分
+        score = 60;
+      }
     }
   }
 
@@ -82,6 +95,7 @@ export default function Review() {
   const [calculatedScore, setCalculatedScore] = useState(80);
   const [subtaskProgress, setSubtaskProgress] = useState(100);
   const [hasSubtasks, setHasSubtasks] = useState(false);
+  const [hasException, setHasException] = useState(false);
 
   // 复盘表单
   const [learnings, setLearnings] = useState('');
@@ -104,8 +118,10 @@ export default function Review() {
       if (res.success && res.data?.task) {
         const taskData = res.data.task;
         setTask(taskData);
+        setHasException(taskData.has_exception || false);
 
         // 计算完成时间差异
+        // 使用原截止日期(require_date)计算，不受异常延期影响
         if (taskData.require_date) {
           const requireDate = new Date(taskData.require_date);
           const completeDate = taskData.complete_date ? new Date(taskData.complete_date) : new Date();
@@ -158,9 +174,9 @@ export default function Review() {
 
   // 计算评分
   useEffect(() => {
-    const score = calculateScore(completeDays, subtaskProgress, hasSubtasks);
+    const score = calculateScore(completeDays, hasException, subtaskProgress, hasSubtasks);
     setCalculatedScore(score);
-  }, [completeDays, subtaskProgress, hasSubtasks]);
+  }, [completeDays, hasException, subtaskProgress, hasSubtasks]);
 
   useEffect(() => {
     loadTask();
@@ -183,7 +199,7 @@ export default function Review() {
       return;
     }
 
-    if (completeDays > 0 && !delayReason.trim()) {
+    if (completeDays > 0 && !hasException && !delayReason.trim()) {
       Taro.showToast({ title: '请填写延迟原因', icon: 'none' });
       return;
     }
@@ -230,6 +246,9 @@ export default function Review() {
       notes.push(`提前${Math.abs(completeDays)}天完成`);
     } else if (completeDays > 0) {
       notes.push(`逾期${completeDays}天完成`);
+      if (hasException) {
+        notes.push('已上报异常');
+      }
     } else {
       notes.push('按时完成');
     }
@@ -244,11 +263,11 @@ export default function Review() {
   // 获取完成状态描述
   const getCompletionStatus = () => {
     if (completeDays < 0) {
-      return { text: `提前${Math.abs(completeDays)}天`, color: 'text-green-500', icon: TrendingUp };
+      return { text: `提前${Math.abs(completeDays)}天`, color: 'text-green-500', bg: 'bg-green-50', icon: TrendingUp };
     } else if (completeDays > 0) {
-      return { text: `逾期${completeDays}天`, color: 'text-orange-500', icon: CircleAlert };
+      return { text: `逾期${completeDays}天`, color: 'text-orange-500', bg: 'bg-orange-50', icon: CircleAlert };
     }
-    return { text: '按时完成', color: 'text-blue-500', icon: Clock };
+    return { text: '按时完成', color: 'text-blue-500', bg: 'bg-blue-50', icon: Clock };
   };
 
   if (loading) {
@@ -291,6 +310,9 @@ export default function Review() {
                   {completeDays < 0 ? `提前${Math.abs(completeDays)}天` : `逾期${completeDays}天`}
                 </Badge>
               )}
+              {hasException && (
+                <Badge className="bg-purple-50 text-purple-600">已上报异常</Badge>
+              )}
               <Text className="text-sm text-gray-500">截止：{task.require_date}</Text>
             </View>
           </CardContent>
@@ -325,6 +347,16 @@ export default function Review() {
                 </Text>
               </View>
               
+              {hasException && completeDays > 0 && (
+                <View className="flex items-center justify-between">
+                  <View className="flex items-center">
+                    <CircleAlert size={16} color="#9333EA" />
+                    <Text className="text-sm text-gray-600 ml-2">异常上报</Text>
+                  </View>
+                  <Text className="text-sm text-purple-500">已处理</Text>
+                </View>
+              )}
+
               {hasSubtasks && subtaskProgress < 100 && (
                 <View className="flex items-center justify-between">
                   <View className="flex items-center">
@@ -339,9 +371,11 @@ export default function Review() {
             {/* 评分规则说明 */}
             <View className="mt-3 p-3 bg-blue-50 rounded-lg">
               <Text className="text-xs text-blue-600 font-semibold mb-1">评分规则</Text>
+              <Text className="text-xs text-blue-500">• 提前完成：100分</Text>
               <Text className="text-xs text-blue-500">• 按时完成：80分</Text>
-              <Text className="text-xs text-blue-500">• 提前1-2天：90分；提前3-6天：95分；提前7天以上：100分</Text>
-              <Text className="text-xs text-blue-500">• 逾期1天扣5分；2-3天扣10分；4-7天扣15分；7天以上扣20分</Text>
+              <Text className="text-xs text-blue-500">• 逾期≤3天：80分</Text>
+              <Text className="text-xs text-blue-500">• 逾期大于3天且未上报异常：60分</Text>
+              <Text className="text-xs text-blue-500">• 有异常上报：按原截止日期评分</Text>
               {hasSubtasks && (
                 <Text className="text-xs text-blue-500">• 子任务未完成：按比例扣分（最多10分）</Text>
               )}
@@ -376,7 +410,7 @@ export default function Review() {
         </Card>
 
         {/* 延迟原因（逾期必填） */}
-        {completeDays > 0 && (
+        {completeDays > 0 && !hasException && (
           <Card className="mx-3 mt-3">
             <CardContent className="p-4">
               <View className="flex items-center mb-2">
@@ -385,7 +419,7 @@ export default function Review() {
               </View>
               <View className="bg-orange-50 rounded-xl p-3 mb-2">
                 <Text className="text-xs text-orange-600">
-                  该任务逾期完成，请说明延迟原因
+                  该任务逾期完成且未上报异常，请说明延迟原因
                 </Text>
               </View>
               <View className="bg-gray-50 rounded-xl p-3">

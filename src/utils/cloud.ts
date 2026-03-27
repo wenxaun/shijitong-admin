@@ -302,6 +302,7 @@ const mockCloudFunction = async (name: string, data?: any): Promise<any> => {
           exception_reason: data?.reason,
           new_deadline: data?.new_deadline,
           assist_user_id: data?.assist_user_id,
+          has_exception: data?.has_exception ?? true, // 标记已上报异常
           status: 'exception',
           updated_at: new Date().toISOString()
         };

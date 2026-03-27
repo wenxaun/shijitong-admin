@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { DeadlineReminder } from '@/components/deadline-reminder';
 
 // 状态筛选选项
 const STATUS_FILTERS = [
@@ -231,6 +232,9 @@ export default function Index() {
 
   return (
     <View className="min-h-screen bg-gray-50">
+      {/* 截止日期提醒弹窗 */}
+      <DeadlineReminder />
+
       {/* 筛选栏 */}
       <View className="bg-white px-3 py-2 mb-3">
         {/* 时间筛选 */}

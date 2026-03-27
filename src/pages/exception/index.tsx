@@ -133,7 +133,8 @@ export default function Exception() {
           exception_type: exceptionType,
           reason: reason.trim(),
           new_deadline: exceptionType === 'delay' ? newDeadline : undefined,
-          assist_user_id: exceptionType === 'assist' ? assistUserId : undefined
+          assist_user_id: exceptionType === 'assist' ? assistUserId : undefined,
+          has_exception: true // 标记已上报异常
         }
       );
 
