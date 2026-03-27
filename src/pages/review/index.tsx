@@ -194,19 +194,24 @@ export default function Review() {
 
   // 提交复盘和评分
   const submitReview = async () => {
-    if (!learnings.trim()) {
-      Taro.showToast({ title: '请填写学习收获', icon: 'none' });
-      return;
-    }
+    // 80分以下需要强制填写复盘
+    const needReview = calculatedScore < 80;
 
-    if (completeDays > 0 && !hasException && !delayReason.trim()) {
-      Taro.showToast({ title: '请填写延迟原因', icon: 'none' });
-      return;
-    }
+    if (needReview) {
+      if (!learnings.trim()) {
+        Taro.showToast({ title: '请填写学习收获', icon: 'none' });
+        return;
+      }
 
-    if (!improvements.trim()) {
-      Taro.showToast({ title: '请填写反思改进', icon: 'none' });
-      return;
+      if (completeDays > 0 && !hasException && !delayReason.trim()) {
+        Taro.showToast({ title: '请填写延迟原因', icon: 'none' });
+        return;
+      }
+
+      if (!improvements.trim()) {
+        Taro.showToast({ title: '请填写反思改进', icon: 'none' });
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -386,7 +391,11 @@ export default function Review() {
         {/* 复盘表单 */}
         <View className="mx-3 mt-4 mb-2">
           <Text className="text-base font-semibold text-gray-800">任务复盘</Text>
-          <Text className="text-xs text-gray-400">完成任务后请填写复盘内容</Text>
+          <Text className="text-xs text-gray-400">
+            {calculatedScore >= 80 
+              ? '表现优秀，复盘内容可选填写' 
+              : '请填写复盘内容，总结改进'}
+          </Text>
         </View>
 
         {/* 学习收获 */}
@@ -394,17 +403,17 @@ export default function Review() {
           <CardContent className="p-4">
             <View className="flex items-center mb-2">
               <Lightbulb size={18} color="#1377EB" />
-              <Text className="text-sm font-semibold text-gray-700 ml-2">学习收获 *</Text>
+              <Text className="text-sm font-semibold text-gray-700 ml-2">
+                学习收获 {calculatedScore < 80 && <Text className="text-red-500">*</Text>}
+              </Text>
             </View>
-            <View className="bg-gray-50 rounded-xl p-3">
-              <Textarea
-                style={{ width: '100%', minHeight: '80px', backgroundColor: 'transparent' }}
-                placeholder="记录这次任务中学到的知识、技能或经验..."
-                value={learnings}
-                onInput={(e) => setLearnings(e.detail.value)}
-                maxlength={500}
-              />
-            </View>
+            <Textarea
+              className="bg-gray-50 border-gray-200 min-h-[80px]"
+              placeholder="记录这次任务中学到的知识、技能或经验..."
+              value={learnings}
+              onInput={(e) => setLearnings(e.detail.value)}
+              maxlength={500}
+            />
             <Text className="text-xs text-gray-400 mt-1 text-right">{learnings.length}/500</Text>
           </CardContent>
         </Card>
@@ -422,15 +431,13 @@ export default function Review() {
                   该任务逾期完成且未上报异常，请说明延迟原因
                 </Text>
               </View>
-              <View className="bg-gray-50 rounded-xl p-3">
-                <Textarea
-                  style={{ width: '100%', minHeight: '60px', backgroundColor: 'transparent' }}
-                  placeholder="说明任务延迟的具体原因..."
-                  value={delayReason}
-                  onInput={(e) => setDelayReason(e.detail.value)}
-                  maxlength={300}
-                />
-              </View>
+              <Textarea
+                className="bg-gray-50 border-gray-200 min-h-[60px]"
+                placeholder="说明任务延迟的具体原因..."
+                value={delayReason}
+                onInput={(e) => setDelayReason(e.detail.value)}
+                maxlength={300}
+              />
             </CardContent>
           </Card>
         )}
@@ -440,17 +447,17 @@ export default function Review() {
           <CardContent className="p-4">
             <View className="flex items-center mb-2">
               <Check size={18} color="#22C55E" />
-              <Text className="text-sm font-semibold text-gray-700 ml-2">反思改进 *</Text>
+              <Text className="text-sm font-semibold text-gray-700 ml-2">
+                反思改进 {calculatedScore < 80 && <Text className="text-red-500">*</Text>}
+              </Text>
             </View>
-            <View className="bg-gray-50 rounded-xl p-3">
-              <Textarea
-                style={{ width: '100%', minHeight: '80px', backgroundColor: 'transparent' }}
-                placeholder="总结经验教训，提出改进措施..."
-                value={improvements}
-                onInput={(e) => setImprovements(e.detail.value)}
-                maxlength={500}
-              />
-            </View>
+            <Textarea
+              className="bg-gray-50 border-gray-200 min-h-[80px]"
+              placeholder="总结经验教训，提出改进措施..."
+              value={improvements}
+              onInput={(e) => setImprovements(e.detail.value)}
+              maxlength={500}
+            />
           </CardContent>
         </Card>
 

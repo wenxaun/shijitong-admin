@@ -155,7 +155,7 @@ export default function Create() {
           <CardContent className="p-3">
             <Label className="text-sm text-gray-500 mb-2">任务描述</Label>
             <Textarea
-              className="bg-gray-50 border-gray-200 h-24"
+              className="bg-gray-50 border-gray-200 min-h-[96px]"
               placeholder="请输入任务描述（可选）"
               value={taskDescription}
               onInput={(e) => setTaskDescription(e.detail.value)}

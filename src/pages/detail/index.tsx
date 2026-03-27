@@ -72,8 +72,11 @@ export default function Detail() {
   // 权限
   const [isPublisher, setIsPublisher] = useState(false);
   const [isExecutor, setIsExecutor] = useState(false);
-  const canEdit = isPublisher || isExecutor;
-  const canDelete = isPublisher;
+  
+  // 编辑权限：只有创建人且任务状态为待办时可以编辑
+  const canEdit = isPublisher && task?.status === 'pending';
+  // 删除权限：只有创建人且任务状态为待办时可以删除
+  const canDelete = isPublisher && task?.status === 'pending';
 
   // 加载任务详情
   const loadTask = useCallback(async () => {
@@ -380,7 +383,7 @@ export default function Detail() {
             {/* 标题行 */}
             <View className="flex items-start justify-between mb-3">
               <Text className="text-xl font-bold text-gray-800 flex-1">{task.task_name}</Text>
-              {canEdit && (
+              {(canEdit || canDelete) && (
                 <View onClick={() => setShowMoreMenu(!showMoreMenu)}>
                   <Ellipsis size={20} color="#9CA3AF" />
                 </View>

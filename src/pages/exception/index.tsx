@@ -310,15 +310,13 @@ export default function Exception() {
               <Text className="text-red-500">*</Text>
               <Text className="text-sm font-semibold text-gray-700 ml-1">异常原因</Text>
             </View>
-            <View className="bg-gray-50 rounded-xl p-3">
-              <Textarea
-                style={{ width: '100%', minHeight: '100px', backgroundColor: 'transparent' }}
-                placeholder="请详细说明异常情况、原因及解决方案..."
-                value={reason}
-                onInput={(e) => setReason(e.detail.value)}
-                maxlength={500}
-              />
-            </View>
+            <Textarea
+              className="bg-gray-50 border-gray-200 min-h-[100px]"
+              placeholder="请详细说明异常情况、原因及解决方案..."
+              value={reason}
+              onInput={(e) => setReason(e.detail.value)}
+              maxlength={500}
+            />
             <Text className="text-xs text-gray-400 mt-2 text-right">
               {reason.length}/500
             </Text>
