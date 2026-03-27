@@ -12,6 +12,25 @@ import pkg from '../package.json';
 
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 
+// 为每个页面生成空的 wxss 文件（解决微信开发者工具编译错误）
+const generateEmptyPageWxss = (outputRoot: string) => {
+  const pagesDir = path.resolve(__dirname, '..', outputRoot, 'pages');
+  if (!fs.existsSync(pagesDir)) {
+    return;
+  }
+  const pageDirs = fs.readdirSync(pagesDir, { withFileTypes: true })
+    .filter(dirent => dirent.isDirectory())
+    .map(dirent => dirent.name);
+  
+  pageDirs.forEach(pageDir => {
+    const wxssPath = path.resolve(pagesDir, pageDir, 'index.wxss');
+    if (!fs.existsSync(wxssPath)) {
+      fs.writeFileSync(wxssPath, '/* 样式已打包到 app-origin.wxss */\n');
+    }
+  });
+  console.log(`[Taro] 已为 ${pageDirs.length} 个页面生成 wxss 文件`);
+};
+
 const generateTTProjectConfig = (outputRoot: string) => {
   const config = {
     miniprogramRoot: './',
@@ -154,6 +173,16 @@ export default defineConfig<'vite'>(async (merge, _env) => {
                 name: 'generate-tt-project-config',
                 closeBundle() {
                   generateTTProjectConfig(outputRoot);
+                },
+              },
+            ]
+          : []),
+        ...(process.env.TARO_ENV === 'weapp'
+          ? [
+              {
+                name: 'generate-empty-page-wxss',
+                closeBundle() {
+                  generateEmptyPageWxss(outputRoot);
                 },
               },
             ]
