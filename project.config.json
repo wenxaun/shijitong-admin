@@ -2,7 +2,7 @@
   "miniprogramRoot": "./dist-weapp",
   "projectname": "事绩通",
   "description": "事绩通 - 任务管理系统",
-  "appid": "touristappid",
+  "appid": "wx2be578f65935b5e8",
   "setting": {
     "urlCheck": true,
     "es6": false,
