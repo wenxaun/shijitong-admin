@@ -46,8 +46,10 @@ export default function Login() {
         const loginRes = await callFunction<CloudResponse<{ openid: string; user_id: string }>>(
           'user-login',
           {
-            nickname: userInfo.nickName,
-            avatar_url: userInfo.avatarUrl
+            userInfo: {
+              nickName: userInfo.nickName,
+              avatarUrl: userInfo.avatarUrl
+            }
           }
         );
 

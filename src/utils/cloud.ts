@@ -129,6 +129,20 @@ const mockCloudFunction = async (name: string, data?: any): Promise<any> => {
     case 'login':
       return { openid: 'mock_openid' };
     
+    case 'user-login':
+      return {
+        success: true,
+        message: '欢迎加入事绩通！',
+        data: {
+          user_id: 'mock_user_' + Date.now(),
+          openid: 'mock_openid',
+          nickname: data?.userInfo?.nickName || '测试用户',
+          avatar_url: data?.userInfo?.avatarUrl || '',
+          role: 'executor',
+          isNewUser: true
+        }
+      };
+    
     case 'task-create': {
       const newTask = {
         _id: 'mock_task_' + Date.now(),
@@ -571,6 +585,7 @@ export const getOpenId = async (): Promise<string | null> => {
 // 云函数名称常量
 export const CLOUD_FUNCTIONS = {
   LOGIN: 'login',
+  USER_LOGIN: 'user-login',
   TASK_LIST: 'task-list',
   TASK_CREATE: 'task-create',
   TASK_UPDATE: 'task-update',

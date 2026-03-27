@@ -63,30 +63,39 @@ export default function Index() {
 
   // 加载任务列表
   const loadTasks = useCallback(async (refresh = false) => {
+    console.log('===== loadTasks 开始 =====');
+    console.log('[Index] openid:', openid);
+    console.log('[Index] openid 类型:', typeof openid);
+    console.log('[Index] openid 是否为空:', !openid);
+    
     if (!openid) {
       console.log('[Index] openid 为空，跳过加载');
       setLoading(false);
       return;
     }
 
-    console.log('[Index] 开始加载任务列表, openid:', openid);
+    console.log('[Index] 开始加载任务列表...');
     setLoading(true);
     try {
       const currentPage = refresh ? 1 : page;
+      const params = {
+        status: statusFilter === 'all' ? undefined : statusFilter,
+        time_filter: timeFilter,
+        page: currentPage,
+        pageSize: 20
+      };
+      console.log('[Index] 调用参数:', JSON.stringify(params));
+      
       const res = await callFunction<CloudResponse<TaskListResponse>>(
         CLOUD_FUNCTIONS.TASK_LIST,
-        {
-          status: statusFilter === 'all' ? undefined : statusFilter,
-          time_filter: timeFilter,
-          page: currentPage,
-          pageSize: 20
-        }
+        params
       );
 
-      console.log('[Index] 任务列表返回:', res);
+      console.log('[Index] 任务列表返回:', JSON.stringify(res));
 
       if (res.success && res.data) {
         const newTasks = res.data.tasks || [];
+        console.log('[Index] 任务数量:', newTasks.length);
         if (refresh) {
           setTasks(newTasks);
           setPage(1);
@@ -96,31 +105,35 @@ export default function Index() {
         setHasMore(res.data.hasMore);
       } else {
         console.error('[Index] 加载任务失败:', res.message);
+        Taro.showToast({ title: res.message || '加载失败', icon: 'none' });
       }
     } catch (err) {
-      console.error('加载任务失败:', err);
+      console.error('[Index] 加载任务异常:', err);
       Taro.showToast({ title: '加载失败', icon: 'none' });
     } finally {
       setLoading(false);
+      console.log('===== loadTasks 结束 =====');
     }
   }, [openid, statusFilter, timeFilter, page]);
 
   // 初始化加载
   useEffect(() => {
-    console.log('[Index] useEffect 触发, openid:', openid);
+    console.log('===== Index useEffect =====');
+    console.log('[Index] openid:', openid);
     if (openid) {
       loadTasks(true);
     } else {
-      // openid 为空，跳转到登录页面
       console.log('[Index] openid 为空，跳转登录页面');
       setLoading(false);
-      Taro.redirectTo({ url: '/pages/login/index' });
+      // 不自动跳转，让用户看到问题
+      // Taro.redirectTo({ url: '/pages/login/index' });
     }
   }, [openid]);
 
   // 页面显示时刷新数据
   Taro.useDidShow(() => {
-    console.log('[Index] useDidShow 触发, openid:', openid);
+    console.log('===== Index useDidShow =====');
+    console.log('[Index] openid:', openid);
     if (openid) {
       loadTasks(true);
     }
