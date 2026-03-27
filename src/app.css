@@ -11,25 +11,30 @@ page {
 :root,
 page,
 root-portal {
-  --background: lab(100% 0 0);
-  --foreground: lab(2.75381% 0 0);
-  --card: lab(100% 0 0);
-  --card-foreground: lab(2.75381% 0 0);
-  --popover: lab(100% 0 0);
-  --popover-foreground: lab(2.75381% 0 0);
-  --primary: lab(7.78201% -0.0000149012 0);
-  --primary-foreground: lab(98.26% 0 0);
-  --secondary: lab(96.52% -0.0000298023 0.0000119209);
-  --secondary-foreground: lab(7.78201% -0.0000149012 0);
-  --muted: lab(96.52% -0.0000298023 0.0000119209);
-  --muted-foreground: lab(48.496% 0 0);
-  --accent: lab(96.52% -0.0000298023 0.0000119209);
-  --accent-foreground: lab(7.78201% -0.0000149012 0);
-  --destructive: lab(48.4493% 77.4328 61.5452);
-  --destructive-foreground: lab(96.4152% 3.22586 1.14673);
-  --border: lab(90.952% 0 -0.0000119209);
-  --input: lab(90.952% 0 -0.0000119209);
-  --ring: lab(66.128% -0.0000298023 0.0000119209);
+  /* 事绩通 - 飞书风格配色 */
+  --background: #F5F7FA;
+  --foreground: #333333;
+  --card: #FFFFFF;
+  --card-foreground: #333333;
+  --popover: #FFFFFF;
+  --popover-foreground: #333333;
+  --primary: #1377EB;
+  --primary-foreground: #FFFFFF;
+  --secondary: #E5E6EB;
+  --secondary-foreground: #333333;
+  --muted: #F5F7FA;
+  --muted-foreground: #666666;
+  --accent: #E8F0FE;
+  --accent-foreground: #1377EB;
+  --destructive: #EA4335;
+  --destructive-foreground: #FFFFFF;
+  --border: #E5E6EB;
+  --input: #F5F7FA;
+  --ring: #1377EB;
+  /* 语义色 */
+  --success: #00B365;
+  --warning: #FF7D27;
+  --error: #EA4335;
   --sidebar: lab(98.26% 0 0);
   --sidebar-foreground: lab(2.75381% 0 0);
   --sidebar-primary: lab(7.78201% -0.0000149012 0);
