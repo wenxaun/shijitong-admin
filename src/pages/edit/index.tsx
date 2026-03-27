@@ -70,16 +70,6 @@ export default function Edit() {
   const loadTask = async () => {
     setLoading(true);
     try {
-      // H5 端模拟数据
-      if (Taro.getEnv() !== Taro.ENV_TYPE.WEAPP) {
-        setTaskName('示例任务');
-        setTaskDescription('示例描述');
-        setPriority('P1');
-        setRequireDate(new Date().toISOString().split('T')[0]);
-        setLoading(false);
-        return;
-      }
-
       const res = await callFunction<CloudResponse<{ task: Task }>>(
         'task-detail',
         { task_id: taskId }
@@ -110,6 +100,9 @@ export default function Edit() {
         setDelayReason(task.delay_reason || '');
         setImprovements(task.improvements || '');
         setAttributionTags(task.attribution_tags || []);
+      } else {
+        Taro.showToast({ title: '任务不存在', icon: 'none' });
+        setTimeout(() => Taro.navigateBack(), 1500);
       }
     } catch (err) {
       console.error('加载失败:', err);

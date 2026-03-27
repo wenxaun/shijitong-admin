@@ -61,39 +61,6 @@ export default function SubtaskManage() {
 
     setLoading(true);
     try {
-      if (Taro.getEnv() !== Taro.ENV_TYPE.WEAPP) {
-        // H5 模拟数据
-        setSubtasks([
-          {
-            _id: '1',
-            parent_task_id: parentTaskId,
-            name: '设计原型图',
-            task_name: '设计原型图',
-            status: 'completed',
-            executor_id: 'test1',
-            executor_name: '张三',
-            require_date: new Date().toISOString().split('T')[0],
-            created_at: new Date().toISOString()
-          },
-          {
-            _id: '2',
-            parent_task_id: parentTaskId,
-            name: '开发前端页面',
-            task_name: '开发前端页面',
-            status: 'in_progress',
-            executor_id: 'test2',
-            executor_name: '李四',
-            require_date: new Date().toISOString().split('T')[0],
-            created_at: new Date().toISOString()
-          }
-        ]);
-        setTotal(2);
-        setCompletedCount(1);
-        setProgress(50);
-        setLoading(false);
-        return;
-      }
-
       const res = await callFunction<CloudResponse<{ subtasks: Subtask[] }>>(
         CLOUD_FUNCTIONS.SUBTASK_LIST,
         { parent_task_id: parentTaskId }

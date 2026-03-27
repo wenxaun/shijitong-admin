@@ -80,30 +80,6 @@ export default function Detail() {
 
     setLoading(true);
     try {
-      // H5 端使用模拟数据
-      if (Taro.getEnv() !== Taro.ENV_TYPE.WEAPP) {
-        setTask({
-          _id: taskId,
-          task_id: taskId,
-          task_name: '示例任务',
-          task_description: '这是一个示例任务描述',
-          status: 'in_progress',
-          priority: 'P1',
-          publisher_id: openid,
-          executor_id: openid,
-          require_date: new Date().toISOString().split('T')[0],
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
-        setPublisherName('测试用户');
-        setExecutorName('测试用户');
-        setIsPublisher(true);
-        setIsExecutor(true);
-        setLoading(false);
-        return;
-      }
-
-      // 小程序端调用云函数
       const res = await callFunction<CloudResponse<{ task: Task; publisher_name: string; executor_name: string }>>(
         'task-detail',
         { task_id: taskId }
@@ -129,12 +105,6 @@ export default function Detail() {
     if (!taskId) return;
 
     try {
-      if (Taro.getEnv() !== Taro.ENV_TYPE.WEAPP) {
-        setSubtasks([]);
-        setSubtaskProgress({ total: 0, completed: 0, progress: 0 });
-        return;
-      }
-
       const res = await callFunction<CloudResponse<{ subtasks: Subtask[] }>>(
         CLOUD_FUNCTIONS.SUBTASK_LIST,
         { parent_task_id: taskId }
@@ -160,11 +130,6 @@ export default function Detail() {
     if (!taskId) return;
 
     try {
-      if (Taro.getEnv() !== Taro.ENV_TYPE.WEAPP) {
-        setComments([]);
-        return;
-      }
-
       const res = await callFunction<CloudResponse<{ comments: Comment[] }>>(
         CLOUD_FUNCTIONS.COMMENT_LIST,
         { task_id: taskId }

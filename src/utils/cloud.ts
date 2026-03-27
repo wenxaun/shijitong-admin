@@ -7,6 +7,64 @@ import Taro from '@tarojs/taro';
 // 云开发环境 ID
 const CLOUD_ENV = 'cloud1-3g7j95ax4a0f4a3f';
 
+// 模拟任务数据存储（用于 H5 端保持数据一致性）
+let mockTasks: any[] = [
+  {
+    _id: 'mock_task_1',
+    task_id: 'mock_task_1',
+    task_name: '示例任务 1',
+    task_description: '这是一个示例任务描述，用于演示任务详情功能。',
+    status: 'pending',
+    priority: 'P1',
+    publisher_id: 'mock_openid',
+    executor_id: 'mock_openid',
+    require_date: new Date().toISOString().split('T')[0],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    _id: 'mock_task_2',
+    task_id: 'mock_task_2',
+    task_name: '示例任务 2',
+    task_description: '这是另一个示例任务，状态为进行中。',
+    status: 'in_progress',
+    priority: 'P2',
+    publisher_id: 'mock_openid',
+    executor_id: 'mock_openid',
+    require_date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  }
+];
+
+// 模拟子任务数据存储
+let mockSubtasks: any[] = [
+  {
+    _id: 'mock_subtask_1',
+    parent_task_id: 'mock_task_1',
+    task_name: '子任务 1 - 需求分析',
+    name: '子任务 1 - 需求分析',
+    status: 'completed',
+    executor_id: 'mock_openid',
+    executor_name: '测试用户',
+    require_date: new Date().toISOString().split('T')[0],
+    due_date: new Date().toISOString().split('T')[0],
+    created_at: new Date().toISOString()
+  },
+  {
+    _id: 'mock_subtask_2',
+    parent_task_id: 'mock_task_1',
+    task_name: '子任务 2 - 设计方案',
+    name: '子任务 2 - 设计方案',
+    status: 'in_progress',
+    executor_id: 'mock_openid',
+    executor_name: '测试用户',
+    require_date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+    due_date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+    created_at: new Date().toISOString()
+  }
+];
+
 /**
  * 初始化云开发（仅小程序端）
  */
@@ -31,93 +89,159 @@ const mockCloudFunction = async (name: string, data?: any): Promise<any> => {
   console.log('[Cloud Mock] 模拟云函数:', name, '参数:', data);
   
   // 模拟网络延迟
-  await new Promise(resolve => setTimeout(resolve, 500));
+  await new Promise(resolve => setTimeout(resolve, 300));
   
   switch (name) {
     case 'login':
-      return { openid: 'mock_openid_' + Date.now() };
+      return { openid: 'mock_openid' };
     
-    case 'task-create':
+    case 'task-create': {
+      const newTask = {
+        _id: 'mock_task_' + Date.now(),
+        task_id: 'mock_task_' + Date.now(),
+        task_name: data?.task_name || '新任务',
+        task_description: data?.task_description || '',
+        status: 'pending',
+        priority: data?.priority || 'P2',
+        publisher_id: 'mock_openid',
+        executor_id: data?.executor_id || 'mock_openid',
+        require_date: data?.require_date || new Date().toISOString().split('T')[0],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      mockTasks.unshift(newTask);
       return {
         success: true,
         message: '创建成功',
-        data: { task_id: 'mock_task_' + Date.now() }
+        data: { task_id: newTask.task_id }
       };
+    }
     
     case 'task-list':
       return {
         success: true,
         message: '获取成功',
         data: {
-          tasks: [
-            {
-              _id: 'mock_1',
-              task_id: 'mock_1',
-              task_name: '示例任务 1',
-              task_description: '这是一个示例任务',
-              status: 'pending',
-              priority: 'P1',
-              publisher_id: 'mock_openid',
-              executor_id: 'mock_openid',
-              require_date: new Date().toISOString().split('T')[0],
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            },
-            {
-              _id: 'mock_2',
-              task_id: 'mock_2',
-              task_name: '示例任务 2',
-              task_description: '这是另一个示例任务',
-              status: 'in_progress',
-              priority: 'P2',
-              publisher_id: 'mock_openid',
-              executor_id: 'mock_openid',
-              require_date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            }
-          ],
+          tasks: mockTasks,
           hasMore: false
         }
       };
     
-    case 'task-update':
+    case 'task-detail': {
+      const task = mockTasks.find(t => t.task_id === data?.task_id || t._id === data?.task_id);
+      if (task) {
+        return {
+          success: true,
+          message: '获取成功',
+          data: {
+            task: task,
+            publisher_name: '测试发布人',
+            executor_name: '测试执行人'
+          }
+        };
+      }
       return {
-        success: true,
-        message: '更新成功'
+        success: false,
+        message: '任务不存在'
       };
+    }
     
-    case 'task-delete':
+    case 'task-update': {
+      const taskIndex = mockTasks.findIndex(t => t.task_id === data?.task_id || t._id === data?.task_id);
+      if (taskIndex >= 0) {
+        mockTasks[taskIndex] = {
+          ...mockTasks[taskIndex],
+          ...data,
+          updated_at: new Date().toISOString()
+        };
+        return {
+          success: true,
+          message: '更新成功'
+        };
+      }
       return {
-        success: true,
-        message: '删除成功'
+        success: false,
+        message: '任务不存在'
       };
+    }
     
-    case 'subtask-create':
+    case 'task-delete': {
+      const taskIndex = mockTasks.findIndex(t => t.task_id === data?.task_id || t._id === data?.task_id);
+      if (taskIndex >= 0) {
+        mockTasks.splice(taskIndex, 1);
+        return {
+          success: true,
+          message: '删除成功'
+        };
+      }
+      return {
+        success: false,
+        message: '任务不存在'
+      };
+    }
+    
+    case 'subtask-create': {
+      const newSubtask = {
+        _id: 'mock_subtask_' + Date.now(),
+        parent_task_id: data?.task_id,
+        task_name: data?.title || '新子任务',
+        name: data?.title || '新子任务',
+        status: 'pending',
+        executor_id: data?.executor_id || 'mock_openid',
+        executor_name: '测试用户',
+        require_date: data?.require_date || new Date().toISOString().split('T')[0],
+        due_date: data?.require_date || new Date().toISOString().split('T')[0],
+        created_at: new Date().toISOString()
+      };
+      mockSubtasks.push(newSubtask);
       return {
         success: true,
         message: '创建成功',
-        data: { subtask_id: 'mock_subtask_' + Date.now() }
+        data: { subtask_id: newSubtask._id }
       };
+    }
     
-    case 'subtask-list':
+    case 'subtask-list': {
+      const subtasks = mockSubtasks.filter(s => s.parent_task_id === data?.parent_task_id);
       return {
         success: true,
         message: '获取成功',
-        data: { subtasks: [] }
+        data: { subtasks }
       };
+    }
     
-    case 'subtask-update':
+    case 'subtask-update': {
+      const subtaskIndex = mockSubtasks.findIndex(s => s._id === data?.subtask_id);
+      if (subtaskIndex >= 0) {
+        mockSubtasks[subtaskIndex] = {
+          ...mockSubtasks[subtaskIndex],
+          ...data
+        };
+        return {
+          success: true,
+          message: '更新成功'
+        };
+      }
       return {
-        success: true,
-        message: '更新成功'
+        success: false,
+        message: '子任务不存在'
       };
+    }
     
-    case 'subtask-delete':
+    case 'subtask-delete': {
+      const subtaskIndex = mockSubtasks.findIndex(s => s._id === data?.subtask_id);
+      if (subtaskIndex >= 0) {
+        mockSubtasks.splice(subtaskIndex, 1);
+        return {
+          success: true,
+          message: '删除成功'
+        };
+      }
       return {
-        success: true,
-        message: '删除成功'
+        success: false,
+        message: '子任务不存在'
       };
+    }
     
     case 'comment-add':
       return {
@@ -128,7 +252,7 @@ const mockCloudFunction = async (name: string, data?: any): Promise<any> => {
             _id: 'mock_comment_' + Date.now(),
             user_name: '测试用户',
             content: data?.content || '',
-            created_at: new Date().toISOString()
+            created_at: new Date().toLocaleString()
           }
         }
       };
