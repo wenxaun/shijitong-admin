@@ -414,6 +414,38 @@ const mockCloudFunction = async (name: string, data?: any): Promise<any> => {
         message: '成员已移除'
       };
     
+    case 'team-invite': {
+      // 邀请码查询和加入团队
+      if (data?.action === 'query') {
+        // 模拟查询邀请码
+        if (data?.invite_code === 'ABC123') {
+          return {
+            success: true,
+            message: '查询成功',
+            data: {
+              team_id: 'mock_team_1',
+              team_name: '示例团队',
+              inviter_name: '测试用户'
+            }
+          };
+        }
+        return {
+          success: false,
+          message: '邀请码无效或已过期'
+        };
+      } else if (data?.action === 'join') {
+        // 模拟加入团队
+        return {
+          success: true,
+          message: '加入成功'
+        };
+      }
+      return {
+        success: false,
+        message: '未知操作'
+      };
+    }
+    
     default:
       console.warn('[Cloud Mock] 未知的云函数:', name);
       return {
