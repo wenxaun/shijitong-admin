@@ -1,0 +1,9 @@
+{
+  "name": "task-history",
+  "version": "1.0.0",
+  "description": "获取历史任务",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

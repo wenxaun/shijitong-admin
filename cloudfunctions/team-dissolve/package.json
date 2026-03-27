@@ -1,0 +1,9 @@
+{
+  "name": "team-dissolve",
+  "version": "1.0.0",
+  "description": "解散团队",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

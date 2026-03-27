@@ -359,6 +359,61 @@ const mockCloudFunction = async (name: string, data?: any): Promise<any> => {
         message: '通知发送成功'
       };
     
+    case 'task-history': {
+      // 返回历史任务
+      return {
+        success: true,
+        message: '获取成功',
+        data: {
+          tasks: mockTasks.filter(t => t.status === 'completed'),
+          hasMore: false
+        }
+      };
+    }
+    
+    case 'team-detail': {
+      // 返回团队详情
+      return {
+        success: true,
+        message: '获取成功',
+        data: {
+          team: {
+            _id: 'mock_team_1',
+            name: '示例团队',
+            description: '这是一个示例团队',
+            leader_id: 'mock_openid',
+            leader_name: '测试用户',
+            members: ['mock_openid', 'mock_user_1', 'mock_user_2'],
+            member_details: [
+              { openid: 'mock_openid', nickname: '测试用户', role: 'owner' },
+              { openid: 'mock_user_1', nickname: '张三', role: 'admin' },
+              { openid: 'mock_user_2', nickname: '李四', role: 'member' }
+            ],
+            invite_code: 'ABC123',
+            created_at: new Date().toISOString()
+          }
+        }
+      };
+    }
+    
+    case 'team-dissolve':
+      return {
+        success: true,
+        message: '团队已解散'
+      };
+    
+    case 'team-member-update':
+      return {
+        success: true,
+        message: '成员角色已更新'
+      };
+    
+    case 'team-member-remove':
+      return {
+        success: true,
+        message: '成员已移除'
+      };
+    
     default:
       console.warn('[Cloud Mock] 未知的云函数:', name);
       return {
