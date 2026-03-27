@@ -1,54 +1,87 @@
-import { View, Text } from '@tarojs/components';
+// 注意：头像选择和昵称输入必须使用 Taro 原生组件，因为需要 openType="chooseAvatar" 和 type="nickname"
+// eslint-disable-next-line no-restricted-syntax
+import { View, Text, Image, Input, Button } from '@tarojs/components';
 import { useEffect, useState } from 'react';
 import Taro from '@tarojs/taro';
 import { useUserStore } from '@/stores/user';
 import { callFunction } from '@/utils/cloud';
 import type { CloudResponse } from '@/types';
-import { Button } from '@/components/ui/button';
-import { CircleCheck, ListTodo, Users, TrendingUp } from 'lucide-react-taro';
+import { Button as UIButton } from '@/components/ui/button';
+import { CircleCheck, ListTodo, Users, TrendingUp, Camera } from 'lucide-react-taro';
 
 export default function Login() {
   const { openid } = useUserStore();
   const [loading, setLoading] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [nickname, setNickname] = useState('');
 
   useEffect(() => {
     // 如果已登录，直接跳转
     if (openid) {
       Taro.switchTab({ url: '/pages/index/index' });
     }
+    
+    // 尝试从本地存储恢复用户信息
+    const storedUserInfo = Taro.getStorageSync('userInfo');
+    if (storedUserInfo) {
+      setAvatarUrl(storedUserInfo.avatarUrl || '');
+      setNickname(storedUserInfo.nickName || '');
+    }
   }, [openid]);
+
+  // 选择头像（微信新版能力）
+  const onChooseAvatar = (e: any) => {
+    const { avatarUrl: newAvatarUrl } = e.detail;
+    console.log('[Login] 选择的头像:', newAvatarUrl);
+    setAvatarUrl(newAvatarUrl);
+  };
+
+  // 输入昵称
+  const onInputNickname = (e: any) => {
+    setNickname(e.detail.value);
+  };
 
   // 微信登录
   const handleLogin = async () => {
     setLoading(true);
     try {
       if (Taro.getEnv() === Taro.ENV_TYPE.WEAPP) {
-        // 小程序端：获取用户信息
-        let userInfo = { nickName: '微信用户', avatarUrl: '' };
+        // 如果没有填写昵称，使用默认值
+        const finalNickname = nickname || '微信用户';
+        let finalAvatarUrl = avatarUrl;
 
-        try {
-          // @ts-ignore
-          if (wx.getUserProfile) {
+        // 如果头像是临时文件，需要上传到云存储
+        if (avatarUrl && (avatarUrl.startsWith('http://tmp/') || avatarUrl.startsWith('wxfile://'))) {
+          try {
+            console.log('[Login] 上传头像到云存储...');
             // @ts-ignore
-            const res = await wx.getUserProfile({
-              desc: '用于完善用户资料'
+            const uploadRes = await wx.cloud.uploadFile({
+              cloudPath: `avatars/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`,
+              filePath: avatarUrl
             });
-            userInfo = res.userInfo;
+            if (uploadRes.fileID) {
+              finalAvatarUrl = uploadRes.fileID;
+              console.log('[Login] 头像上传成功:', finalAvatarUrl);
+            }
+          } catch (err) {
+            console.error('[Login] 头像上传失败:', err);
+            // 上传失败，使用空头像
+            finalAvatarUrl = '';
           }
-        } catch (err) {
-          console.log('用户拒绝授权，使用默认信息');
         }
 
-        // 保存用户信息到本地
-        Taro.setStorageSync('userInfo', userInfo);
-
         // 调用云函数进行登录/注册
-        const loginRes = await callFunction<CloudResponse<{ openid: string; user_id: string }>>(
+        const loginRes = await callFunction<CloudResponse<{ 
+          openid: string; 
+          user_id: string;
+          nickname: string;
+          avatar_url: string;
+        }>>(
           'user-login',
           {
             userInfo: {
-              nickName: userInfo.nickName,
-              avatarUrl: userInfo.avatarUrl
+              nickName: finalNickname,
+              avatarUrl: finalAvatarUrl
             }
           }
         );
@@ -56,13 +89,19 @@ export default function Login() {
         console.log('[Login] 登录结果:', loginRes);
 
         if (loginRes.success && loginRes.data) {
-          // 直接从返回值获取 openid，不再重新调用 getOpenId
           const userOpenid = loginRes.data.openid;
-          console.log('[Login] 获取到 openid:', userOpenid);
+          const userInfo = {
+            nickName: loginRes.data.nickname || finalNickname,
+            avatarUrl: loginRes.data.avatar_url || finalAvatarUrl
+          };
+          
+          // 保存用户信息到本地
+          Taro.setStorageSync('userInfo', userInfo);
           
           // 更新 store
           useUserStore.setState({ 
             openid: userOpenid, 
+            userInfo: userInfo as any,
             isLoading: false
           });
           
@@ -72,12 +111,15 @@ export default function Login() {
         }
       } else {
         // H5 端：模拟登录
-        const mockUserInfo = { nickName: '测试用户', avatarUrl: '' };
+        const mockUserInfo = { 
+          nickName: nickname || '测试用户', 
+          avatarUrl: avatarUrl || '' 
+        };
         Taro.setStorageSync('userInfo', mockUserInfo);
         
-        // 模拟 openid
         useUserStore.setState({ 
           openid: 'mock_openid', 
+          userInfo: mockUserInfo as any,
           isLoading: false
         });
         
@@ -102,7 +144,46 @@ export default function Login() {
 
         {/* 标题 */}
         <Text className="text-2xl font-bold text-gray-800 mb-2">事绩通</Text>
-        <Text className="text-sm text-gray-400 mb-12">高效任务管理，轻松团队协作</Text>
+        <Text className="text-sm text-gray-400 mb-8">高效任务管理，轻松团队协作</Text>
+
+        {/* 用户信息设置区域 */}
+        <View className="w-full bg-gray-50 rounded-2xl p-4 mb-4">
+          <Text className="text-sm text-gray-500 mb-3 block">设置头像和昵称（可选）</Text>
+          
+          {/* 头像选择 */}
+          <View className="flex items-center mb-4">
+            <Button
+              className="bg-transparent p-0 border-0"
+              openType="chooseAvatar"
+              onChooseAvatar={onChooseAvatar}
+            >
+              {avatarUrl ? (
+                <Image
+                  className="w-16 h-16 rounded-full"
+                  src={avatarUrl}
+                  mode="aspectFill"
+                />
+              ) : (
+                <View className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center">
+                  <Camera size={24} color="#9CA3AF" />
+                </View>
+              )}
+            </Button>
+            <Text className="ml-4 text-sm text-gray-500">点击选择头像</Text>
+          </View>
+
+          {/* 昵称输入 */}
+          <View className="flex items-center bg-white rounded-xl px-4 py-3">
+            <Text className="text-sm text-gray-500 w-16">昵称</Text>
+            <Input
+              className="flex-1 text-base"
+              type="nickname"
+              placeholder="点击输入昵称"
+              value={nickname}
+              onInput={onInputNickname}
+            />
+          </View>
+        </View>
       </View>
 
       {/* 功能特点 */}
@@ -140,13 +221,13 @@ export default function Login() {
 
       {/* 登录按钮 */}
       <View className="px-8 pb-12">
-        <Button
+        <UIButton
           className="w-full bg-blue-500 text-white rounded-xl py-4 font-medium text-base"
           onClick={handleLogin}
           disabled={loading}
         >
           {loading ? '登录中...' : '微信快捷登录'}
-        </Button>
+        </UIButton>
 
         {/* 协议提示 */}
         <Text className="text-gray-400 text-xs mt-4 text-center block">

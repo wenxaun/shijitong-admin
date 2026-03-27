@@ -144,6 +144,16 @@ const mockCloudFunction = async (name: string, data?: any): Promise<any> => {
         }
       };
     
+    case 'user-update':
+      return {
+        success: true,
+        message: '更新成功',
+        data: {
+          nickname: data?.nickname,
+          avatar_url: data?.avatar_url
+        }
+      };
+    
     case 'task-create': {
       const newTask = {
         _id: 'mock_task_' + Date.now(),
@@ -574,6 +584,55 @@ export const getDatabase = () => {
 };
 
 /**
+ * 上传文件到云存储
+ * @param filePath 本地文件路径
+ * @param cloudPath 云存储路径（可选，默认自动生成）
+ */
+export const uploadFile = async (options: {
+  filePath: string;
+  cloudPath?: string;
+}): Promise<{ success: boolean; fileID?: string; url?: string; message?: string }> => {
+  const { filePath, cloudPath } = options;
+  const env = Taro.getEnv();
+  
+  console.log('[Cloud] 开始上传文件:', filePath);
+  
+  if (env === Taro.ENV_TYPE.WEAPP) {
+    try {
+      // 生成云存储路径
+      const finalCloudPath = cloudPath || `user-uploads/${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // @ts-ignore
+      const res = await wx.cloud.uploadFile({
+        cloudPath: finalCloudPath,
+        filePath: filePath
+      });
+      
+      console.log('[Cloud] 文件上传成功:', res.fileID);
+      return {
+        success: true,
+        fileID: res.fileID,
+        url: res.fileID // 云存储的 fileID 可以直接作为图片 URL 使用
+      };
+    } catch (err: any) {
+      console.error('[Cloud] 文件上传失败:', err);
+      return {
+        success: false,
+        message: err.message || '上传失败'
+      };
+    }
+  } else {
+    // H5 端模拟上传
+    console.log('[Cloud] H5 端模拟上传');
+    return {
+      success: true,
+      fileID: 'mock_file_' + Date.now(),
+      url: filePath // H5 端直接返回原始路径
+    };
+  }
+};
+
+/**
  * 获取用户 OpenID
  */
 export const getOpenId = async (): Promise<string | null> => {
@@ -605,6 +664,7 @@ export const getOpenId = async (): Promise<string | null> => {
 export const CLOUD_FUNCTIONS = {
   LOGIN: 'login',
   USER_LOGIN: 'user-login',
+  USER_UPDATE: 'user-update',
   TASK_LIST: 'task-list',
   TASK_CREATE: 'task-create',
   TASK_UPDATE: 'task-update',

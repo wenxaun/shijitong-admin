@@ -4,15 +4,21 @@ import Taro from '@tarojs/taro';
 import { User } from '@/types';
 import { getOpenId } from '@/utils/cloud';
 
+interface UserInfo {
+  nickName: string;
+  avatarUrl: string;
+}
+
 interface UserState {
   openid: string | null;
-  userInfo: User | null;
+  userInfo: UserInfo | null;
   isLoggedIn: boolean;
   isLoading: boolean;
   
   // Actions
   init: () => Promise<void>;
   setUserInfo: (user: User) => void;
+  updateUserInfo: (info: Partial<UserInfo>) => void;
   logout: () => void;
 }
 
@@ -45,7 +51,13 @@ export const useUserStore = create<UserState>()(
         // 获取 OpenID
         const openid = await getOpenId();
         if (openid) {
-          set({ openid, isLoading: false });
+          // 从本地存储恢复用户信息
+          const storedUserInfo = Taro.getStorageSync('userInfo');
+          set({ 
+            openid, 
+            userInfo: storedUserInfo || null,
+            isLoading: false 
+          });
           console.log('[Store] 用户 OpenID:', openid);
         } else {
           set({ isLoading: false });
@@ -54,7 +66,20 @@ export const useUserStore = create<UserState>()(
       },
 
       setUserInfo: (user: User) => {
-        set({ userInfo: user, isLoggedIn: true });
+        const userInfo: UserInfo = {
+          nickName: (user as any).nickName || (user as any).nickname || '',
+          avatarUrl: (user as any).avatarUrl || (user as any).avatar_url || ''
+        };
+        Taro.setStorageSync('userInfo', userInfo);
+        set({ userInfo, isLoggedIn: true });
+      },
+
+      updateUserInfo: (info: Partial<UserInfo>) => {
+        set((state) => {
+          const newUserInfo = { ...state.userInfo, ...info } as UserInfo;
+          Taro.setStorageSync('userInfo', newUserInfo);
+          return { userInfo: newUserInfo };
+        });
       },
 
       logout: () => {
