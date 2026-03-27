@@ -16,12 +16,24 @@ export default function TeamPage() {
   const [teams, setTeams] = useState<Team[]>([]);
 
   const loadTeams = useCallback(async () => {
-    if (!openid) return;
+    console.log('===== loadTeams 开始 =====');
+    
+    // 优先使用 hook 返回的 openid，否则从 store 获取
+    const currentOpenid = openid || useUserStore.getState().openid;
+    console.log('[Team] openid:', openid);
+    console.log('[Team] currentOpenid:', currentOpenid);
+    
+    if (!currentOpenid) {
+      console.log('[Team] openid 为空，跳过加载');
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
     try {
       // H5 端模拟数据
       if (Taro.getEnv() !== Taro.ENV_TYPE.WEAPP) {
+        console.log('[Team] H5 端使用模拟数据');
         // 从本地存储读取团队数据
         const storedTeams = Taro.getStorageSync('mock_teams') || '[]';
         let teamList = JSON.parse(storedTeams);
@@ -32,11 +44,11 @@ export default function TeamPage() {
             { 
               _id: '1', 
               name: '产品研发组', 
-              leader_id: openid, 
+              leader_id: currentOpenid, 
               leader_name: '我',
-              members: [openid, 'user2', 'user3'], 
+              members: [currentOpenid, 'user2', 'user3'], 
               member_details: [
-                { openid, nickname: '我', role: 'owner', permissions: { can_create_task: true, can_assign_task: true, can_view_all_tasks: true, can_edit_team: true, can_invite_member: true, can_remove_member: true }, joined_at: new Date().toISOString() },
+                { openid: currentOpenid, nickname: '我', role: 'owner', permissions: { can_create_task: true, can_assign_task: true, can_view_all_tasks: true, can_edit_team: true, can_invite_member: true, can_remove_member: true }, joined_at: new Date().toISOString() },
                 { openid: 'user2', nickname: '张三', role: 'admin', permissions: { can_create_task: true, can_assign_task: true, can_view_all_tasks: true, can_edit_team: false, can_invite_member: true, can_remove_member: false }, joined_at: new Date().toISOString() },
                 { openid: 'user3', nickname: '李四', role: 'member', permissions: { can_create_task: true, can_assign_task: false, can_view_all_tasks: false, can_edit_team: false, can_invite_member: false, can_remove_member: false }, joined_at: new Date().toISOString() }
               ],
@@ -47,10 +59,10 @@ export default function TeamPage() {
               name: '运营团队', 
               leader_id: 'other', 
               leader_name: '王五',
-              members: [openid, 'other'], 
+              members: [currentOpenid, 'other'], 
               member_details: [
                 { openid: 'other', nickname: '王五', role: 'owner', permissions: { can_create_task: true, can_assign_task: true, can_view_all_tasks: true, can_edit_team: true, can_invite_member: true, can_remove_member: true }, joined_at: new Date().toISOString() },
-                { openid, nickname: '我', role: 'member', permissions: { can_create_task: true, can_assign_task: false, can_view_all_tasks: false, can_edit_team: false, can_invite_member: false, can_remove_member: false }, joined_at: new Date().toISOString() }
+                { openid: currentOpenid, nickname: '我', role: 'member', permissions: { can_create_task: true, can_assign_task: false, can_view_all_tasks: false, can_edit_team: false, can_invite_member: false, can_remove_member: false }, joined_at: new Date().toISOString() }
               ],
               created_at: new Date().toISOString() 
             }
@@ -64,30 +76,57 @@ export default function TeamPage() {
         return;
       }
 
+      console.log('[Team] 调用 team-list 云函数...');
       const res = await callFunction<CloudResponse<{ teams: Team[] }>>(
         'team-list',
         {}
       );
 
+      console.log('[Team] team-list 返回:', JSON.stringify(res));
+
       if (res.success && res.data) {
+        console.log('[Team] 获取到团队数量:', res.data.teams?.length || 0);
         setTeams(res.data.teams || []);
+      } else {
+        console.error('[Team] 获取团队失败:', res.message);
       }
     } catch (err) {
-      console.error('加载团队失败:', err);
+      console.error('[Team] 加载团队失败:', err);
       Taro.showToast({ title: '加载失败', icon: 'none' });
     } finally {
       setLoading(false);
+      console.log('===== loadTeams 结束 =====');
     }
   }, [openid]);
 
+  // 初始化加载
   useEffect(() => {
-    loadTeams();
-  }, [loadTeams]);
+    console.log('[Team] useEffect 触发, openid:', openid);
+    if (openid) {
+      loadTeams();
+    } else {
+      console.log('[Team] openid 为空，尝试从 store 获取');
+      // 尝试从 store 获取最新的 openid
+      const storeOpenid = useUserStore.getState().openid;
+      console.log('[Team] store 中的 openid:', storeOpenid);
+      if (storeOpenid) {
+        loadTeams();
+      } else {
+        setLoading(false);
+      }
+    }
+  }, [openid, loadTeams]);
 
   // 页面显示时刷新
   Taro.useDidShow(() => {
-    if (openid) {
+    console.log('[Team] useDidShow 触发');
+    const storeOpenid = useUserStore.getState().openid;
+    console.log('[Team] store 中的 openid:', storeOpenid);
+    if (storeOpenid) {
       loadTeams();
+    } else {
+      console.log('[Team] openid 为空，跳过加载');
+      setLoading(false);
     }
   });
 

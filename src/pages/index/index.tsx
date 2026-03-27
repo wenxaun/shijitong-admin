@@ -64,11 +64,13 @@ export default function Index() {
   // 加载任务列表
   const loadTasks = useCallback(async (refresh = false) => {
     console.log('===== loadTasks 开始 =====');
-    console.log('[Index] openid:', openid);
-    console.log('[Index] openid 类型:', typeof openid);
-    console.log('[Index] openid 是否为空:', !openid);
     
-    if (!openid) {
+    // 优先使用 hook 返回的 openid，否则从 store 获取
+    const currentOpenid = openid || useUserStore.getState().openid;
+    console.log('[Index] openid:', openid);
+    console.log('[Index] currentOpenid:', currentOpenid);
+    
+    if (!currentOpenid) {
       console.log('[Index] openid 为空，跳过加载');
       setLoading(false);
       return;
@@ -120,21 +122,27 @@ export default function Index() {
   useEffect(() => {
     console.log('===== Index useEffect =====');
     console.log('[Index] openid:', openid);
-    if (openid) {
+    
+    // 如果 hook 返回的 openid 为空，尝试从 store 直接获取
+    const storeOpenid = useUserStore.getState().openid;
+    console.log('[Index] store 中的 openid:', storeOpenid);
+    
+    if (openid || storeOpenid) {
       loadTasks(true);
     } else {
-      console.log('[Index] openid 为空，跳转登录页面');
+      console.log('[Index] openid 为空，跳过加载');
       setLoading(false);
-      // 不自动跳转，让用户看到问题
-      // Taro.redirectTo({ url: '/pages/login/index' });
     }
   }, [openid]);
 
   // 页面显示时刷新数据
   Taro.useDidShow(() => {
     console.log('===== Index useDidShow =====');
+    const storeOpenid = useUserStore.getState().openid;
     console.log('[Index] openid:', openid);
-    if (openid) {
+    console.log('[Index] store 中的 openid:', storeOpenid);
+    
+    if (openid || storeOpenid) {
       loadTasks(true);
     }
   });
