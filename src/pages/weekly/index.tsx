@@ -143,13 +143,60 @@ export default function Weekly() {
         return;
       }
 
-      const res = await callFunction<CloudResponse<WeeklyAnalysis>>(
-        'task-weekly-analysis',
+      const res = await callFunction<CloudResponse<any>>(
+        'weekly-report',
         { week_start: weekRange.start, week_end: weekRange.end }
       );
 
       if (res.success && res.data) {
-        setWeeklyData(res.data);
+        const data = res.data;
+        const tasks = data.tasks || [];
+        const stats = data.stats || {};
+        
+        // 计算满分任务数
+        const perfectTasks = tasks.filter((t: TaskWithReview) => t.score === 100).length;
+        // 需要复盘的任务（不足100分）
+        const reviewTasks = tasks.filter((t: TaskWithReview) => (t.score || 0) < 100).length;
+        
+        // 提取常见学习收获、问题和改进
+        const learningsSet = new Set<string>();
+        const issuesSet = new Set<string>();
+        const improvementsSet = new Set<string>();
+        
+        tasks.forEach((t: TaskWithReview) => {
+          if (t.learnings) learningsSet.add(t.learnings);
+          if (t.delay_reason) issuesSet.add(t.delay_reason);
+          if (t.improvements) improvementsSet.add(t.improvements);
+        });
+        
+        // 归因标签名称映射
+        const tagNames: Record<string, string> = {
+          time: '时间管理',
+          skill: '技能不足',
+          resource: '资源不足',
+          communication: '沟通问题',
+          priority: '优先级错误',
+          external: '外部因素'
+        };
+        
+        // 转换归因统计
+        const tagDistribution = (stats.attributionStats || []).map((item: { tag: string; count: number }) => ({
+          tag: tagNames[item.tag] || item.tag,
+          count: item.count
+        }));
+        
+        setWeeklyData({
+          totalTasks: stats.totalTasks || tasks.length,
+          completedTasks: tasks.length,
+          perfectTasks,
+          reviewTasks,
+          avgScore: stats.avgScore || 0,
+          commonLearnings: Array.from(learningsSet).slice(0, 5),
+          commonIssues: Array.from(issuesSet).slice(0, 5),
+          commonImprovements: Array.from(improvementsSet).slice(0, 5),
+          tagDistribution,
+          tasks
+        });
       }
     } catch (err) {
       console.error('加载周报失败:', err);

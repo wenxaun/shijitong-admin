@@ -518,6 +518,29 @@ const mockCloudFunction = async (name: string, data?: any): Promise<any> => {
       };
     }
     
+    case 'weekly-report': {
+      // 返回周报数据
+      const completedTasks = mockTasks.filter(t => t.status === 'completed');
+      return {
+        success: true,
+        message: '获取成功',
+        data: {
+          weekStart: data?.week_start || new Date().toISOString().split('T')[0],
+          weekEnd: data?.week_end || new Date().toISOString().split('T')[0],
+          tasks: completedTasks,
+          stats: {
+            totalTasks: completedTasks.length,
+            avgScore: completedTasks.length > 0 
+              ? Math.round(completedTasks.reduce((sum, t) => sum + (t.score || 0), 0) / completedTasks.length)
+              : 0,
+            highScoreCount: completedTasks.filter(t => (t.score || 0) >= 80).length,
+            lowScoreCount: completedTasks.filter(t => (t.score || 0) < 80).length,
+            attributionStats: []
+          }
+        }
+      };
+    }
+    
     default:
       console.warn('[Cloud Mock] 未知的云函数:', name);
       return {
