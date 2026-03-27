@@ -14,6 +14,12 @@ export default function TeamPage() {
   const { openid } = useUserStore();
   const [loading, setLoading] = useState(true);
   const [teams, setTeams] = useState<Team[]>([]);
+  
+  // 组件渲染时立即输出
+  console.log('===== TeamPage 组件渲染 =====');
+  console.log('[TeamPage] 当前时间:', new Date().toISOString());
+  console.log('[TeamPage] hook openid:', openid);
+  console.log('[TeamPage] store openid:', useUserStore.getState().openid);
 
   const loadTeams = useCallback(async () => {
     console.log('===== loadTeams 开始 =====');
