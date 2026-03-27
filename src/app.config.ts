@@ -15,7 +15,6 @@ export default defineAppConfig({
     'pages/team-join/index',
     'pages/weekly/index',
     'pages/stats/index',
-    'pages/register/index',
     'pages/login/index',
     'pages/org-create/index',
     'pages/dept-manage/index',

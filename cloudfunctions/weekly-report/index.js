@@ -6,18 +6,29 @@ cloud.init({
 })
 
 const db = cloud.database()
+const _ = db.command
 
 exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext()
   const { week_start, week_end } = event
 
   try {
+    // 计算本周日期范围
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const monday = new Date(today)
+    monday.setDate(monday.getDate() - today.getDay() + 1)
+    const sunday = new Date(monday)
+    sunday.setDate(sunday.getDate() + 6)
+    
+    const weekStart = week_start || formatDate(monday)
+    const weekEnd = week_end || formatDate(sunday)
+
     // 查询本周完成的任务
     const tasksRes = await db.collection('tasks').where({
       executor_id: wxContext.OPENID,
       status: 'completed',
-      complete_date: db.command.gte(week_start || '2026-01-01'),
-      complete_date: db.command.lte(week_end || '2099-12-31')
+      complete_date: _.and(_.gte(weekStart), _.lte(weekEnd))
     }).orderBy('score', 'desc').get()
 
     const tasks = tasksRes.data
@@ -48,6 +59,8 @@ exports.main = async (event, context) => {
     return {
       success: true,
       data: {
+        weekStart,
+        weekEnd,
         tasks,
         stats: {
           totalTasks,
@@ -66,4 +79,12 @@ exports.main = async (event, context) => {
       message: '获取失败：' + err.message
     }
   }
+}
+
+function formatDate(date) {
+  const d = new Date(date)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }

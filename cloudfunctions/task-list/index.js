@@ -45,20 +45,23 @@ exports.main = async (event, context) => {
     
     // 按时间筛选
     const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+    
     if (time_filter === 'today') {
       // 今日：require_date = today
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-      query.require_date = today
+      query.require_date = todayStr
     } else if (time_filter === 'week') {
       // 本周：require_date >= 本周一
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
       const monday = new Date(today)
       monday.setDate(monday.getDate() - monday.getDay() + 1)
-      query.require_date = { $gte: monday }
+      const mondayStr = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`
+      query.require_date = _.gte(mondayStr)
     } else if (time_filter === 'month') {
       // 本月：require_date >= 本月 1 号
       const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
-      query.require_date = { $gte: firstDay }
+      const firstDayStr = `${firstDay.getFullYear()}-${String(firstDay.getMonth() + 1).padStart(2, '0')}-${String(firstDay.getDate()).padStart(2, '0')}`
+      query.require_date = _.gte(firstDayStr)
     }
     
     // 查询数据库
