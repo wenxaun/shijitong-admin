@@ -86,6 +86,7 @@ export const CLOUD_FUNCTIONS = {
   TASK_UPDATE: 'task-update',
   TASK_DELETE: 'task-delete',
   SUBTASK_CREATE: 'subtask-create',
+  SUBTASK_LIST: 'subtask-list',
   SUBTASK_UPDATE: 'subtask-update',
   SUBTASK_DELETE: 'subtask-delete',
   COMMENT_ADD: 'comment-add',
