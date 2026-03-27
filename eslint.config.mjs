@@ -23,7 +23,7 @@ const baseRestrictedSyntaxRules = [
   },
   {
     selector:
-      'Literal[value=/(^|\\s)(?:[^\\s:]+:)*(bg|text|border|divide|outline|ring|ring-offset|from|to|via|decoration|shadow|accent|caret|fill|stroke)-[a-z0-9-]+\\/([0-9]+|\\[[^\\]]+\\])/], TemplateElement[value.raw=/(^|\\s)(?:[^\\s:]+:)*(bg|text|border|divide|outline|ring|ring-offset|from|to|via|decoration|shadow|accent|caret|fill|stroke)-[a-z0-9-]+\\/([0-9]+|\\[[^\\]]+\\])/]',
+      'Literal[value=/(^|\\s)(?:[^\\s:]+:)*(bg|text|border|divide|outline|ring|ring-offset|from|to|via|decoration|shadow|accent|caret|fill|stroke)-[a-z0-9-]+\\/([0-9]+|\\[[^\\]]+\\])/], TemplateElement[value.raw=/(^|\\s)(?:[^\\s:]+:)*(bg|text|border|divide|outline|ring|ring-offset|from|to|via|decoration|shadow|accent|caret|fill|stroke)-[a-z0-9-]+\\/([0-9]+|\\[[^\\]]+\\))/]',
     message:
       '微信小程序兼容性：禁用 Tailwind 颜色不透明度简写（如 bg-primary/10），该语法在微信小程序下 opacity 会丢失。请拆分写（如 bg-primary bg-opacity-10）。',
   },
@@ -86,6 +86,18 @@ const pageRestrictedSyntaxRules = [
       "ImportDeclaration[source.value='@tarojs/components'] ImportSpecifier[imported.name='Button']",
     message:
       "组件规范：Button 优先使用 '@/components/ui/button'，不要在页面中直接使用 '@tarojs/components' 的 Button。",
+  },
+  {
+    selector:
+      "ImportDeclaration[source.value='@tarojs/components'] ImportSpecifier[imported.name='Input']",
+    message:
+      "组件规范：Input 优先使用 '@/components/ui/input'，不要在页面中直接使用 '@tarojs/components' 的 Input。",
+  },
+  {
+    selector:
+      "ImportDeclaration[source.value='@tarojs/components'] ImportSpecifier[imported.name='Textarea']",
+    message:
+      "组件规范：Textarea 优先使用 '@/components/ui/textarea'，不要在页面中直接使用 '@tarojs/components' 的 Textarea。",
   },
   {
     selector:

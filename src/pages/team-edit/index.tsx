@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Input as TaroInput, Textarea as TaroTextarea } from '@tarojs/components';
+import { View, Text, ScrollView } from '@tarojs/components';
 import { useState, useEffect, useCallback } from 'react';
 import Taro, { useRouter } from '@tarojs/taro';
 import { useUserStore } from '@/stores/user';
@@ -6,7 +6,9 @@ import { callFunction } from '@/utils/cloud';
 import type { Team, CloudResponse, TeamMemberRole } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Crown, Shield, User, Menu, UserPlus, Trash2, Settings } from 'lucide-react-taro';
 
@@ -371,31 +373,26 @@ export default function TeamEdit() {
           <Card>
             <CardContent className="p-4">
               <Text className="text-sm text-gray-500 mb-2">团队名称 *</Text>
-              <View className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
-                <TaroInput
-                  placeholder="请输入团队名称"
-                  placeholderClass="text-gray-400"
-                  value={teamName}
-                  onInput={(e) => setTeamName(e.detail.value)}
-                  maxlength={30}
-                  disabled={!isCreator}
-                  className="w-full text-sm"
-                />
-              </View>
+              <Input
+                placeholder="请输入团队名称"
+                placeholderClass="text-gray-400"
+                value={teamName}
+                onInput={(e) => setTeamName(e.detail.value)}
+                maxlength={30}
+                disabled={!isCreator}
+                className="bg-gray-50 border-gray-200"
+              />
 
               <Text className="text-sm text-gray-500 mb-2 mt-4">团队描述</Text>
-              <View className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
-                <TaroTextarea
-                  placeholder="请输入团队描述（可选）"
-                  placeholderClass="text-gray-400"
-                  value={teamDesc}
-                  onInput={(e) => setTeamDesc(e.detail.value)}
-                  maxlength={200}
-                  disabled={!isCreator}
-                  className="w-full text-sm"
-                  style={{ minHeight: '80px' }}
-                />
-              </View>
+              <Textarea
+                placeholder="请输入团队描述（可选）"
+                placeholderClass="text-gray-400"
+                value={teamDesc}
+                onInput={(e) => setTeamDesc(e.detail.value)}
+                maxlength={200}
+                disabled={!isCreator}
+                className="bg-gray-50 border-gray-200"
+              />
 
               {isCreator && (
                 <Button 
