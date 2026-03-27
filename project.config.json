@@ -1,34 +1,15 @@
 {
-  "miniprogramRoot": "miniprogram/",
-  "cloudfunctionRoot": "cloudfunctions/",
+  "miniprogramRoot": "./dist",
+  "projectname": "coze-mini-program",
+  "description": "test",
+  "appid": "touristappid",
   "setting": {
-    "urlCheck": false,
-    "es6": true,
-    "enhance": true,
-    "postcss": true,
-    "preloadBackgroundData": false,
-    "minified": true,
-    "newFeature": true,
-    "coverView": true,
-    "nodeModules": false,
-    "autoAudits": false,
-    "showShadowRootInWxmlPanel": true,
-    "scopeDataCheck": false,
-    "uglifyFileName": false,
-    "checkInvalidKey": true,
-    "checkSiteMap": true,
-    "uploadWithSourceMap": true,
+    "urlCheck": true,
+    "es6": false,
+    "enhance": false,
     "compileHotReLoad": false,
-    "babelSetting": {
-      "ignore": [],
-      "disablePlugins": [],
-      "outputPath": ""
-    }
+    "postcss": false,
+    "minified": false
   },
-  "appid": "wx2be578f65935b5e8",
-  "projectname": "shijitong",
-  "libVersion": "2.19.4",
-  "cloudfunctionTemplateRoot": "cloudfunctionTemplate/",
-  "condition": {},
-  "srcMiniprogramRoot": "miniprogram/"
+  "compileType": "miniprogram"
 }
