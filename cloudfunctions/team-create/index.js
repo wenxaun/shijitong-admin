@@ -45,13 +45,13 @@ exports.main = async (event, context) => {
     
     const user = userRes.data[0]
     
-    // 权限检查
-    if (!['creator', 'admin', 'manager', 'publisher'].includes(user.role)) {
-      return {
-        success: false,
-        message: '无权限创建团队'
-      }
-    }
+    // 权限检查 - 所有已登录用户都可以创建团队
+    // if (!['creator', 'admin', 'manager', 'publisher'].includes(user.role)) {
+    //   return {
+    //     success: false,
+    //     message: '无权限创建团队'
+    //   }
+    // }
     
     // 创建团队
     const result = await db.collection('teams').add({
@@ -87,13 +87,19 @@ exports.main = async (event, context) => {
       }
     })
     
-    // 更新组织的团队数量
-    await db.collection('organizations').doc(organization_id).update({
-      data: {
-        team_count: db.command.inc(1),
-        updated_at: new Date()
+    // 更新组织的团队数量（如果有组织）
+    if (organization_id) {
+      try {
+        await db.collection('organizations').doc(organization_id).update({
+          data: {
+            team_count: db.command.inc(1),
+            updated_at: new Date()
+          }
+        })
+      } catch (err) {
+        console.log('更新组织统计失败，跳过:', err.message)
       }
-    })
+    }
     
     // 创建团队成员关系
     await db.collection('team_members').add({
