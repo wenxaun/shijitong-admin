@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { CircleCheck, ListTodo, Users, TrendingUp } from 'lucide-react-taro';
 
 export default function Login() {
-  const { init, openid } = useUserStore();
+  const { openid } = useUserStore();
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -43,7 +43,7 @@ export default function Login() {
         Taro.setStorageSync('userInfo', userInfo);
 
         // 调用云函数进行登录/注册
-        const loginRes = await callFunction<CloudResponse<{ openid: string }>>(
+        const loginRes = await callFunction<CloudResponse<{ openid: string; user_id: string }>>(
           'user-login',
           {
             nickname: userInfo.nickName,
@@ -51,8 +51,19 @@ export default function Login() {
           }
         );
 
-        if (loginRes.success) {
-          await init();
+        console.log('[Login] 登录结果:', loginRes);
+
+        if (loginRes.success && loginRes.data) {
+          // 直接从返回值获取 openid，不再重新调用 getOpenId
+          const userOpenid = loginRes.data.openid;
+          console.log('[Login] 获取到 openid:', userOpenid);
+          
+          // 更新 store
+          useUserStore.setState({ 
+            openid: userOpenid, 
+            isLoading: false
+          });
+          
           Taro.switchTab({ url: '/pages/index/index' });
         } else {
           Taro.showToast({ title: loginRes.message || '登录失败', icon: 'none' });
@@ -61,7 +72,13 @@ export default function Login() {
         // H5 端：模拟登录
         const mockUserInfo = { nickName: '测试用户', avatarUrl: '' };
         Taro.setStorageSync('userInfo', mockUserInfo);
-        await init();
+        
+        // 模拟 openid
+        useUserStore.setState({ 
+          openid: 'mock_openid', 
+          isLoading: false
+        });
+        
         Taro.switchTab({ url: '/pages/index/index' });
       }
     } catch (err) {

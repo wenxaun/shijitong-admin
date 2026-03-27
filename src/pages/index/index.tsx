@@ -63,8 +63,13 @@ export default function Index() {
 
   // 加载任务列表
   const loadTasks = useCallback(async (refresh = false) => {
-    if (!openid) return;
+    if (!openid) {
+      console.log('[Index] openid 为空，跳过加载');
+      setLoading(false);
+      return;
+    }
 
+    console.log('[Index] 开始加载任务列表, openid:', openid);
     setLoading(true);
     try {
       const currentPage = refresh ? 1 : page;
@@ -78,6 +83,8 @@ export default function Index() {
         }
       );
 
+      console.log('[Index] 任务列表返回:', res);
+
       if (res.success && res.data) {
         const newTasks = res.data.tasks || [];
         if (refresh) {
@@ -87,6 +94,8 @@ export default function Index() {
           setTasks(prev => [...prev, ...newTasks]);
         }
         setHasMore(res.data.hasMore);
+      } else {
+        console.error('[Index] 加载任务失败:', res.message);
       }
     } catch (err) {
       console.error('加载任务失败:', err);
@@ -98,13 +107,20 @@ export default function Index() {
 
   // 初始化加载
   useEffect(() => {
+    console.log('[Index] useEffect 触发, openid:', openid);
     if (openid) {
       loadTasks(true);
+    } else {
+      // openid 为空，跳转到登录页面
+      console.log('[Index] openid 为空，跳转登录页面');
+      setLoading(false);
+      Taro.redirectTo({ url: '/pages/login/index' });
     }
   }, [openid]);
 
   // 页面显示时刷新数据
   Taro.useDidShow(() => {
+    console.log('[Index] useDidShow 触发, openid:', openid);
     if (openid) {
       loadTasks(true);
     }
