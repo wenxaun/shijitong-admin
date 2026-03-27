@@ -1,10 +1,11 @@
 {
   "miniprogramRoot": "./dist-weapp",
+  "cloudfunctionRoot": "./cloudfunctions/",
   "projectname": "事绩通",
   "description": "事绩通 - 任务管理系统",
   "appid": "wx2be578f65935b5e8",
   "setting": {
-    "urlCheck": true,
+    "urlCheck": false,
     "es6": false,
     "enhance": false,
     "compileHotReLoad": false,
