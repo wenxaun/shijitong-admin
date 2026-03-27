@@ -1,0 +1,140 @@
+/* pages/review/review.wxss */
+.score-info {
+  text-align: center;
+  padding: 40rpx 24rpx;
+}
+
+.score-title {
+  font-size: 32rpx;
+  font-weight: 500;
+  margin-bottom: 24rpx;
+  color: #666;
+}
+
+.score-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.score {
+  font-size: 96rpx;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.score-high { color: #52c41a; }
+.score-medium { color: #faad14; }
+.score-low { color: #ff4d4f; }
+
+.score-note {
+  font-size: 28rpx;
+  color: #999;
+  margin-top: 16rpx;
+}
+
+.form-tip {
+  display: flex;
+  align-items: center;
+  padding: 24rpx;
+  background-color: #fff7e6;
+  border-left: 4rpx solid #faad14;
+}
+
+.form-tip.success {
+  background-color: #f6ffed;
+  border-left-color: #52c41a;
+}
+
+.tip-icon {
+  font-size: 36rpx;
+  margin-right: 16rpx;
+}
+
+.tip-text {
+  font-size: 28rpx;
+  color: #666;
+}
+
+.form-item {
+  padding: 24rpx;
+}
+
+.form-label {
+  font-size: 28rpx;
+  font-weight: 500;
+  margin-bottom: 16rpx;
+  color: #333;
+}
+
+.required {
+  color: #ff4d4f;
+}
+
+.form-textarea {
+  width: 100%;
+  min-height: 180rpx;
+  padding: 16rpx 0;
+  font-size: 28rpx;
+  line-height: 1.6;
+  background-color: #f5f5f5;
+  border-radius: 8rpx;
+  padding: 16rpx;
+}
+
+.checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  padding: 16rpx 20rpx;
+  background-color: #f5f5f5;
+  border-radius: 8rpx;
+  font-size: 26rpx;
+  color: #666;
+  cursor: pointer;
+}
+
+.checkbox-item.checked {
+  background-color: #e6f7ff;
+  color: #1890ff;
+  border: 2rpx solid #1890ff;
+}
+
+.checkbox-icon {
+  width: 36rpx;
+  height: 36rpx;
+  border: 2rpx solid #d9d9d9;
+  border-radius: 4rpx;
+  margin-right: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  color: transparent;
+  flex-shrink: 0;
+}
+
+.checkbox-icon.checked {
+  background-color: #1890ff;
+  border-color: #1890ff;
+  color: white;
+}
+
+.submit-btn {
+  background-color: #07c160;
+  color: white;
+  text-align: center;
+  padding: 28rpx 0;
+  border-radius: 12rpx;
+  font-size: 32rpx;
+  margin: 40rpx 20rpx;
+}
+
+.submit-btn:active {
+  background-color: #06ad56;
+}

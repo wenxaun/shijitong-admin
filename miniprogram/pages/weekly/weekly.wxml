@@ -1,0 +1,74 @@
+<!--pages/weekly/weekly.wxml-->
+<view class="container">
+  <!-- 日期选择器 -->
+  <view class="week-selector">
+    <button class="nav-btn" bindtap="prevWeek">◀ 上周</button>
+    <view class="week-range">{{currentWeekStart}} ~ {{currentWeekEnd}}</view>
+    <button class="nav-btn" bindtap="nextWeek">下周 ▶</button>
+  </view>
+
+  <!-- 统计卡片 -->
+  <view class="stats-container">
+    <view class="stat-card">
+      <view class="stat-value">{{stats.totalTasks}}</view>
+      <view class="stat-label">完成任务</view>
+    </view>
+    <view class="stat-card">
+      <view class="stat-value">{{stats.avgScore}}</view>
+      <view class="stat-label">平均分</view>
+    </view>
+    <view class="stat-card">
+      <view class="stat-value high" wx:if="{{stats.highScoreCount}}">{{stats.highScoreCount}}</view>
+      <view class="stat-value" wx:else>0</view>
+      <view class="stat-label">优秀 (≥100)</view>
+    </view>
+    <view class="stat-card">
+      <view class="stat-value low" wx:if="{{stats.lowScoreCount}}">{{stats.lowScoreCount}}</view>
+      <view class="stat-value" wx:else>0</view>
+      <view class="stat-label">待改进</view>
+    </view>
+  </view>
+
+  <!-- 归因分析 -->
+  <view class="section" wx:if="{{stats.attributionStats.length}}">
+    <view class="section-title">📊 归因分析</view>
+    <view class="attribution-list">
+      <view class="attribution-item" wx:for="{{stats.attributionStats}}" wx:key="tag">
+        <view class="attribution-name">{{item.tag}}</view>
+        <view class="attribution-bar">
+          <view class="attribution-fill" style="width: {{item.percentage}}%"></view>
+        </view>
+        <view class="attribution-count">{{item.count}}次 ({{item.percentage}}%)</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 任务列表 -->
+  <view class="section">
+    <view class="section-title">📝 任务详情</view>
+    <view class="task-list">
+      <view class="task-item" wx:for="{{weeklyTasks}}" wx:key="task_id" bindtap="goDetail" data-id="{{item.task_id}}">
+        <view class="task-header">
+          <view class="task-name">{{item.task_name}}</view>
+          <view class="task-score score-{{item.scoreLevel}}">{{item.score}}分</view>
+        </view>
+        <view class="task-meta">
+          <view class="task-priority priority-{{item.priority}}">{{item.priority}}</view>
+          <view class="task-date">截止：{{item.require_date}}</view>
+          <view class="task-date">完成：{{item.complete_date || '未完成'}}</view>
+        </view>
+        <view class="task-score-note" wx:if="{{item.score_note}}">{{item.score_note}}</view>
+      </view>
+      <view class="empty-tip" wx:if="{{weeklyTasks.length === 0}}">
+        本周暂无完成任务
+      </view>
+    </view>
+  </view>
+
+  <!-- 生成周报按钮 -->
+  <view class="action-section">
+    <button class="generate-btn" bindtap="generateReport" wx:if="{{weeklyTasks.length}}">
+      📤 生成周报分享
+    </button>
+  </view>
+</view>

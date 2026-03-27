@@ -1,0 +1,270 @@
+/* pages/subtask-detail/subtask-detail.wxss - v5.0.0 */
+
+.page-container {
+  min-height: 100vh;
+  background: #F5F6F7;
+  padding-bottom: 120rpx;
+}
+
+/* 加载状态 */
+.loading-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 200rpx 0;
+}
+
+.loading-text {
+  color: #999999;
+  font-size: 28rpx;
+}
+
+/* 子任务头部卡片 */
+.subtask-header-card {
+  background: #FFFFFF;
+  margin: 24rpx;
+  padding: 32rpx;
+  border-radius: 16rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06);
+}
+
+.subtask-name {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #333333;
+  margin-bottom: 16rpx;
+}
+
+.subtask-desc {
+  font-size: 28rpx;
+  color: #666666;
+  line-height: 1.6;
+  margin-bottom: 24rpx;
+}
+
+.subtask-meta-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24rpx;
+  margin-bottom: 24rpx;
+}
+
+.meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  min-width: 120rpx;
+}
+
+.meta-label {
+  font-size: 24rpx;
+  color: #999999;
+}
+
+.meta-value {
+  font-size: 28rpx;
+  color: #333333;
+}
+
+.meta-value.overdue {
+  color: #FF5252;
+  font-weight: 500;
+}
+
+.priority-P0 { color: #FF5252; font-weight: 500; }
+.priority-P1 { color: #FF8800; font-weight: 500; }
+.priority-P2 { color: #333333; }
+
+.status-tag {
+  display: inline-block;
+  padding: 4rpx 16rpx;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+}
+
+.status-pending { background: #FFF3E6; color: #FF8800; }
+.status-in_progress { background: #E6F3FF; color: #1377EB; }
+.status-completed { background: #E6FFF0; color: #00B365; }
+.status-cancelled { background: #FFE6E6; color: #FF5252; }
+
+/* 操作按钮 */
+.action-buttons {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 16rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid #F0F0F0;
+}
+
+.action-btn {
+  flex: 1;
+  text-align: center;
+  padding: 20rpx 0;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+}
+
+.action-btn.complete {
+  background: #00B365;
+  color: #FFFFFF;
+}
+
+.action-btn.edit {
+  background: #1377EB;
+  color: #FFFFFF;
+}
+
+/* 清单模块 */
+.checklist-section {
+  background: #FFFFFF;
+  margin: 0 24rpx 24rpx;
+  padding: 24rpx;
+  border-radius: 16rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.section-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333333;
+}
+
+.section-count {
+  font-size: 24rpx;
+  color: #999999;
+}
+
+/* 清单进度条 */
+.checklist-progress {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 16rpx;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 12rpx;
+  background: #F0F0F0;
+  border-radius: 6rpx;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #1377EB, #4D9BFF);
+  border-radius: 6rpx;
+  transition: width 0.3s;
+}
+
+.progress-text {
+  font-size: 24rpx;
+  color: #999999;
+  width: 60rpx;
+  text-align: right;
+}
+
+/* 清单项 */
+.checklist-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 16rpx;
+  background: #F5F6F7;
+  border-radius: 12rpx;
+}
+
+.checklist-item.completed .checklist-title {
+  text-decoration: line-through;
+  color: #999999;
+}
+
+.checklist-checkbox {
+  width: 40rpx;
+  height: 40rpx;
+  border: 2rpx solid #1377EB;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.checklist-item.completed .checklist-checkbox {
+  background: #1377EB;
+}
+
+.checkbox-mark {
+  font-size: 28rpx;
+  color: #FFFFFF;
+  font-weight: bold;
+}
+
+.checklist-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.checklist-title {
+  font-size: 28rpx;
+  color: #333333;
+}
+
+.checklist-time {
+  font-size: 22rpx;
+  color: #999999;
+}
+
+.checklist-delete {
+  width: 40rpx;
+  height: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.delete-icon {
+  font-size: 32rpx;
+  color: #999999;
+}
+
+/* 添加清单项 */
+.add-checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 16rpx;
+  color: #1377EB;
+  font-size: 28rpx;
+  border: 2rpx dashed #1377EB;
+  border-radius: 12rpx;
+  margin-top: 12rpx;
+}
+
+.add-icon {
+  font-size: 32rpx;
+  font-weight: bold;
+}
+
+/* 空状态 */
+.empty-tip {
+  text-align: center;
+  padding: 80rpx 24rpx;
+  color: #999999;
+  font-size: 28rpx;
+}

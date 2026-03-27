@@ -1,0 +1,44 @@
+<!--pages/login/login.wxml - v5.0.7 登录功能增强-->
+<view class="login-container">
+  <view class="login-content">
+    <!-- Logo 区域 -->
+    <view class="logo-section">
+      <view class="logo-icon">📊</view>
+      <view class="logo-title">事绩通</view>
+      <view class="logo-subtitle">事事有绩效，分分都清楚</view>
+    </view>
+
+    <!-- 登录说明 -->
+    <view class="login-tip">
+      <text class="tip-text">微信登录自动识别已注册用户</text>
+      <text class="tip-hint">首次使用将自动创建账户</text>
+    </view>
+
+    <!-- 登录按钮 -->
+    <view class="button-section">
+      <button 
+        class="login-button primary" 
+        bindtap="onWechatLogin" 
+        disabled="{{loading}}">
+        <text class="button-text">{{loading ? '登录中...' : '微信登录'}}</text>
+      </button>
+      
+      <button 
+        class="login-button secondary" 
+        bindtap="goToRegister"
+        disabled="{{loading}}">
+        <text class="button-text">注册</text>
+      </button>
+    </view>
+
+    <!-- 底部说明 -->
+    <view class="footer-section">
+      <view class="footer-text">
+        <text>登录即代表您同意</text>
+        <text class="link" bindtap="showTerms">《用户协议》</text>
+        <text>和</text>
+        <text class="link" bindtap="showPrivacy">《隐私政策》</text>
+      </view>
+    </view>
+  </view>
+</view>

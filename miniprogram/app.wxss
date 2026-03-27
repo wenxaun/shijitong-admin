@@ -1,0 +1,486 @@
+/* ========== 事绩通 - 飞书风格全局样式 ========== */
+/* 版本：v3.0 | 严格对齐飞书任务系统 UI 规范 */
+
+/* ========== 设计令牌（飞书标准）========== */
+page {
+  /* 色彩系统 - 飞书标准 */
+  --fs-blue: #1377EB;
+  --fs-blue-dark: #0F64D2;
+  --fs-blue-light: #E8F0FE;
+  
+  --fs-white: #FFFFFF;
+  --fs-bg: #F5F7FA;
+  --fs-border: #E5E6EB;
+  --fs-divider: #E5E6EB;
+  
+  --fs-text-main: #333333;
+  --fs-text-sec: #666666;
+  --fs-text-aux: #999999;
+  
+  --fs-success: #00B365;
+  --fs-warning: #FF7D27;
+  --fs-error: #EA4335;
+  
+  /* 排版规范 */
+  --fs-font-title: 36rpx;
+  --fs-font-body: 32rpx;
+  --fs-font-small: 28rpx;
+  --fs-font-tiny: 24rpx;
+  
+  --fs-weight-normal: 400;
+  --fs-weight-medium: 500;
+  --fs-weight-semibold: 600;
+  
+  --fs-line-height: 1.5;
+  
+  /* 组件规范 */
+  --fs-radius-card: 24rpx;
+  --fs-radius-btn: 16rpx;
+  --fs-radius-tag: 8rpx;
+  
+  --fs-shadow-card: 0 4rpx 16rpx rgba(0,0,0,0.08);
+  --fs-shadow-light: 0 2rpx 8rpx rgba(0,0,0,0.05);
+  
+  --fs-spacing-page: 48rpx;
+  --fs-spacing-card: 32rpx;
+  --fs-spacing-item: 24rpx;
+  --fs-spacing-small: 16rpx;
+  
+  /* 动画 */
+  --fs-transition: 200ms ease;
+  
+  /* 基础设置 */
+  background-color: var(--fs-bg);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'HarmonyOS Sans', 'Microsoft YaHei', sans-serif;
+  font-size: var(--fs-font-body);
+  line-height: var(--fs-line-height);
+  color: var(--fs-text-main);
+  box-sizing: border-box;
+}
+
+/* ========== 通用容器 ========== */
+.page-container {
+  min-height: 100vh;
+  background: var(--fs-bg);
+  padding: var(--fs-spacing-page) 0;
+  box-sizing: border-box;
+}
+
+.section {
+  background: var(--fs-white);
+  border-radius: var(--fs-radius-card);
+  padding: var(--fs-spacing-item);
+  margin: 0 var(--fs-spacing-page) var(--fs-spacing-card);
+  box-shadow: var(--fs-shadow-light);
+}
+
+.card {
+  background: var(--fs-white);
+  border-radius: var(--fs-radius-card);
+  padding: var(--fs-spacing-item);
+  box-shadow: var(--fs-shadow-light);
+}
+
+/* ========== 文字样式 ========== */
+.text-main {
+  font-size: var(--fs-font-body);
+  font-weight: var(--fs-weight-normal);
+  color: var(--fs-text-main);
+}
+
+.text-sec {
+  font-size: var(--fs-font-small);
+  font-weight: var(--fs-weight-normal);
+  color: var(--fs-text-sec);
+}
+
+.text-aux {
+  font-size: var(--fs-font-small);
+  font-weight: var(--fs-weight-normal);
+  color: var(--fs-text-aux);
+}
+
+.text-title {
+  font-size: var(--fs-font-title);
+  font-weight: var(--fs-weight-semibold);
+  color: var(--fs-text-main);
+}
+
+.text-bold {
+  font-weight: var(--fs-weight-semibold);
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.text-right {
+  text-align: right;
+}
+
+/* ========== 按钮（飞书标准）========== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 80rpx;
+  padding: 0 var(--fs-spacing-item);
+  border-radius: var(--fs-radius-btn);
+  font-size: var(--fs-font-body);
+  font-weight: var(--fs-weight-medium);
+  transition: all var(--fs-transition);
+  border: none;
+  box-sizing: border-box;
+}
+
+.btn:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+.btn-primary {
+  background: var(--fs-blue);
+  color: var(--fs-white);
+}
+
+.btn-primary:active {
+  background: var(--fs-blue-dark);
+}
+
+.btn-secondary {
+  background: var(--fs-bg);
+  color: var(--fs-text-main);
+  border: 2rpx solid var(--fs-border);
+}
+
+.btn-secondary:active {
+  background: var(--fs-border);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--fs-blue);
+}
+
+.btn-ghost:active {
+  background: var(--fs-blue-light);
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.btn-sm {
+  height: 56rpx;
+  padding: 0 var(--fs-spacing-small);
+  font-size: var(--fs-font-small);
+}
+
+.btn-lg {
+  height: 96rpx;
+  font-size: var(--fs-font-title);
+}
+
+/* ========== 表单（飞书标准）========== */
+.form-item {
+  margin-bottom: var(--fs-spacing-item);
+}
+
+.form-item:last-child {
+  margin-bottom: 0;
+}
+
+.form-label {
+  font-size: var(--fs-font-small);
+  font-weight: var(--fs-weight-medium);
+  color: var(--fs-text-sec);
+  margin-bottom: var(--fs-spacing-small);
+  display: flex;
+  align-items: center;
+}
+
+.form-label.required::before {
+  content: '*';
+  color: var(--fs-error);
+  margin-right: 8rpx;
+  font-size: var(--fs-font-small);
+}
+
+.form-input {
+  width: 100%;
+  height: 80rpx;
+  background: var(--fs-bg);
+  border-radius: var(--fs-radius-btn);
+  padding: 0 var(--fs-spacing-item);
+  font-size: var(--fs-font-body);
+  color: var(--fs-text-main);
+  border: 2rpx solid transparent;
+  transition: all var(--fs-transition);
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  background: var(--fs-white);
+  border-color: var(--fs-blue);
+}
+
+.form-textarea {
+  width: 100%;
+  min-height: 200rpx;
+  background: var(--fs-bg);
+  border-radius: var(--fs-radius-btn);
+  padding: var(--fs-spacing-small) var(--fs-spacing-item);
+  font-size: var(--fs-font-body);
+  color: var(--fs-text-main);
+  border: 2rpx solid transparent;
+  line-height: var(--fs-line-height);
+  transition: all var(--fs-transition);
+  box-sizing: border-box;
+}
+
+.form-textarea:focus {
+  background: var(--fs-white);
+  border-color: var(--fs-blue);
+}
+
+/* ========== 标签（飞书标准）========== */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8rpx 16rpx;
+  border-radius: var(--fs-radius-tag);
+  font-size: var(--fs-font-tiny);
+  font-weight: var(--fs-weight-medium);
+  white-space: nowrap;
+}
+
+.tag-primary {
+  background: var(--fs-blue-light);
+  color: var(--fs-blue);
+}
+
+.tag-success {
+  background: #E6F7EF;
+  color: var(--fs-success);
+}
+
+.tag-warning {
+  background: #FFF3E6;
+  color: var(--fs-warning);
+}
+
+.tag-error {
+  background: #FFECE8;
+  color: var(--fs-error);
+}
+
+.tag-default {
+  background: var(--fs-bg);
+  color: var(--fs-text-sec);
+}
+
+/* 优先级标签 */
+.tag-P0 {
+  background: #FFECE8;
+  color: var(--fs-error);
+}
+
+.tag-P1 {
+  background: #FFF3E6;
+  color: var(--fs-warning);
+}
+
+.tag-P2 {
+  background: var(--fs-blue-light);
+  color: var(--fs-blue);
+}
+
+.tag-P3 {
+  background: var(--fs-bg);
+  color: var(--fs-text-aux);
+}
+
+/* ========== 列表（飞书标准）========== */
+.list {
+  background: var(--fs-white);
+  border-radius: var(--fs-radius-card);
+  overflow: hidden;
+  box-shadow: var(--fs-shadow-light);
+}
+
+.list-item {
+  display: flex;
+  align-items: center;
+  height: 96rpx;
+  padding: 0 var(--fs-spacing-item);
+  border-bottom: 2rpx solid var(--fs-divider);
+  transition: background var(--fs-transition);
+  box-sizing: border-box;
+}
+
+.list-item:last-child {
+  border-bottom: none;
+}
+
+.list-item:active {
+  background: var(--fs-bg);
+}
+
+.list-item-icon {
+  width: 48rpx;
+  height: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40rpx;
+  margin-right: var(--fs-spacing-small);
+  flex-shrink: 0;
+}
+
+.list-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.list-item-title {
+  font-size: var(--fs-font-body);
+  font-weight: var(--fs-weight-normal);
+  color: var(--fs-text-main);
+}
+
+.list-item-desc {
+  font-size: var(--fs-font-small);
+  color: var(--fs-text-sec);
+  margin-top: 4rpx;
+}
+
+.list-item-action {
+  display: flex;
+  align-items: center;
+  color: var(--fs-text-aux);
+  font-size: var(--fs-font-small);
+}
+
+/* ========== 分割线 ========== */
+.divider {
+  height: 2rpx;
+  background: var(--fs-divider);
+  margin: var(--fs-spacing-item) 0;
+}
+
+.divider-light {
+  height: 1rpx;
+  background: var(--fs-border);
+}
+
+/* ========== 空状态 ========== */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 160rpx var(--fs-spacing-page);
+  text-align: center;
+}
+
+.empty-state-icon {
+  font-size: 120rpx;
+  margin-bottom: var(--fs-spacing-item);
+  opacity: 0.3;
+}
+
+.empty-state-title {
+  font-size: var(--fs-font-title);
+  font-weight: var(--fs-weight-medium);
+  color: var(--fs-text-main);
+  margin-bottom: var(--fs-spacing-small);
+}
+
+.empty-state-desc {
+  font-size: var(--fs-font-small);
+  color: var(--fs-text-sec);
+  line-height: var(--fs-line-height);
+}
+
+/* ========== 加载状态 ========== */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--fs-spacing-item);
+  color: var(--fs-text-aux);
+  font-size: var(--fs-font-small);
+}
+
+/* ========== 徽章 ========== */
+.badge {
+  position: relative;
+  display: inline-block;
+}
+
+.badge-dot {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 16rpx;
+  height: 16rpx;
+  background: var(--fs-error);
+  border-radius: 50%;
+  border: 2rpx solid var(--fs-white);
+}
+
+/* ========== 工具类 ========== */
+.flex {
+  display: flex;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.flex-1 {
+  flex: 1;
+  min-width: 0;
+}
+
+.gap-sm { gap: var(--fs-spacing-item); }
+.gap-md { gap: var(--fs-spacing-small); }
+
+.mt-sm { margin-top: var(--fs-spacing-small); }
+.mt-md { margin-top: var(--fs-spacing-item); }
+.mb-sm { margin-bottom: var(--fs-spacing-small); }
+.mb-md { margin-bottom: var(--fs-spacing-item); }
+
+.hidden { display: none !important; }
+
+/* ========== 动画 ========== */
+@keyframes fs-fade-in {
+  from { opacity: 0; transform: translateY(20rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fs-fade-in 300ms ease;
+}
+
+/* ========== TabBar 样式统一 ========== */
+.weui-tabbar__label {
+  color: var(--fs-text-sec) !important;
+}
+
+.weui-tabbar__label.weui-bar__item_on {
+  color: var(--fs-blue) !important;
+}

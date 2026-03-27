@@ -1,0 +1,56 @@
+<!--pages/team-edit/team-edit.wxml-->
+<view class="container">
+  <view class="form">
+    <!-- 部门 -->
+    <view class="form-item card">
+      <view class="form-label">部门</view>
+      <input class="form-input" placeholder="请输入部门名称" value="{{department}}" bindinput="onDepartmentInput" maxlength="50"/>
+    </view>
+
+    <!-- 直属上级 -->
+    <view class="form-item card">
+      <view class="form-label">直属上级</view>
+      <picker mode="selector" range="{{managerList}}" range-key="name" value="{{managerIndex}}" bindchange="onManagerChange">
+        <view class="form-picker {{managerIndex >= 0 ? '' : 'placeholder'}}">
+          {{managerIndex >= 0 ? managerList[managerIndex].name : '选择直属上级'}}
+        </view>
+      </picker>
+    </view>
+
+    <!-- 角色权限 -->
+    <view class="form-item card">
+      <view class="form-label">角色权限</view>
+      <view class="radio-group">
+        <view class="radio-item {{role === 'executor' ? 'active' : ''}}" bindtap="setRole" data-value="executor">
+          <text>执行人</text>
+        </view>
+        <view class="radio-item {{role === 'publisher' ? 'active' : ''}}" bindtap="setRole" data-value="publisher">
+          <text>发布人</text>
+        </view>
+        <view class="radio-item {{role === 'manager' ? 'active' : ''}}" bindtap="setRole" data-value="manager">
+          <text>部门经理</text>
+        </view>
+        <view wx:if="{{myRole === 'admin'}}" class="radio-item {{role === 'admin' ? 'active' : ''}}" bindtap="setRole" data-value="admin">
+          <text>管理员</text>
+        </view>
+      </view>
+      <view class="role-desc">
+        <text>{{roleDesc}}</text>
+      </view>
+    </view>
+
+    <!-- 特别授权 -->
+    <view class="form-item card">
+      <view class="form-label">特别授权</view>
+      <view class="checkbox-item {{canManageTeam ? 'checked' : ''}}" bindtap="toggleManageTeam">
+        <view class="checkbox-icon {{canManageTeam ? 'checked' : ''}}">✓</view>
+        <text>团队管理权限</text>
+      </view>
+    </view>
+
+    <!-- 提交按钮 -->
+    <view class="submit-btn" bindtap="submitEdit">
+      <text>保存修改</text>
+    </view>
+  </view>
+</view>

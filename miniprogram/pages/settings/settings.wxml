@@ -1,0 +1,57 @@
+<!--pages/settings/settings.wxml-->
+<view class="container">
+  <view class="section card">
+    <view class="section-title">⏰ 提醒设置</view>
+    
+    <view class="setting-item">
+      <view class="setting-label">启用 16:00 提醒</view>
+      <switch checked="{{enableReminder}}" bindchange="onEnableChange" color="#07c160"/>
+    </view>
+
+    <view wx:if="{{enableReminder}}" class="setting-item">
+      <view class="setting-label">提醒时间</view>
+      <picker mode="time" value="{{reminderTime}}" bindchange="onTimeChange">
+        <view class="picker-value">{{reminderTime}}</view>
+      </picker>
+    </view>
+
+    <view class="setting-item">
+      <view class="setting-label">免打扰时段</view>
+      <view class="quiet-hours">20:00 - 08:00</view>
+    </view>
+  </view>
+
+  <view class="section card">
+    <view class="section-title">📬 消息通知</view>
+    
+    <view class="setting-item">
+      <view class="setting-label">接收任务分配通知</view>
+      <switch checked="{{receiveAssignNotify}}" bindchange="onAssignNotifyChange" color="#07c160"/>
+    </view>
+
+    <view class="setting-item">
+      <view class="setting-label">接收异常上报通知</view>
+      <view class="setting-desc">作为发布人时，接收执行人的异常上报</view>
+      <switch checked="{{receiveExceptionNotify}}" bindchange="onExceptionNotifyChange" color="#07c160"/>
+    </view>
+  </view>
+
+  <view class="section card">
+    <view class="section-title">ℹ️ 关于</view>
+    
+    <view class="about-item">
+      <view class="about-label">版本</view>
+      <view class="about-value">v1.0.0</view>
+    </view>
+    
+    <view class="about-item">
+      <view class="about-label">云环境</view>
+      <view class="about-value" bindtap="copyEnvId">{{envId}}</view>
+    </view>
+    
+    <view class="about-item">
+      <view class="about-label">AppID</view>
+      <view class="about-value" bindtap="copyAppId">{{appId}}</view>
+    </view>
+  </view>
+</view>

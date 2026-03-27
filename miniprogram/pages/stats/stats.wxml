@@ -1,0 +1,92 @@
+<!--pages/stats/stats.wxml-->
+<view class="container">
+  <!-- 时间范围选择 -->
+  <view class="range-selector card">
+    <view class="range-btn {{rangeType === 'week' ? 'active' : ''}}" bindtap="setRange" data-type="week">本周</view>
+    <view class="range-btn {{rangeType === 'month' ? 'active' : ''}}" bindtap="setRange" data-type="month">本月</view>
+    <view class="range-btn {{rangeType === 'all' ? 'active' : ''}}" bindtap="setRange" data-type="all">全部</view>
+  </view>
+
+  <!-- 核心指标 -->
+  <view class="metrics-grid">
+    <view class="metric-card">
+      <view class="metric-icon">📋</view>
+      <view class="metric-value">{{metrics.totalTasks}}</view>
+      <view class="metric-label">总任务数</view>
+    </view>
+    <view class="metric-card">
+      <view class="metric-icon">✅</view>
+      <view class="metric-value">{{metrics.completedTasks}}</view>
+      <view class="metric-label">已完成</view>
+    </view>
+    <view class="metric-card">
+      <view class="metric-icon">📈</view>
+      <view class="metric-value">{{metrics.avgScore}}</view>
+      <view class="metric-label">平均分</view>
+    </view>
+    <view class="metric-card">
+      <view class="metric-icon">🎯</view>
+      <view class="metric-value">{{metrics.onTimeRate}}%</view>
+      <view class="metric-label">按时率</view>
+    </view>
+  </view>
+
+  <!-- 分数分布图表 -->
+  <view class="chart-section card">
+    <view class="chart-title">📊 分数分布</view>
+    <view class="score-distribution">
+      <view class="score-bar-item" wx:for="{{scoreDistribution}}" wx:key="range">
+        <view class="score-label">{{item.range}}</view>
+        <view class="score-bar-container">
+          <view class="score-bar" style="width: {{item.percentage}}%; background: {{item.color}}"></view>
+        </view>
+        <view class="score-count">{{item.count}}个</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 优先级分布 -->
+  <view class="chart-section card">
+    <view class="chart-title">🚨 优先级分布</view>
+    <view class="priority-chart">
+      <view class="priority-item" wx:for="{{priorityDistribution}}" wx:key="priority">
+        <view class="priority-label priority-{{item.priority}}">{{item.priority}}</view>
+        <view class="priority-bar-container">
+          <view class="priority-bar" style="width: {{item.percentage}}%"></view>
+        </view>
+        <view class="priority-count">{{item.count}}个 ({{item.percentage}}%)</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 分类统计 -->
+  <view class="chart-section card" wx:if="{{categoryStats.length}}">
+    <view class="chart-title">📁 分类统计</view>
+    <view class="category-list">
+      <view class="category-item" wx:for="{{categoryStats}}" wx:key="name">
+        <view class="category-name">{{item.name}}</view>
+        <view class="category-count">{{item.count}}个任务</view>
+        <view class="category-score">平均 {{item.avgScore}}分</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 趋势图（简化版） -->
+  <view class="chart-section card">
+    <view class="chart-title">📈 完成任务趋势</view>
+    <view class="trend-chart">
+      <view class="trend-item" wx:for="{{trendData}}" wx:key="date">
+        <view class="trend-date">{{item.date}}</view>
+        <view class="trend-bar-container">
+          <view class="trend-bar" style="height: {{item.height}}%; background: #007AFF"></view>
+        </view>
+        <view class="trend-count">{{item.count}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 刷新按钮 -->
+  <view class="refresh-section">
+    <button class="refresh-btn" bindtap="refreshData">🔄 刷新数据</button>
+  </view>
+</view>

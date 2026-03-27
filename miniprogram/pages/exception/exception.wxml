@@ -1,0 +1,51 @@
+<!--pages/exception/exception.wxml-->
+<view class="container">
+  <view class="task-info card">
+    <view class="task-name">{{taskName}}</view>
+    <view class="task-date">要求完成：{{requireDate}}</view>
+  </view>
+
+  <view class="form-tip card warning">
+    <text class="tip-icon">⚠️</text>
+    <text class="tip-text">任务今日到期但尚未完成，是否需要上报异常？</text>
+  </view>
+
+  <!-- 异常原因 -->
+  <view class="form-item card">
+    <view class="form-label">异常原因 <text class="required">*</text></view>
+    <textarea class="form-textarea" placeholder="请说明未完成的原因" value="{{exceptionReason}}" bindinput="onReasonInput" maxlength="500"/>
+  </view>
+
+  <!-- 是否需要延期 -->
+  <view class="form-item card">
+    <view class="form-label">是否需要申请延期？</view>
+    <view class="radio-group">
+      <view class="radio-item {{needDelay === true ? 'active' : ''}}" bindtap="setNeedDelay" data-value="true">
+        <text>是，需要延期</text>
+      </view>
+      <view class="radio-item {{needDelay === false ? 'active' : ''}}" bindtap="setNeedDelay" data-value="false">
+        <text>否，今天完成</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 延期日期（如果需要） -->
+  <view wx:if="{{needDelay === true}}" class="form-item card">
+    <view class="form-label">申请延期至 <text class="required">*</text></view>
+    <picker mode="date" value="{{delayDate}}" bindchange="onDelayDateChange">
+      <view class="form-picker {{delayDate ? '' : 'placeholder'}}">
+        {{delayDate || '选择日期'}}
+      </view>
+    </picker>
+  </view>
+
+  <!-- 提交按钮 -->
+  <view class="submit-btn" bindtap="submitException">
+    <text>上报异常</text>
+  </view>
+
+  <!-- 取消按钮 -->
+  <view class="cancel-btn" bindtap="cancelException">
+    <text>不上报，继续推进</text>
+  </view>
+</view>

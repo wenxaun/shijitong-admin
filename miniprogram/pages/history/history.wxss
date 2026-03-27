@@ -1,0 +1,114 @@
+/* pages/history/history.wxss */
+.filter-bar {
+  padding: 20rpx 0;
+  margin-bottom: 20rpx;
+}
+
+.filter-scroll {
+  white-space: nowrap;
+  padding: 0 20rpx;
+}
+
+.filter-item {
+  display: inline-block;
+  padding: 12rpx 24rpx;
+  margin-right: 20rpx;
+  border-radius: 30rpx;
+  background-color: #f5f5f5;
+  color: #666;
+  font-size: 28rpx;
+}
+
+.filter-item.active {
+  background-color: #07c160;
+  color: white;
+}
+
+.task-list {
+  padding-bottom: 40rpx;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 100rpx 0;
+  color: #999;
+}
+
+.task-card {
+  position: relative;
+}
+
+.task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.task-name {
+  font-size: 32rpx;
+  font-weight: 500;
+  flex: 1;
+}
+
+.task-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 26rpx;
+  color: #666;
+  margin-bottom: 16rpx;
+}
+
+.task-people {
+  font-size: 26rpx;
+  color: #666;
+  margin-bottom: 8rpx;
+}
+
+.people-label {
+  color: #999;
+  margin-right: 8rpx;
+}
+
+.people-value {
+  color: #333;
+}
+
+.task-score {
+  display: flex;
+  align-items: center;
+  padding-top: 16rpx;
+  border-top: 1rpx solid #f0f0f0;
+}
+
+.score {
+  font-size: 36rpx;
+  font-weight: bold;
+}
+
+.score-high { color: #52c41a; }
+.score-medium { color: #faad14; }
+.score-low { color: #ff4d4f; }
+
+.score-note {
+  margin-left: 16rpx;
+  font-size: 24rpx;
+  color: #999;
+}
+
+.deleted-tag {
+  position: absolute;
+  top: 20rpx;
+  right: 20rpx;
+  padding: 4rpx 12rpx;
+  background-color: #f5f5f5;
+  color: #999;
+  border-radius: 4rpx;
+  font-size: 24rpx;
+}
+
+.load-more {
+  text-align: center;
+  padding: 30rpx 0;
+  color: #07c160;
+}

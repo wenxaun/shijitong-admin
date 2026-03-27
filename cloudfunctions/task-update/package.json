@@ -1,0 +1,9 @@
+{
+  "name": "task-update",
+  "version": "1.0.0",
+  "description": "更新任务云函数（含自动评分）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

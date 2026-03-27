@@ -1,0 +1,164 @@
+/* pages/subtask-create/subtask-create.wxss */
+
+.page-container {
+  min-height: 100vh;
+  background: #F5F6F7;
+  padding: 24rpx;
+  padding-bottom: 160rpx;
+}
+
+.form-section {
+  background: #FFFFFF;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06);
+}
+
+.form-item {
+  margin-bottom: 32rpx;
+}
+
+.form-item:last-child {
+  margin-bottom: 24rpx;
+}
+
+.form-label-inline {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+
+.required {
+  color: #FF5252;
+  margin-right: 4rpx;
+}
+
+.label-text {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333333;
+}
+
+.form-label {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333333;
+  margin-bottom: 12rpx;
+}
+
+.form-input {
+  width: 100%;
+  height: 80rpx;
+  background: #F5F6F7;
+  border-radius: 12rpx;
+  padding: 0 24rpx;
+  font-size: 28rpx;
+  border: 2rpx solid transparent;
+}
+
+.form-input:focus {
+  background: #FFFFFF;
+  border-color: #1377EB;
+}
+
+.form-textarea {
+  width: 100%;
+  min-height: 200rpx;
+  background: #F5F6F7;
+  border-radius: 12rpx;
+  padding: 16rpx 24rpx;
+  font-size: 28rpx;
+  line-height: 1.6;
+  border: 2rpx solid transparent;
+}
+
+.form-textarea:focus {
+  background: #FFFFFF;
+  border-color: #1377EB;
+}
+
+.selector-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 80rpx;
+  background: #F5F6F7;
+  border-radius: 12rpx;
+  padding: 0 24rpx;
+}
+
+.selector-text {
+  font-size: 28rpx;
+  color: #333333;
+}
+
+.selector-arrow {
+  font-size: 32rpx;
+  color: #999999;
+}
+
+/* 优先级选择 */
+.priority-group {
+  display: flex;
+  gap: 16rpx;
+}
+
+.priority-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20rpx 0;
+  background: #F5F6F7;
+  border-radius: 12rpx;
+  border: 2rpx solid transparent;
+  transition: all 0.2s;
+}
+
+.priority-item.active {
+  background: #FFFFFF;
+  border-color: #1377EB;
+  box-shadow: 0 4rpx 12rpx rgba(19, 119, 235, 0.15);
+}
+
+.priority-label {
+  font-size: 32rpx;
+  font-weight: 600;
+  margin-bottom: 8rpx;
+}
+
+.priority-p0 { color: #FF5252; }
+.priority-p1 { color: #FF8800; }
+.priority-p2 { color: #1377EB; }
+.priority-p3 { color: #999999; }
+
+.priority-desc {
+  font-size: 24rpx;
+  color: #999999;
+}
+
+/* 提交按钮 */
+.submit-btn {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #FFFFFF;
+  padding: 24rpx;
+  box-shadow: 0 -4rpx 12rpx rgba(0,0,0,0.08);
+}
+
+.submit-btn:active {
+  opacity: 0.9;
+}
+
+.btn-text {
+  display: block;
+  text-align: center;
+  background: #1377EB;
+  color: #FFFFFF;
+  font-size: 32rpx;
+  font-weight: 600;
+  padding: 24rpx 0;
+  border-radius: 16rpx;
+}

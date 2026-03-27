@@ -1,0 +1,9 @@
+{
+  "name": "feishu-notify",
+  "version": "1.0.0",
+  "description": "飞书机器人通知",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

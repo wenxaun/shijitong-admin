@@ -1,0 +1,58 @@
+<!--pages/history/history.wxml-->
+<view class="container">
+  <!-- 筛选栏 -->
+  <view class="filter-bar card">
+    <scroll-view scroll-x class="filter-scroll">
+      <view class="filter-item {{currentTab === 'created' ? 'active' : ''}}" bindtap="switchTab" data-tab="created">我创建的</view>
+      <view class="filter-item {{currentTab === 'executed' ? 'active' : ''}}" bindtap="switchTab" data-tab="executed">我执行的</view>
+      <view class="filter-item {{currentTab === 'deleted' ? 'active' : ''}}" bindtap="switchTab" data-tab="deleted">已删除</view>
+    </scroll-view>
+  </view>
+
+  <!-- 任务列表 -->
+  <view class="task-list">
+    <view wx:if="{{tasks.length === 0}}" class="empty-state">
+      <text>暂无历史记录</text>
+    </view>
+    
+    <view wx:for="{{tasks}}" wx:key="task_id" class="task-card card" bindtap="goDetail" data-id="{{item.task_id}}">
+      <view class="task-header">
+        <view class="task-name">{{item.task_name}}</view>
+        <view class="task-priority tag tag-{{item.priority | lowercase}}">{{item.priority}}</view>
+      </view>
+      
+      <view class="task-meta">
+        <text class="task-status status-{{item.status}}">
+          {{item.status === 'pending' ? '待办' : item.status === 'in_progress' ? '进行中' : item.status === 'completed' ? '已完成' : item.status === 'cancelled' ? '已取消' : '已删除'}}
+        </text>
+        <text class="task-date">截止：{{item.require_date}}</text>
+      </view>
+      
+      <view wx:if="{{item.executor_name}}" class="task-people">
+        <text class="people-label">执行人：</text>
+        <text class="people-value">{{item.executor_name}}</text>
+      </view>
+      
+      <view wx:if="{{item.publisher_name && currentTab !== 'created'}}" class="task-people">
+        <text class="people-label">发布人：</text>
+        <text class="people-value">{{item.publisher_name}}</text>
+      </view>
+      
+      <view wx:if="{{item.score !== null}}" class="task-score">
+        <text class="score {{item.score >= 80 ? 'score-high' : item.score >= 60 ? 'score-medium' : 'score-low'}}">
+          {{item.score}}分
+        </text>
+        <text class="score-note">{{item.score_note}}</text>
+      </view>
+      
+      <view wx:if="{{item.deleted}}" class="deleted-tag">
+        <text>🗑️ 已删除</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载更多 -->
+  <view wx:if="{{hasMore}}" class="load-more" bindtap="loadMore">
+    <text>加载更多</text>
+  </view>
+</view>

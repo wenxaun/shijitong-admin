@@ -1,0 +1,228 @@
+<!--pages/detail/detail.wxml - v5.0.3 修复版-->
+<view class="page-container">
+  <!-- 原生导航栏已启用，不再需要自定义导航栏 -->
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading-container">
+    <view class="loading-text">加载中...</view>
+  </view>
+
+  <!-- 任务详情 -->
+  <view wx:if="{{!loading && task}}" class="detail-content">
+    
+    <!-- 更多菜单按钮 -->
+    <view wx:if="{{canEdit}}" class="more-menu" bindtap="toggleMoreMenu">
+      <text class="more-dots">•••</text>
+    </view>
+    
+    <!-- 更多菜单弹窗 -->
+    <view wx:if="{{showMoreMenu}}" class="more-menu-popup" bindtap="toggleMoreMenu">
+      <view class="menu-content" catchtap="stopPropagation">
+        <view class="menu-item" bindtap="editTask">
+          <text class="menu-icon">✏️</text>
+          <text class="menu-text">编辑任务</text>
+        </view>
+        <view wx:if="{{canDelete}}" class="menu-item" bindtap="deleteTask">
+          <text class="menu-icon">🗑️</text>
+          <text class="menu-text">删除任务</text>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 任务信息卡片 -->
+    <view class="task-card">
+      <view class="task-name">{{task.task_name}}</view>
+      <view wx:if="{{task.task_description}}" class="task-desc">{{task.task_description}}</view>
+      
+      <view class="task-meta-grid">
+        <view class="meta-item">
+          <text class="meta-label">截止日期</text>
+          <text class="meta-value">{{task.require_date}}</text>
+        </view>
+        <view class="meta-item">
+          <text class="meta-label">状态</text>
+          <view class="status-tag status-{{task.status}}">{{task.statusText}}</view>
+        </view>
+        <view class="meta-item">
+          <text class="meta-label">优先级</text>
+          <text class="meta-value priority-{{task.priority || 'P2'}}">{{task.priority || '普通'}}</text>
+        </view>
+        <view class="meta-item">
+          <text class="meta-label">发布人</text>
+          <text class="meta-value">{{task.publisher_name}}</text>
+        </view>
+        <view class="meta-item">
+          <text class="meta-label">执行人</text>
+          <text class="meta-value">{{task.executor_name}}</text>
+        </view>
+      </view>
+      
+      <!-- 进度条（有子任务时） -->
+      <view wx:if="{{subtaskProgress.total > 0}}" class="progress-section">
+        <view class="progress-header">
+          <text class="progress-title">子任务进度</text>
+          <text class="progress-count">{{subtaskProgress.completed}}/{{subtaskProgress.total}}</text>
+        </view>
+        <view class="progress-bar">
+          <view class="progress-fill" style="width: {{subtaskProgress.progress}}%"></view>
+        </view>
+        <view class="progress-footer">
+          <text class="progress-percent">{{subtaskProgress.progress}}% 完成</text>
+        </view>
+      </view>
+      
+      <!-- 状态切换按钮 -->
+      <view wx:if="{{canEdit && task.status !== 'completed'}}" class="action-section">
+        <view wx:if="{{task.status === 'pending'}}" class="start-btn" bindtap="startTask">
+          <text class="btn-text">▶ 开始任务</text>
+        </view>
+        <view wx:if="{{task.status === 'in_progress'}}" class="complete-btn" bindtap="completeTask">
+          <text class="btn-text">✓ 完成任务</text>
+        </view>
+      </view>
+      
+      <!-- 异常上报按钮 -->
+      <view wx:if="{{task.status === 'in_progress' && !task.is_subtask}}" class="exception-btn" bindtap="reportException">
+        <text class="btn-text">⚠️ 异常上报</text>
+      </view>
+    </view>
+
+    <!-- Tab 导航 -->
+    <view class="tab-nav-container">
+      <view class="tab-nav">
+        <view 
+          wx:for="{{tabs}}" 
+          wx:key="id" 
+          wx:for-item="tab"
+          class="tab-item {{currentTab === tab.id ? 'active' : ''}}"
+          data-tab="{{tab.id}}"
+          bindtap="onTabChange">
+          <text class="tab-text">{{tab.name}}</text>
+          <view wx:if="{{tab.id === 'subtask' && subtaskProgress.total > 0}}" class="tab-badge">
+            {{subtaskProgress.completed}}/{{subtaskProgress.total}}
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- Tab 内容区 -->
+    <view class="tab-content">
+      
+      <!-- 详情 Tab -->
+      <view wx:if="{{currentTab === 'detail'}}" class="tab-panel">
+        <!-- 任务描述 -->
+        <view wx:if="{{task.task_description}}" class="info-section">
+          <view class="section-title">任务描述</view>
+          <view class="desc-content">{{task.task_description}}</view>
+        </view>
+
+        <!-- 归因分类 -->
+        <view wx:if="{{task.attribution_tags && task.attribution_tags.length > 0}}" class="info-section">
+          <view class="section-title">归因分类</view>
+          <view class="tags-container">
+            <text wx:for="{{task.attribution_tags}}" wx:key="*this" class="tag-item">{{item}}</text>
+          </view>
+        </view>
+
+        <!-- 复盘信息 -->
+        <view wx:if="{{task.score !== null && task.score < 80}}" class="info-section">
+          <view class="section-title">复盘反思</view>
+          <view class="review-content">{{task.review_text || '暂无反思内容'}}</view>
+        </view>
+
+        <!-- 完成备注 -->
+        <view wx:if="{{task.completion_note}}" class="info-section">
+          <view class="section-title">完成总结</view>
+          <view class="completion-note">{{task.completion_note}}</view>
+        </view>
+      </view>
+
+      <!-- 子任务 Tab -->
+      <view wx:if="{{currentTab === 'subtask'}}" class="tab-panel">
+        <view wx:if="{{!task.is_subtask}}" class="subtask-section">
+          <!-- 待办状态不显示子任务管理入口 -->
+          <view wx:if="{{task.status !== 'pending'}}" class="subtask-action" bindtap="goToSubtaskManage">
+            <text class="action-text">管理子任务</text>
+            <text class="action-arrow">›</text>
+          </view>
+          
+          <!-- 待办状态提示 -->
+          <view wx:if="{{task.status === 'pending'}}" class="pending-tip">
+            <text class="tip-icon">ℹ️</text>
+            <text class="tip-text">任务需先开始才能添加子任务</text>
+          </view>
+          
+          <view wx:if="{{latestSubtasks.length > 0}}" class="subtask-list">
+            <view wx:for="{{latestSubtasks}}" wx:key="_id" wx:for-item="subtask" class="subtask-item" bindtap="goToSubtaskDetail" data-id="{{subtask._id}}">
+              <view class="subtask-status {{subtask.status}}"></view>
+              <view class="subtask-info">
+                <text class="subtask-name">{{subtask.task_name}}</text>
+                <view class="subtask-meta">
+                  <text class="subtask-executor">{{subtask.executor_name}}</text>
+                  <text class="subtask-date">截止：{{subtask.require_date}}</text>
+                </view>
+              </view>
+              <text class="subtask-arrow">›</text>
+            </view>
+          </view>
+          <view wx:else class="empty-tip">
+            暂无子任务
+          </view>
+        </view>
+        <view wx:else class="empty-tip">当前任务是子任务</view>
+      </view>
+
+      <!-- 清单 Tab -->
+      <view wx:if="{{currentTab === 'checklist'}}" class="tab-panel">
+        <view class="checklist-guide">
+          <view class="guide-icon">✅</view>
+          <view class="guide-title">任务清单说明</view>
+          <view class="guide-text">清单是任务的检查项列表</view>
+          <view class="guide-text">例如：发布前需要完成的步骤</view>
+          <view class="guide-text">✓ 轻量级，快速勾选</view>
+          <view class="guide-text">✓ 无负责人/截止日期</view>
+          <view class="guide-text">✓ 自动计算完成进度</view>
+          <view class="guide-hint">当前版本清单功能已移除</view>
+          <view class="guide-hint">复杂任务请使用子任务分解</view>
+          <view class="guide-action" bindtap="goToSubtaskManage">
+            <text class="action-btn">管理子任务</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 评论 Tab -->
+      <view wx:if="{{currentTab === 'comment'}}" class="tab-panel">
+        <view class="comment-list">
+          <view wx:for="{{comments}}" wx:key="id" wx:for-item="comment" class="comment-item">
+            <view class="comment-avatar">
+              <image wx:if="{{comment.avatar_url}}" src="{{comment.avatar_url}}" mode="aspectFill" />
+              <text wx:else class="avatar-placeholder">{{comment.user_name[0]}}</text>
+            </view>
+            <view class="comment-content">
+              <view class="comment-header">
+                <text class="comment-user">{{comment.user_name}}</text>
+                <text class="comment-time">{{comment.timeText}}</text>
+              </view>
+              <view class="comment-text">{{comment.content}}</view>
+            </view>
+          </view>
+          
+          <view wx:if="{{comments.length === 0}}" class="empty-tip">
+            暂无评论
+          </view>
+        </view>
+
+        <view class="comment-input-box">
+          <input 
+            class="comment-input" 
+            placeholder="写下你的评论..." 
+            value="{{commentInput}}"
+            bindinput="onCommentInput" />
+          <view class="send-btn" bindtap="addComment">
+            <text class="send-text">发送</text>
+          </view>
+        </view>
+      </view>
+
+    </view>
+  </view>
+</view>

@@ -1,0 +1,54 @@
+<!--pages/register/register.wxml - v5.0.2 飞书风格重构-->
+<view class="register-container">
+  <view class="register-content">
+    <!-- Logo -->
+    <view class="logo-section">
+      <view class="logo-icon">📊</view>
+      <view class="logo-title">事绩通</view>
+      <view class="logo-subtitle">创建您的账户</view>
+    </view>
+
+    <!-- 注册表单 -->
+    <view class="register-form">
+      <view class="form-item">
+        <view class="form-label">昵称</view>
+        <input 
+          class="form-input" 
+          placeholder="请输入昵称" 
+          value="{{nickname}}" 
+          bindinput="onNicknameInput"
+          maxlength="20"
+        />
+      </view>
+
+      <view class="form-item">
+        <view class="form-label">手机号</view>
+        <input 
+          class="form-input" 
+          type="number"
+          placeholder="请输入手机号" 
+          value="{{phone}}" 
+          bindinput="onPhoneInput"
+          maxlength="11"
+        />
+      </view>
+
+      <view class="form-item">
+        <view class="form-label">所属组织</view>
+        <view class="selector-box" bindtap="selectOrg">
+          <text class="selector-text">{{orgName || '选择组织（可选）'}}</text>
+          <text class="selector-arrow">›</text>
+        </view>
+      </view>
+
+      <button class="register-btn" bindtap="register">
+        <text class="btn-text">创建账户</text>
+      </button>
+
+      <view class="login-link" bindtap="goToLogin">
+        <text>已有账户？</text>
+        <text class="link-text">返回登录</text>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,635 @@
+/* pages/detail/detail.wxss - v5.0.1 重构版 */
+
+.page-container {
+  min-height: 100vh;
+  background: #F5F6F7;
+  padding: 24rpx;
+  padding-bottom: 120rpx;
+}
+
+/* 加载状态 */
+.loading-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 200rpx 0;
+}
+
+.loading-text {
+  color: #999999;
+  font-size: 28rpx;
+}
+
+/* 待办状态提示 */
+.pending-tip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 96rpx 48rpx;
+  background: #F5F6F7;
+  border-radius: 16rpx;
+  text-align: center;
+}
+
+.tip-icon {
+  font-size: 64rpx;
+  margin-bottom: 24rpx;
+}
+
+.tip-text {
+  font-size: 28rpx;
+  color: #999999;
+}
+
+/* 更多菜单按钮 */
+.more-menu {
+  position: fixed;
+  top: 24rpx;
+  right: 24rpx;
+  width: 60rpx;
+  height: 60rpx;
+  background: rgba(255,255,255,0.9);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.1);
+}
+
+.more-dots {
+  font-size: 32rpx;
+  color: #333333;
+  letter-spacing: 4rpx;
+}
+
+.more-menu-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 199;
+  display: flex;
+  justify-content: flex-end;
+  padding: 100rpx 24rpx;
+}
+
+.menu-content {
+  background: #FFFFFF;
+  border-radius: 16rpx;
+  padding: 16rpx 0;
+  width: 300rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0,0,0,0.2);
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 24rpx 32rpx;
+}
+
+.menu-item:active {
+  background: #F5F6F7;
+}
+
+.menu-icon {
+  font-size: 32rpx;
+}
+
+.menu-text {
+  font-size: 28rpx;
+  color: #333333;
+}
+
+/* 任务卡片 */
+.task-card {
+  background: #FFFFFF;
+  padding: 32rpx;
+  border-radius: 16rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06);
+  margin-bottom: 24rpx;
+  margin-top: 60rpx; /* 给菜单按钮留空间 */
+}
+
+.task-name {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #333333;
+  margin-bottom: 16rpx;
+}
+
+.task-desc {
+  font-size: 28rpx;
+  color: #666666;
+  line-height: 1.6;
+  margin-bottom: 24rpx;
+}
+
+.task-meta-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24rpx;
+  margin-bottom: 24rpx;
+}
+
+.meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  min-width: 120rpx;
+}
+
+.meta-label {
+  font-size: 24rpx;
+  color: #999999;
+}
+
+.meta-value {
+  font-size: 28rpx;
+  color: #333333;
+}
+
+.meta-value.overdue {
+  color: #FF5252;
+  font-weight: 500;
+}
+
+.priority-P0 { color: #FF5252; font-weight: 500; }
+.priority-P1 { color: #FF8800; font-weight: 500; }
+.priority-P2 { color: #333333; }
+
+.status-tag {
+  display: inline-block;
+  padding: 4rpx 16rpx;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+}
+
+.status-pending { background: #FFF3E6; color: #FF8800; }
+.status-in_progress { background: #E6F3FF; color: #1377EB; }
+.status-completed { background: #E6FFF0; color: #00B365; }
+.status-cancelled { background: #FFE6E6; color: #FF5252; }
+
+/* 进度条 */
+.progress-section {
+  margin-bottom: 24rpx;
+  padding-bottom: 24rpx;
+  border-bottom: 1rpx solid #F0F0F0;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+
+.progress-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333333;
+}
+
+.progress-count {
+  font-size: 24rpx;
+  color: #999999;
+}
+
+.progress-bar {
+  height: 12rpx;
+  background: #F0F0F0;
+  border-radius: 6rpx;
+  overflow: hidden;
+  margin-bottom: 12rpx;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #1377EB, #4D9BFF);
+  border-radius: 6rpx;
+  transition: width 0.3s;
+}
+
+.progress-footer {
+  text-align: right;
+}
+
+.progress-percent {
+  font-size: 24rpx;
+  color: #999999;
+}
+
+/* 操作按钮区域 */
+.action-section {
+  margin-top: 16rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid #F0F0F0;
+}
+
+.start-btn, .complete-btn {
+  text-align: center;
+  padding: 20rpx 0;
+  border-radius: 12rpx;
+  font-weight: 500;
+}
+
+.start-btn {
+  background: #1377EB;
+  color: #FFFFFF;
+}
+
+.complete-btn {
+  background: #00B365;
+  color: #FFFFFF;
+}
+
+.btn-text {
+  font-size: 28rpx;
+}
+
+/* 异常上报按钮 */
+.exception-btn {
+  margin-top: 16rpx;
+  text-align: center;
+  padding: 20rpx 0;
+  border-radius: 12rpx;
+  background: #FFF3E6;
+  border: 2rpx solid #FF8800;
+}
+
+.exception-btn .btn-text {
+  color: #FF8800;
+  font-weight: 500;
+}
+
+/* Tab 导航 */
+.tab-nav-container {
+  margin-bottom: 24rpx;
+  background: #FFFFFF;
+  border-radius: 16rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06);
+  overflow: hidden;
+}
+
+.tab-nav {
+  display: flex;
+  position: relative;
+}
+
+.tab-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28rpx 0;
+  position: relative;
+}
+
+.tab-text {
+  font-size: 28rpx;
+  color: #666666;
+}
+
+.tab-item.active .tab-text {
+  color: #1377EB;
+  font-weight: 500;
+}
+
+.tab-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 48rpx;
+  height: 4rpx;
+  background: #1377EB;
+  border-radius: 2rpx;
+}
+
+.tab-badge {
+  position: absolute;
+  top: 16rpx;
+  right: 50%;
+  margin-right: -50rpx;
+  background: #FF5252;
+  color: #FFFFFF;
+  font-size: 20rpx;
+  padding: 2rpx 12rpx;
+  border-radius: 16rpx;
+}
+
+/* Tab 内容区 */
+.tab-content {
+  margin: 0 24rpx;
+}
+
+.tab-panel {
+  background: #FFFFFF;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06);
+}
+
+.info-section {
+  margin-bottom: 24rpx;
+  padding-bottom: 24rpx;
+  border-bottom: 1rpx solid #F0F0F0;
+}
+
+.info-section:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.section-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333333;
+  margin-bottom: 16rpx;
+}
+
+.tags-container {
+  display: flex;
+  gap: 12rpx;
+  flex-wrap: wrap;
+}
+
+.tag-item {
+  background: #F5F6F7;
+  color: #666666;
+  font-size: 24rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 8rpx;
+}
+
+/* 任务描述 */
+.desc-content {
+  font-size: 28rpx;
+  color: #666666;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* 复盘/完成备注 */
+.review-content, .completion-note {
+  font-size: 28rpx;
+  color: #666666;
+  line-height: 1.6;
+  background: #FFF3E6;
+  padding: 16rpx;
+  border-radius: 8rpx;
+  border-left: 4rpx solid #FF8800;
+}
+
+.completion-note {
+  background: #E6FFF0;
+  border-left-color: #00B365;
+}
+
+/* 子任务列表 */
+.subtask-section {
+  padding: 8rpx 0;
+}
+
+.subtask-action {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16rpx 0;
+  margin-bottom: 16rpx;
+}
+
+.action-text {
+  font-size: 28rpx;
+  color: #1377EB;
+}
+
+.action-arrow {
+  font-size: 32rpx;
+  color: #1377EB;
+}
+
+.subtask-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.subtask-item {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 20rpx;
+  background: #F5F6F7;
+  border-radius: 12rpx;
+}
+
+.subtask-status {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.subtask-status.pending { background: #FF8800; }
+.subtask-status.in_progress { background: #1377EB; }
+.subtask-status.completed { background: #00B365; }
+.subtask-status.cancelled { background: #999999; }
+
+.subtask-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.subtask-name {
+  font-size: 28rpx;
+  color: #333333;
+  font-weight: 500;
+}
+
+.subtask-meta {
+  display: flex;
+  gap: 24rpx;
+}
+
+.subtask-executor {
+  font-size: 24rpx;
+  color: #999999;
+}
+
+.subtask-date {
+  font-size: 24rpx;
+  color: #999999;
+}
+
+.subtask-arrow {
+  font-size: 36rpx;
+  color: #999999;
+}
+
+/* 清单引导 */
+.checklist-guide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80rpx 24rpx;
+  text-align: center;
+}
+
+.guide-icon {
+  font-size: 100rpx;
+  margin-bottom: 24rpx;
+}
+
+.guide-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333333;
+  margin-bottom: 16rpx;
+}
+
+.guide-text {
+  font-size: 28rpx;
+  color: #666666;
+  line-height: 1.6;
+  margin-bottom: 8rpx;
+}
+
+.guide-hint {
+  font-size: 24rpx;
+  color: #FF8800;
+  margin: 16rpx 0 8rpx;
+  font-weight: 500;
+}
+
+.guide-action {
+  margin-top: 32rpx;
+}
+
+.action-btn {
+  display: inline-block;
+  background: #1377EB;
+  color: #FFFFFF;
+  font-size: 28rpx;
+  padding: 16rpx 48rpx;
+  border-radius: 24rpx;
+}
+
+/* 评论样式 */
+.comment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+  margin-bottom: 24rpx;
+  max-height: 600rpx;
+  overflow-y: auto;
+}
+
+.comment-item {
+  display: flex;
+  gap: 16rpx;
+}
+
+.comment-avatar {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #F0F0F0;
+}
+
+.comment-avatar image {
+  width: 100%;
+  height: 100%;
+}
+
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  color: #1377EB;
+  font-weight: 600;
+}
+
+.comment-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.comment-user {
+  font-size: 26rpx;
+  color: #333333;
+  font-weight: 500;
+}
+
+.comment-time {
+  font-size: 22rpx;
+  color: #999999;
+}
+
+.comment-text {
+  font-size: 28rpx;
+  color: #333333;
+  line-height: 1.5;
+  word-break: break-all;
+}
+
+.comment-input-box {
+  display: flex;
+  gap: 16rpx;
+  padding-top: 24rpx;
+  border-top: 1rpx solid #F0F0F0;
+}
+
+.comment-input {
+  flex: 1;
+  height: 72rpx;
+  background: #F5F6F7;
+  border-radius: 12rpx;
+  padding: 0 24rpx;
+  font-size: 28rpx;
+}
+
+.send-btn {
+  height: 72rpx;
+  background: #1377EB;
+  border-radius: 12rpx;
+  padding: 0 32rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.send-text {
+  color: #FFFFFF;
+  font-size: 28rpx;
+}
+
+/* 空状态 */
+.empty-tip {
+  text-align: center;
+  padding: 80rpx 0;
+  color: #999999;
+  font-size: 28rpx;
+}

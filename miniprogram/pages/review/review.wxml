@@ -1,0 +1,84 @@
+<!--pages/review/review.wxml-->
+<view class="container">
+  <view class="score-info card">
+    <view class="score-title">任务完成评分</view>
+    <view class="score-display">
+      <text class="score {{score >= 80 ? 'score-high' : score >= 60 ? 'score-medium' : 'score-low'}}">
+        {{score}}分
+      </text>
+      <text class="score-note">{{scoreNote}}</text>
+    </view>
+  </view>
+
+  <view wx:if="{{score < 80}}" class="review-form">
+    <view class="form-tip card">
+      <text class="tip-icon">⚠️</text>
+      <text class="tip-text">得分低于 80 分，需要填写复盘信息</text>
+    </view>
+
+    <!-- 学习收获 -->
+    <view class="form-item card">
+      <view class="form-label">学习收获 <text class="required">*</text></view>
+      <textarea class="form-textarea" placeholder="通过这个任务，你学到了什么？" value="{{learnings}}" bindinput="onLearningsInput" maxlength="500"/>
+    </view>
+
+    <!-- 延迟原因 -->
+    <view class="form-item card">
+      <view class="form-label">延迟原因 <text class="required">*</text></view>
+      <textarea class="form-textarea" placeholder="为什么延迟了？请说明原因" value="{{delayReason}}" bindinput="onDelayReasonInput" maxlength="500"/>
+    </view>
+
+    <!-- 反思改进 -->
+    <view class="form-item card">
+      <view class="form-label">反思改进 <text class="required">*</text></view>
+      <textarea class="form-textarea" placeholder="下次如何改进？具体行动计划" value="{{improvements}}" bindinput="onImprovementsInput" maxlength="500"/>
+    </view>
+
+    <!-- 归因分类 -->
+    <view class="form-item card">
+      <view class="form-label">归因分类 <text class="required">*</text></view>
+      <view class="checkbox-group">
+        <view class="checkbox-item {{tagSkills ? 'checked' : ''}}" bindtap="toggleAttribution" data-tag="技能不足">
+          <view class="checkbox-icon {{tagSkills ? 'checked' : ''}}">✓</view>
+          <text>技能不足</text>
+        </view>
+        <view class="checkbox-item {{tagProcess ? 'checked' : ''}}" bindtap="toggleAttribution" data-tag="流程问题">
+          <view class="checkbox-icon {{tagProcess ? 'checked' : ''}}">✓</view>
+          <text>流程问题</text>
+        </view>
+        <view class="checkbox-item {{tagCommunication ? 'checked' : ''}}" bindtap="toggleAttribution" data-tag="沟通问题">
+          <view class="checkbox-icon {{tagCommunication ? 'checked' : ''}}">✓</view>
+          <text>沟通问题</text>
+        </view>
+        <view class="checkbox-item {{tagResources ? 'checked' : ''}}" bindtap="toggleAttribution" data-tag="资源不足">
+          <view class="checkbox-icon {{tagResources ? 'checked' : ''}}">✓</view>
+          <text>资源不足</text>
+        </view>
+        <view class="checkbox-item {{tagJudgment ? 'checked' : ''}}" bindtap="toggleAttribution" data-tag="判断失误">
+          <view class="checkbox-icon {{tagJudgment ? 'checked' : ''}}">✓</view>
+          <text>判断失误</text>
+        </view>
+        <view class="checkbox-item {{tagEmotion ? 'checked' : ''}}" bindtap="toggleAttribution" data-tag="情绪影响">
+          <view class="checkbox-icon {{tagEmotion ? 'checked' : ''}}">✓</view>
+          <text>情绪影响</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{score >= 80}}" class="form-tip card success">
+    <text class="tip-icon">✅</text>
+    <text class="tip-text">任务完成良好！可选填学习收获</text>
+  </view>
+
+  <!-- 可选：学习收获（得分>=80 时可选填） -->
+  <view wx:if="{{score >= 80}}" class="form-item card">
+    <view class="form-label">学习收获（可选）</view>
+    <textarea class="form-textarea" placeholder="通过这个任务，你有什么收获？" value="{{learnings}}" bindinput="onLearningsInput" maxlength="500"/>
+  </view>
+
+  <!-- 提交按钮 -->
+  <view class="submit-btn" bindtap="submitReview">
+    <text>提交复盘</text>
+  </view>
+</view>

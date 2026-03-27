@@ -1,0 +1,81 @@
+<!--pages/subtask-flow/subtask-flow.wxml-->
+<view class="container">
+  <!-- 当前任务信息 -->
+  <view class="task-info">
+    <view class="info-label">当前任务</view>
+    <view class="info-value">{{taskName}}</view>
+    <view class="info-label" style="margin-top: 16rpx;">当前执行人</view>
+    <view class="info-value">{{currentExecutorName}}</view>
+  </view>
+
+  <!-- 流转表单 -->
+  <view class="form-section">
+    <view class="form-item">
+      <view class="form-label">
+        <text class="required">*</text>
+        <text>流转给</text>
+      </view>
+      <picker 
+        mode="selector" 
+        range="{{memberList}}" 
+        range-key="nickname"
+        value="{{toExecutorIndex}}"
+        bindchange="onToExecutorChange"
+      >
+        <view class="form-picker {{toExecutorIndex >= 0 ? '' : 'placeholder'}}">
+          {{toExecutorIndex >= 0 ? memberList[toExecutorIndex].nickname : '请选择接收人'}}
+        </view>
+      </picker>
+    </view>
+
+    <view class="form-item">
+      <view class="form-label">
+        <text>流转原因</text>
+      </view>
+      <textarea 
+        class="form-textarea" 
+        placeholder="请输入流转原因（选填）" 
+        value="{{reason}}"
+        bindinput="onReasonInput"
+        maxlength="200"
+      />
+    </view>
+
+    <view class="form-item">
+      <view class="form-label">
+        <text>备注</text>
+      </view>
+      <textarea 
+        class="form-textarea" 
+        placeholder="请输入备注（选填）" 
+        value="{{note}}"
+        bindinput="onNoteInput"
+        maxlength="200"
+      />
+    </view>
+  </view>
+
+  <!-- 流转历史 -->
+  <view class="flow-history" wx:if="{{flowHistory.length > 0}}">
+    <view class="history-header">
+      <text class="history-title">流转记录</text>
+    </view>
+    <view class="history-list">
+      <block wx:for="{{flowHistory}}" wx:key="index">
+        <view class="history-item">
+          <view class="history-time">{{item.flow_date}}</view>
+          <view class="history-content">
+            <text>{{item.from_executor_name}}</text>
+            <text class="arrow">→</text>
+            <text>{{item.to_executor_name}}</text>
+          </view>
+          <view class="history-reason" wx:if="{{item.reason}}">原因：{{item.reason}}</view>
+        </view>
+      </block>
+    </view>
+  </view>
+
+  <view class="bottom-btn">
+    <button class="submit-btn" bindtap="submitFlow">确认流转</button>
+  </view>
+</view>

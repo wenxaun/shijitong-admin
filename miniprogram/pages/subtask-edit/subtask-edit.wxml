@@ -1,0 +1,132 @@
+<!--pages/subtask-edit/subtask-edit.wxml-->
+<view class="container">
+  <!-- 任务信息头部 -->
+  <view class="task-header">
+    <view class="header-icon">📋</view>
+    <view class="header-info">
+      <text class="parent-task-label">主任务</text>
+      <text class="parent-task-name">{{parentTaskName}}</text>
+    </view>
+  </view>
+
+  <!-- 编辑表单 -->
+  <view class="form-section">
+    <view class="form-item">
+      <view class="form-label">
+        <text class="required">*</text>
+        <text>子任务名称</text>
+      </view>
+      <input 
+        class="form-input" 
+        placeholder="请输入子任务名称" 
+        value="{{taskName}}"
+        bindinput="onTaskNameInput"
+      />
+    </view>
+
+    <view class="form-item">
+      <view class="form-label">
+        <text>任务描述</text>
+      </view>
+      <textarea 
+        class="form-textarea" 
+        placeholder="请输入任务描述（选填）" 
+        value="{{taskDescription}}"
+        bindinput="onDescriptionInput"
+        maxlength="500"
+      />
+    </view>
+
+    <view class="form-item">
+      <view class="form-label">
+        <text class="required">*</text>
+        <text>执行人</text>
+      </view>
+      <picker 
+        mode="selector" 
+        range="{{executorList}}" 
+        range-key="nickname"
+        value="{{executorIndex}}"
+        bindchange="onExecutorChange"
+      >
+        <view class="form-picker {{executorIndex >= 0 ? '' : 'placeholder'}}">
+          {{executorIndex >= 0 ? executorList[executorIndex].nickname : '请选择执行人'}}
+        </view>
+      </picker>
+    </view>
+
+    <view class="form-item">
+      <view class="form-label">
+        <text class="required">*</text>
+        <text>截止日期</text>
+      </view>
+      <picker 
+        mode="date" 
+        value="{{requireDate}}"
+        start="{{minDate}}"
+        end="{{maxDate}}"
+        bindchange="onDateChange"
+      >
+        <view class="form-picker {{requireDate ? '' : 'placeholder'}}">
+          {{requireDate || '请选择截止日期'}}
+        </view>
+      </picker>
+      <view class="form-hint">不能超过主任务截止日期（{{parentTaskRequireDate}}）</view>
+    </view>
+
+    <!-- 协助人管理 -->
+    <view class="form-item">
+      <view class="form-label">
+        <text>协助人</text>
+      </view>
+      <view class="collaborator-section">
+        <!-- 已添加的协助人 -->
+        <view class="collaborator-tags" wx:if="{{collaborators.length > 0}}">
+          <block wx:for="{{collaborators}}" wx:key="openid">
+            <view class="collaborator-tag">
+              <text class="collaborator-name">{{item.name}}</text>
+              <text class="remove-icon" bindtap="removeCollaborator" data-index="{{index}}">×</text>
+            </view>
+          </block>
+        </view>
+        
+        <!-- 添加协助人按钮 -->
+        <view class="add-collaborator-btn" bindtap="addCollaborator">
+          <text class="add-icon">+</text>
+          <text class="add-text">{{collaborators.length > 0 ? '修改协助人' : '添加协助人'}}</text>
+        </view>
+        
+        <view class="form-hint" wx:if="{{collaborators.length === 0}}">添加协助人可以让他们收到任务通知</view>
+      </view>
+    </view>
+
+    <!-- 流转历史 -->
+    <view class="flow-history-section" wx:if="{{flowHistory.length > 0}}">
+      <view class="section-header">
+        <text class="section-title">📜 流转记录</text>
+        <text class="section-count">{{flowHistory.length}} 条</text>
+      </view>
+      <view class="flow-list">
+        <block wx:for="{{flowHistory}}" wx:key="index">
+          <view class="flow-item">
+            <view class="flow-arrow">→</view>
+            <view class="flow-content">
+              <view class="flow-people">
+                <text class="from-name">{{item.from_executor_name}}</text>
+                <text class="to-name">→ {{item.to_executor_name}}</text>
+              </view>
+              <view class="flow-date">{{item.flow_date}}</view>
+              <view class="flow-reason" wx:if="{{item.reason}}">原因：{{item.reason}}</view>
+            </view>
+          </view>
+        </block>
+      </view>
+    </view>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="bottom-btn">
+    <button class="save-btn" bindtap="saveSubtask">保存修改</button>
+    <button class="delete-btn" bindtap="deleteSubtask" wx:if="{{canDelete}}">删除子任务</button>
+  </view>
+</view>

@@ -1,0 +1,88 @@
+<!--pages/index/index.wxml - 飞书风格重构-->
+<view class="page-container">
+  <!-- 筛选栏 -->
+  <view class="section filter-section">
+    <view class="filter-row">
+      <text class="filter-label">时间：</text>
+      <scroll-view scroll-x class="filter-scroll" enable-flex>
+        <view class="filter-btn {{timeFilter === 'all' ? 'active' : ''}}" bindtap="setTimeFilter" data-time="all">全部</view>
+        <view class="filter-btn {{timeFilter === 'today' ? 'active' : ''}}" bindtap="setTimeFilter" data-time="today">今日</view>
+        <view class="filter-btn {{timeFilter === 'week' ? 'active' : ''}}" bindtap="setTimeFilter" data-time="week">本周</view>
+        <view class="filter-btn {{timeFilter === 'month' ? 'active' : ''}}" bindtap="setTimeFilter" data-time="month">本月</view>
+      </scroll-view>
+    </view>
+    
+    <view class="filter-row">
+      <text class="filter-label">状态：</text>
+      <scroll-view scroll-x class="filter-scroll" enable-flex>
+        <view class="filter-btn {{currentFilter === 'all' ? 'active' : ''}}" bindtap="setFilter" data-filter="all">全部</view>
+        <view class="filter-btn {{currentFilter === 'pending' ? 'active' : ''}}" bindtap="setFilter" data-filter="pending">待办</view>
+        <view class="filter-btn {{currentFilter === 'in_progress' ? 'active' : ''}}" bindtap="setFilter" data-filter="in_progress">进行中</view>
+        <view class="filter-btn {{currentFilter === 'completed' ? 'active' : ''}}" bindtap="setFilter" data-filter="completed">已完成</view>
+      </scroll-view>
+    </view>
+  </view>
+
+  <!-- 任务列表 -->
+  <view class="list-container">
+    <view wx:if="{{tasks.length === 0}}" class="empty-state">
+      <view class="empty-state-icon">📋</view>
+      <view class="empty-state-title">暂无任务</view>
+      <view class="empty-state-desc">点击右下角「+」创建新任务</view>
+    </view>
+    
+    <view wx:for="{{tasks}}" wx:key="task_id" class="task-card card" bindtap="goDetail" data-id="{{item.task_id}}">
+      <view class="task-card-inner">
+        <!-- 左侧状态条 -->
+        <view class="task-status-bar status-{{item.status}}"></view>
+        
+        <!-- 任务内容 -->
+        <view class="task-content">
+          <!-- 任务标题行 -->
+          <view class="task-header">
+            <view class="task-name text-main text-bold">{{item.task_name}}</view>
+            <view class="task-priority tag tag-{{item.priority}}">{{item.priority}}</view>
+          </view>
+          
+          <!-- 任务元信息 -->
+          <view class="task-meta">
+            <view class="task-status tag tag-status-{{item.status}}">
+              {{item.status === 'pending' ? '待办' : item.status === 'in_progress' ? '进行中' : item.status === 'completed' ? '已完成' : '已取消'}}
+            </view>
+            <view class="task-date text-aux">截止：{{item.require_date}}</view>
+          </view>
+          
+          <!-- 执行人信息 -->
+          <view wx:if="{{item.executor_name}}" class="task-executor text-sec">
+            <text class="icon">👤</text>
+            <text>{{item.executor_name}}</text>
+          </view>
+          
+          <!-- 进度条（有子任务时显示） -->
+          <view wx:if="{{item.subtask_count > 0}}" class="task-progress">
+            <view class="progress-bar-mini">
+              <view class="progress-fill-mini" style="width: {{item.progress || 0}}%"></view>
+            </view>
+            <text class="progress-text-mini">{{item.progress || 0}}%</text>
+          </view>
+          
+          <!-- 评分信息 -->
+          <view wx:if="{{item.score !== null}}" class="task-footer">
+            <view class="task-score score-{{item.score >= 100 ? 'high' : item.score >= 80 ? 'normal' : 'low'}}">
+              {{item.score}}分
+            </view>
+            <view wx:if="{{item.score_note}}" class="task-score-note text-aux">{{item.score_note}}</view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载更多 -->
+  <view wx:if="{{hasMore && tasks.length > 0}}" class="load-more" bindtap="loadMore">
+    <text>加载更多</text>
+  </view>
+  
+  <!-- 底部占位 -->
+  <view class="tabbar-placeholder"></view>
+</view>

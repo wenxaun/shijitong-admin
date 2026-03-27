@@ -1,0 +1,81 @@
+<!--pages/subtask-create/subtask-create.wxml-->
+<view class="page-container">
+  <view class="form-section">
+    <!-- 任务名称 -->
+    <view class="form-item">
+      <view class="form-label-inline">
+        <text class="required">*</text>
+        <text class="label-text">子任务名称</text>
+      </view>
+      <input 
+        class="form-input" 
+        placeholder="请输入子任务名称" 
+        value="{{taskName}}" 
+        bindinput="onTaskNameInput" 
+        maxlength="50"
+      />
+    </view>
+
+    <!-- 任务描述 -->
+    <view class="form-item">
+      <view class="form-label-inline">
+        <text class="label-text">任务描述</text>
+      </view>
+      <textarea 
+        class="form-textarea" 
+        placeholder="请输入任务描述（可选）" 
+        value="{{taskDescription}}" 
+        bindinput="onDescriptionInput" 
+        maxlength="500"
+      />
+    </view>
+
+    <!-- 负责人 -->
+    <view class="form-item">
+      <view class="form-label">负责人</view>
+      <view class="selector-box" bindtap="selectExecutor">
+        <text class="selector-text">{{executorName || '选择负责人'}}</text>
+        <text class="selector-arrow">›</text>
+      </view>
+    </view>
+
+    <!-- 截止日期 -->
+    <view class="form-item">
+      <view class="form-label">截止日期</view>
+      <picker mode="date" value="{{requireDate}}" start="{{minDate}}" end="{{maxDate}}" bindchange="onDateChange">
+        <view class="selector-box">
+          <text class="selector-text">{{requireDate || '选择截止日期'}}</text>
+          <text class="selector-arrow">›</text>
+        </view>
+      </picker>
+    </view>
+
+    <!-- 优先级 -->
+    <view class="form-item">
+      <view class="form-label">优先级</view>
+      <view class="priority-group">
+        <view class="priority-item {{priority === 'P0' ? 'active' : ''}}" bindtap="setPriority" data-value="P0">
+          <view class="priority-label priority-p0">P0</view>
+          <view class="priority-desc">紧急</view>
+        </view>
+        <view class="priority-item {{priority === 'P1' ? 'active' : ''}}" bindtap="setPriority" data-value="P1">
+          <view class="priority-label priority-p1">P1</view>
+          <view class="priority-desc">高</view>
+        </view>
+        <view class="priority-item {{priority === 'P2' ? 'active' : ''}}" bindtap="setPriority" data-value="P2">
+          <view class="priority-label priority-p2">P2</view>
+          <view class="priority-desc">中</view>
+        </view>
+        <view class="priority-item {{priority === 'P3' ? 'active' : ''}}" bindtap="setPriority" data-value="P3">
+          <view class="priority-label priority-p3">P3</view>
+          <view class="priority-desc">低</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 提交按钮 -->
+  <view class="submit-btn" bindtap="createSubtask">
+    <text class="btn-text">创建子任务</text>
+  </view>
+</view>

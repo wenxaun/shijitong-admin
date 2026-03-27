@@ -1,0 +1,94 @@
+<!--pages/profile/profile.wxml - 飞书风格重构-->
+<view class="page-container">
+  <!-- 用户头部 -->
+  <view class="profile-header">
+    <view class="header-content">
+      <image wx:if="{{userInfo.avatarUrl}}" class="avatar" src="{{userInfo.avatarUrl}}" mode="aspectFill"/>
+      <view wx:else class="avatar-placeholder">{{userInfo.nickName ? userInfo.nickName[0] : '我'}}</view>
+      
+      <view class="user-info">
+        <view class="nickname text-main text-bold">{{userInfo.nickName || '微信用户'}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 菜单列表 -->
+  <view class="menu-section">
+    <view class="section-title text-sec">功能</view>
+    <view class="menu-list">
+      <view class="menu-item" bindtap="goHistory">
+        <view class="menu-item-left">
+          <view class="menu-icon">📜</view>
+          <view class="menu-label text-main">历史任务</view>
+        </view>
+        <view class="menu-arrow text-aux">›</view>
+      </view>
+      
+      <view class="menu-item" bindtap="goWeekly">
+        <view class="menu-item-left">
+          <view class="menu-icon">📊</view>
+          <view class="menu-label text-main">周报</view>
+        </view>
+        <view class="menu-arrow text-aux">›</view>
+      </view>
+      
+      <view class="menu-item" bindtap="goStats">
+        <view class="menu-item-left">
+          <view class="menu-icon">📈</view>
+          <view class="menu-label text-main">数据统计</view>
+        </view>
+        <view class="menu-arrow text-aux">›</view>
+      </view>
+      
+      <view class="menu-item" bindtap="goSettings">
+        <view class="menu-item-left">
+          <view class="menu-icon">⚙️</view>
+          <view class="menu-label text-main">提醒设置</view>
+        </view>
+        <view class="menu-arrow text-aux">›</view>
+      </view>
+      
+      <view class="menu-item" bindtap="goTeam">
+        <view class="menu-item-left">
+          <view class="menu-icon">👥</view>
+          <view class="menu-label text-main">我的团队</view>
+        </view>
+        <view class="menu-arrow text-aux">›</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 信息卡片 -->
+  <view class="menu-section">
+    <view class="section-title text-sec">信息</view>
+    <view class="menu-list">
+      <view class="menu-item" bindtap="copyEnvId">
+        <view class="menu-item-left">
+          <view class="menu-icon">☁️</view>
+          <view class="menu-label text-main">云环境 ID</view>
+        </view>
+        <view class="menu-value text-aux">{{envId}}</view>
+        <view class="menu-arrow text-aux">›</view>
+      </view>
+      
+      <view class="menu-item" bindtap="copyAppId">
+        <view class="menu-item-left">
+          <view class="menu-icon">📱</view>
+          <view class="menu-label text-main">小程序 AppID</view>
+        </view>
+        <view class="menu-value text-aux">{{appId}}</view>
+        <view class="menu-arrow text-aux">›</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 退出登录 -->
+  <view wx:if="{{userId}}" class="logout-section">
+    <button class="btn btn-block btn-secondary" bindtap="logout">退出登录</button>
+  </view>
+
+  <!-- 版本信息 -->
+  <view class="version-info text-aux">
+    <text>事绩通 v2.0.0</text>
+  </view>
+</view>

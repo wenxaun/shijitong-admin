@@ -1,0 +1,74 @@
+<!--pages/team/team.wxml-->
+<view class="container">
+  <!-- 权限提示 -->
+  <view wx:if="{{!canManageTeam}}" class="tip-card card">
+    <text class="tip-icon">ℹ️</text>
+    <text class="tip-text">您暂无团队管理权限</text>
+  </view>
+  
+  <!-- 创建团队按钮 -->
+  <view wx:if="{{canManageTeam}}" class="create-team-section">
+    <button class="create-team-btn" bindtap="createTeam">创建我的团队</button>
+  </view>
+
+  <!-- 我的信息 -->
+  <view class="section card">
+    <view class="section-title">我的信息</view>
+    <view class="info-row">
+      <text class="info-label">昵称：</text>
+      <text class="info-value">{{userInfo.nickname || '未知'}}</text>
+    </view>
+    <view class="info-row">
+      <text class="info-label">部门：</text>
+      <text class="info-value">{{userInfo.department || '未设置'}}</text>
+    </view>
+    <view class="info-row">
+      <text class="info-label">直属上级：</text>
+      <text class="info-value">{{userInfo.manager_name || '未设置'}}</text>
+    </view>
+    <view class="info-row">
+      <text class="info-label">权限：</text>
+      <text class="info-value">{{userInfo.role_name || '普通成员'}}</text>
+    </view>
+  </view>
+
+  <!-- 团队管理（有权限时显示） -->
+  <view wx:if="{{canManageTeam}}" class="section">
+    <view class="section-title">团队成员</view>
+    
+    <!-- 未加入任何团队 -->
+    <view wx:if="{{!userInfo.organization_id}}" class="empty-state">
+      <text class="empty-icon">👥</text>
+      <text class="empty-text">您还未加入任何团队</text>
+      <text class="empty-hint">点击上方「创建我的团队」或等待被邀请</text>
+    </view>
+    
+    <!-- 已加入团队，显示成员列表 -->
+    <view wx:if="{{userInfo.organization_id}}">
+      <view wx:for="{{teamMembers}}" wx:key="openid" class="member-card card">
+        <view class="member-header">
+          <view class="member-name">{{item.nickname}}</view>
+          <view class="member-role tag">{{item.role_name}}</view>
+        </view>
+        <view class="member-info">
+          <text>部门：{{item.department || '未设置'}}</text>
+          <text>上级：{{item.manager_name || '未设置'}}</text>
+        </view>
+        <view class="member-actions" wx:if="{{canEditMember(item)}}">
+          <button class="btn-small" bindtap="editMember" data-member="{{item}}">编辑</button>
+        </view>
+      </view>
+      
+      <view wx:if="{{teamMembers.length === 0 && userInfo.organization_id}}" class="empty-state">
+        <text class="empty-icon">👥</text>
+        <text class="empty-text">团队只有你一人</text>
+        <text class="empty-hint">点击右下角「+」添加成员</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 添加成员按钮 -->
+  <view wx:if="{{canManageTeam}}" class="fab-button" bindtap="addMember">
+    <text>+</text>
+  </view>
+</view>

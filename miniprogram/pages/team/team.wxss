@@ -1,0 +1,152 @@
+/* pages/team/team.wxss */
+.container {
+  padding: 24rpx;
+  background: var(--bg-secondary);
+  min-height: 100vh;
+}
+
+/* 创建团队按钮 */
+.create-team-section {
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+}
+
+.create-team-btn {
+  width: 100%;
+  height: 88rpx;
+  background: linear-gradient(135deg, #07C160, #00B365);
+  border-radius: 44rpx;
+  border: none;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+  box-shadow: 0 4rpx 12rpx rgba(7,193,96,0.3);
+}
+
+.create-team-btn:active {
+  opacity: 0.9;
+}
+
+/* 权限提示 */
+.tip-card {
+  display: flex;
+  align-items: center;
+  padding: 24rpx;
+  background-color: #f0f9ff;
+  border-left: 4rpx solid #1890ff;
+  margin-bottom: 20rpx;
+}
+
+.tip-icon {
+  font-size: 36rpx;
+  margin-right: 16rpx;
+}
+
+.tip-text {
+  font-size: 28rpx;
+  color: #666;
+}
+
+/* 区块 */
+.section {
+  margin-bottom: 20rpx;
+}
+
+.section-title {
+  font-size: 30rpx;
+  font-weight: bold;
+  margin-bottom: 20rpx;
+  color: #333;
+}
+
+/* 卡片 */
+.card {
+  background-color: #fff;
+  border-radius: 12rpx;
+  padding: 24rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.05);
+}
+
+/* 信息行 */
+.info-row {
+  display: flex;
+  margin-bottom: 16rpx;
+}
+
+.info-row:last-child {
+  margin-bottom: 0;
+}
+
+.info-label {
+  width: 140rpx;
+  font-size: 28rpx;
+  color: #666;
+}
+
+.info-value {
+  flex: 1;
+  font-size: 28rpx;
+  color: #333;
+}
+
+/* 成员卡片 */
+.member-card {
+  margin-bottom: 16rpx;
+}
+
+.member-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+
+.member-name {
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.member-role {
+  padding: 6rpx 16rpx;
+  background: #e6f7ff;
+  color: #1890ff;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+}
+
+.member-info {
+  display: flex;
+  gap: 24rpx;
+  font-size: 26rpx;
+  color: #999;
+}
+
+.member-actions {
+  margin-top: 16rpx;
+}
+
+.btn-small {
+  padding: 8rpx 24rpx;
+  background: #1890ff;
+  color: #fff;
+  border-radius: 8rpx;
+  font-size: 26rpx;
+}
+
+/* 空状态 */
+.empty-state {
+  text-align: center;
+  padding: 80rpx 0;
+  color: #999;
+  font-size: 28rpx;
+}
+
+/* 底部提示 */
+.footer-tips {
+  text-align: center;
+  padding: 32rpx 24rpx;
+  font-size: 24rpx;
+  color: var(--text-tertiary);
+  line-height: 1.6;
+}

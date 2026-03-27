@@ -1,0 +1,58 @@
+<!--pages/org-create/org-create.wxml-->
+<view class="container">
+  <view class="header">
+    <view class="title">创建组织</view>
+    <view class="subtitle">建立您的企业架构</view>
+  </view>
+
+  <view class="form-section">
+    <view class="form-item">
+      <view class="form-label">组织名称 *</view>
+      <input 
+        class="form-input" 
+        placeholder="如：XX 科技有限公司" 
+        value="{{name}}"
+        bindinput="onInput"
+        data-field="name"
+        maxlength="50"
+      />
+    </view>
+
+    <view class="form-item">
+      <view class="form-label">简称</view>
+      <input 
+        class="form-input" 
+        placeholder="如：XX 科技" 
+        value="{{shortName}}"
+        bindinput="onInput"
+        data-field="shortName"
+        maxlength="20"
+      />
+    </view>
+
+    <view class="form-item">
+      <view class="form-label">组织描述</view>
+      <textarea 
+        class="form-textarea" 
+        placeholder="选填，组织简介" 
+        value="{{description}}"
+        bindinput="onInput"
+        data-field="description"
+        maxlength="200"
+      />
+    </view>
+  </view>
+
+  <view class="tips-section">
+    <view class="tips-title">💡 提示</view>
+    <view class="tips-content">
+      • 一个用户只能创建一个组织<br/>
+      • 创建后您将成为组织管理员<br/>
+      • 可以后续添加部门和团队成员
+    </view>
+  </view>
+
+  <view class="action-section">
+    <button class="submit-btn" bindtap="submitCreate">创建组织</button>
+  </view>
+</view>

@@ -1,0 +1,62 @@
+<!--pages/subtask-manage/subtask-manage.wxml - v5.0.0 简化版-->
+<view class="page-container">
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading-container">
+    <view class="loading-text">加载中...</view>
+  </view>
+
+  <!-- 子任务管理 -->
+  <view wx:if="{{!loading}}" class="manage-content">
+    
+    <!-- 进度卡片 -->
+    <view class="progress-card">
+      <view class="progress-header">
+        <text class="progress-title">子任务进度</text>
+        <text class="progress-count">{{completedCount}}/{{total}}</text>
+      </view>
+      <view class="progress-bar">
+        <view class="progress-fill" style="width: {{progress}}%"></view>
+      </view>
+      <view class="progress-footer">
+        <text class="progress-percent">{{progress}}% 完成</text>
+      </view>
+    </view>
+
+    <!-- 添加按钮（待办状态不显示） -->
+    <view wx:if="{{parentTaskStatus !== 'pending'}}" class="add-subtask-btn" bindtap="goToAddSubtask">
+      <text class="add-icon">+</text>
+      <text class="add-text">添加子任务</text>
+    </view>
+    
+    <!-- 待办状态提示 -->
+    <view wx:if="{{parentTaskStatus === 'pending'}}" class="pending-tip">
+      <text class="tip-icon">ℹ️</text>
+      <text class="tip-text">主任务需先开始才能添加子任务</text>
+    </view>
+
+    <!-- 子任务列表 -->
+    <view class="subtask-list">
+      <view wx:if="{{subtasks.length === 0}}" class="empty-state">
+        <text class="empty-icon">📋</text>
+        <text class="empty-text">暂无子任务</text>
+        <text class="empty-hint">点击上方按钮添加</text>
+      </view>
+
+      <view wx:for="{{subtasks}}" wx:key="item._id" wx:for-item="item" 
+            class="subtask-card" 
+            bindtap="goToSubtaskDetail" 
+            data-id="{{item._id}}">
+        <view class="card-status {{item.status}}"></view>
+        <view class="card-content">
+          <text class="card-title">{{item.task_name}}</text>
+          <view class="card-meta">
+            <text class="meta-item">👤 {{item.executor_name || '未分配'}}</text>
+            <text class="meta-item {{item.is_overdue ? 'overdue' : ''}}">📅 {{item.require_date}}</text>
+          </view>
+        </view>
+        <text class="card-arrow">›</text>
+      </view>
+    </view>
+
+  </view>
+</view>

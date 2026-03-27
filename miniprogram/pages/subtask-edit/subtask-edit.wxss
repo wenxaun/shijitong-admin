@@ -1,0 +1,294 @@
+/* pages/subtask-edit/subtask-edit.wxss */
+
+.container {
+  min-height: 100vh;
+  background: #F5F7FA;
+  padding-bottom: 200rpx;
+}
+
+/* 任务信息头部 */
+.task-header {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, #1377EB 0%, #1E88E5 100%);
+  padding: 30rpx;
+  color: #fff;
+}
+
+.header-icon {
+  font-size: 48rpx;
+  margin-right: 20rpx;
+}
+
+.header-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.parent-task-label {
+  font-size: 24rpx;
+  opacity: 0.8;
+}
+
+.parent-task-name {
+  font-size: 30rpx;
+  font-weight: 500;
+  margin-top: 6rpx;
+}
+
+/* 表单区域 */
+.form-section {
+  padding: 24rpx;
+}
+
+.form-item {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  margin-bottom: 24rpx;
+}
+
+.form-label {
+  font-size: 28rpx;
+  color: #333;
+  margin-bottom: 16rpx;
+  display: flex;
+  align-items: center;
+}
+
+.required {
+  color: #FF5252;
+  margin-right: 8rpx;
+}
+
+.form-input {
+  width: 100%;
+  height: 80rpx;
+  background: #F5F7FA;
+  border-radius: 12rpx;
+  padding: 0 24rpx;
+  font-size: 28rpx;
+  box-sizing: border-box;
+}
+
+.form-textarea {
+  width: 100%;
+  height: 180rpx;
+  background: #F5F7FA;
+  border-radius: 12rpx;
+  padding: 24rpx;
+  font-size: 28rpx;
+  box-sizing: border-box;
+}
+
+.form-picker {
+  width: 100%;
+  height: 80rpx;
+  background: #F5F7FA;
+  border-radius: 12rpx;
+  padding: 0 24rpx;
+  font-size: 28rpx;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.form-picker.placeholder {
+  color: #999;
+}
+
+.form-hint {
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 12rpx;
+}
+
+/* 协助人管理 */
+.collaborator-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.collaborator-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin-bottom: 20rpx;
+}
+
+.collaborator-tag {
+  display: flex;
+  align-items: center;
+  background: #E3F2FD;
+  border: 1rpx solid #BBDEFB;
+  border-radius: 30rpx;
+  padding: 10rpx 20rpx;
+  max-width: 100%;
+}
+
+.collaborator-name {
+  font-size: 26rpx;
+  color: #1976D2;
+  max-width: 180rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.remove-icon {
+  font-size: 32rpx;
+  color: #1976D2;
+  margin-left: 12rpx;
+  font-weight: bold;
+}
+
+.add-collaborator-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 2rpx dashed #D0D0D0;
+  border-radius: 12rpx;
+  padding: 20rpx;
+}
+
+.add-icon {
+  font-size: 36rpx;
+  color: #1377EB;
+  margin-right: 12rpx;
+}
+
+.add-text {
+  font-size: 28rpx;
+  color: #1377EB;
+}
+
+/* 流转历史 */
+.flow-history-section {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  margin-bottom: 24rpx;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24rpx;
+  padding-bottom: 20rpx;
+  border-bottom: 1rpx solid #F0F0F0;
+}
+
+.section-title {
+  font-size: 30rpx;
+  font-weight: 500;
+  color: #333;
+}
+
+.section-count {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.flow-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.flow-item {
+  display: flex;
+  align-items: flex-start;
+}
+
+.flow-arrow {
+  font-size: 32rpx;
+  color: #1377EB;
+  margin-right: 16rpx;
+  margin-top: 4rpx;
+}
+
+.flow-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.flow-people {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.from-name {
+  color: #666;
+}
+
+.to-name {
+  color: #1377EB;
+  font-weight: 500;
+}
+
+.flow-date {
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 6rpx;
+}
+
+.flow-reason {
+  font-size: 24rpx;
+  color: #666;
+  margin-top: 6rpx;
+  background: #F5F7FA;
+  padding: 10rpx 16rpx;
+  border-radius: 8rpx;
+}
+
+/* 底部按钮 */
+.bottom-btn {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  padding: 24rpx 32rpx;
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.08);
+  display: flex;
+  gap: 20rpx;
+}
+
+.save-btn {
+  flex: 1;
+  height: 88rpx;
+  background: linear-gradient(135deg, #1377EB 0%, #1E88E5 100%);
+  color: #fff;
+  font-size: 32rpx;
+  font-weight: 500;
+  border-radius: 44rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+}
+
+.save-btn::after {
+  border: none;
+}
+
+.delete-btn {
+  width: 200rpx;
+  height: 88rpx;
+  background: #fff;
+  color: #FF5252;
+  font-size: 28rpx;
+  border-radius: 44rpx;
+  border: 2rpx solid #FF5252;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.delete-btn::after {
+  border: none;
+}

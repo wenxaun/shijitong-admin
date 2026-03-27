@@ -1,0 +1,97 @@
+<!--pages/edit/edit.wxml-->
+<view class="container">
+  <view class="form">
+    <!-- 任务名称 -->
+    <view class="form-item card">
+      <view class="form-label">任务名称 <text class="required">*</text></view>
+      <input class="form-input" placeholder="请输入任务名称" value="{{taskName}}" bindinput="onTaskNameInput" maxlength="50"/>
+    </view>
+
+    <!-- 任务描述 -->
+    <view class="form-item card">
+      <view class="form-label">任务描述</view>
+      <textarea class="form-textarea" placeholder="请输入任务描述（可选）" value="{{taskDescription}}" bindinput="onDescriptionInput" maxlength="500"/>
+    </view>
+
+    <!-- 优先级 -->
+    <view class="form-item card">
+      <view class="form-label">优先级</view>
+      <view class="radio-group">
+        <view class="radio-item {{priority === 'P0' ? 'active' : ''}}" bindtap="setPriority" data-value="P0">
+          <text>P0 - 紧急重要</text>
+        </view>
+        <view class="radio-item {{priority === 'P1' ? 'active' : ''}}" bindtap="setPriority" data-value="P1">
+          <text>P1 - 重要</text>
+        </view>
+        <view class="radio-item {{priority === 'P2' ? 'active' : ''}}" bindtap="setPriority" data-value="P2">
+          <text>P2 - 普通</text>
+        </view>
+        <view class="radio-item {{priority === 'P3' ? 'active' : ''}}" bindtap="setPriority" data-value="P3">
+          <text>P3 - 次要</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 分类 -->
+    <view class="form-item card">
+      <view class="form-label">分类</view>
+      <input class="form-input" placeholder="请输入分类（如：盛合智联、龙耀辉科技等）" value="{{category}}" bindinput="onCategoryInput" maxlength="20"/>
+    </view>
+
+    <!-- 要求完成日期 -->
+    <view class="form-item card">
+      <view class="form-label">要求完成日期 <text class="required">*</text></view>
+      <picker mode="date" value="{{requireDate}}" bindchange="onDateChange">
+        <view class="form-picker {{requireDate ? '' : 'placeholder'}}">
+          {{requireDate || '选择日期'}}
+        </view>
+      </picker>
+    </view>
+
+    <!-- 执行人 -->
+    <view class="form-item card">
+      <view class="form-label">执行人</view>
+      <picker mode="selector" range="{{executorList}}" range-key="name" value="{{executorIndex}}" bindchange="onExecutorChange">
+        <view class="form-picker {{executorIndex >= 0 ? '' : 'placeholder'}}">
+          {{executorIndex >= 0 ? executorList[executorIndex].name : '选择执行人'}}
+        </view>
+      </picker>
+    </view>
+
+    <!-- 复盘字段（逾期任务必填） -->
+    <view wx:if="{{isOverdue}}" class="review-section">
+      <view class="section-title">📝 复盘反思（逾期必填）</view>
+      
+      <view class="form-item card">
+        <view class="form-label">学习收获 <text class="required">*</text></view>
+        <textarea class="form-textarea" placeholder="通过本次任务学到了什么？" value="{{learnings}}" bindinput="onLearningsInput" maxlength="500"/>
+      </view>
+      
+      <view class="form-item card">
+        <view class="form-label">延迟原因 <text class="required">*</text></view>
+        <textarea class="form-textarea" placeholder="为什么延迟了？" value="{{delayReason}}" bindinput="onDelayReasonInput" maxlength="500"/>
+      </view>
+      
+      <view class="form-item card">
+        <view class="form-label">反思改进 <text class="required">*</text></view>
+        <textarea class="form-textarea" placeholder="下次如何改进？" value="{{improvements}}" bindinput="onImprovementsInput" maxlength="500"/>
+      </view>
+      
+      <view class="form-item card">
+        <view class="form-label">归因分类 <text class="required">*</text></view>
+        <view class="tag-selector">
+          <view wx:for="{{attributionOptions}}" wx:key="*this" 
+                class="tag-item {{attributionTags.includes(item) ? 'active' : ''}}"
+                bindtap="toggleAttribution" data-value="{{item}}">
+            {{item}}
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 提交按钮 -->
+    <view class="submit-btn" bindtap="submitEdit">
+      <text>保存修改</text>
+    </view>
+  </view>
+</view>

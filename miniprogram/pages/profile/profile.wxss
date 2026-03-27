@@ -1,0 +1,154 @@
+/* pages/profile/profile.wxss - 飞书风格重构 */
+
+/* 用户头部 */
+.profile-header {
+  background: linear-gradient(135deg, var(--fs-blue), #2B85E4);
+  padding: 80rpx var(--fs-spacing-page) 100rpx;
+  margin: 0 var(--fs-spacing-page) var(--fs-spacing-card);
+  border-radius: var(--fs-radius-card);
+  box-shadow: var(--fs-shadow-card);
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+}
+
+.avatar {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  border: 4rpx solid rgba(255,255,255,0.3);
+  flex-shrink: 0;
+}
+
+.avatar-placeholder {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 56rpx;
+  font-weight: var(--fs-weight-semibold);
+  color: var(--fs-white);
+  border: 4rpx solid rgba(255,255,255,0.3);
+  flex-shrink: 0;
+}
+
+.user-info {
+  flex: 1;
+  min-width: 0;
+  margin-left: var(--fs-spacing-item);
+}
+
+.nickname {
+  font-size: var(--fs-font-title);
+  color: var(--fs-white);
+  margin-bottom: var(--fs-spacing-small);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.organization {
+  display: flex;
+  align-items: center;
+  font-size: var(--fs-font-small);
+  color: rgba(255,255,255,0.8);
+  margin-bottom: 8rpx;
+}
+
+.organization .icon {
+  margin-right: 8rpx;
+}
+
+.userid {
+  font-size: var(--fs-font-tiny);
+  color: rgba(255,255,255,0.6);
+}
+
+/* 菜单区块 */
+.menu-section {
+  margin: 0 var(--fs-spacing-page) var(--fs-spacing-card);
+}
+
+.section-title {
+  font-size: var(--fs-font-small);
+  font-weight: var(--fs-weight-medium);
+  padding: 0 var(--fs-spacing-small);
+  margin-bottom: var(--fs-spacing-small);
+}
+
+/* 菜单列表 */
+.menu-list {
+  background: var(--fs-white);
+  border-radius: var(--fs-radius-card);
+  overflow: hidden;
+  box-shadow: var(--fs-shadow-light);
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  height: 96rpx;
+  padding: 0 var(--fs-spacing-item);
+  border-bottom: 2rpx solid var(--fs-divider);
+  transition: background var(--fs-transition);
+}
+
+.menu-item:last-child {
+  border-bottom: none;
+}
+
+.menu-item:active {
+  background: var(--fs-bg);
+}
+
+.menu-item-left {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.menu-icon {
+  width: 48rpx;
+  height: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40rpx;
+  margin-right: var(--fs-spacing-small);
+  flex-shrink: 0;
+}
+
+.menu-label {
+  font-size: var(--fs-font-body);
+  flex: 1;
+  min-width: 0;
+}
+
+.menu-value {
+  font-size: var(--fs-font-small);
+  margin-right: var(--fs-spacing-small);
+}
+
+.menu-arrow {
+  font-size: 40rpx;
+  flex-shrink: 0;
+}
+
+/* 退出登录 */
+.logout-section {
+  padding: 0 var(--fs-spacing-page);
+  margin-bottom: var(--fs-spacing-card);
+}
+
+/* 版本信息 */
+.version-info {
+  text-align: center;
+  padding: var(--fs-spacing-item) 0;
+  font-size: var(--fs-font-tiny);
+}

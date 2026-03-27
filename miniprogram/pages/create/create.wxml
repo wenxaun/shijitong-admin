@@ -1,0 +1,131 @@
+<!--pages/create/create.wxml - 飞书风格修复版-->
+<view class="page-container">
+  <view class="form-section">
+    <!-- 任务名称 -->
+    <view class="form-item">
+      <view class="form-label-inline">
+        <text class="required">*</text>
+        <text class="label-text">任务名称</text>
+      </view>
+      <input 
+        class="form-input" 
+        placeholder="请输入任务名称" 
+        value="{{taskName}}" 
+        bindinput="onTaskNameInput" 
+        maxlength="50"
+      />
+    </view>
+
+    <!-- 任务描述 -->
+    <view class="form-item">
+      <view class="form-label-inline">
+        <text class="label-text">任务描述</text>
+      </view>
+      <textarea 
+        class="form-textarea" 
+        placeholder="请输入任务描述（可选）" 
+        value="{{taskDescription}}" 
+        bindinput="onDescriptionInput" 
+        maxlength="500"
+      />
+    </view>
+
+    <!-- 优先级 -->
+    <view class="form-item">
+      <view class="form-label">优先级</view>
+      <view class="priority-group">
+        <view 
+          class="priority-item {{priority === 'P0' ? 'active' : ''}}" 
+          bindtap="setPriority" 
+          data-value="P0"
+          data-priority="P0"
+        >
+          <view class="priority-label">P0</view>
+          <view class="priority-desc">紧急重要</view>
+        </view>
+        <view 
+          class="priority-item {{priority === 'P1' ? 'active' : ''}}" 
+          bindtap="setPriority" 
+          data-value="P1"
+          data-priority="P1"
+        >
+          <view class="priority-label">P1</view>
+          <view class="priority-desc">重要</view>
+        </view>
+        <view 
+          class="priority-item {{priority === 'P2' ? 'active' : ''}}" 
+          bindtap="setPriority" 
+          data-value="P2"
+          data-priority="P2"
+        >
+          <view class="priority-label">P2</view>
+          <view class="priority-desc">普通</view>
+        </view>
+        <view 
+          class="priority-item {{priority === 'P3' ? 'active' : ''}}" 
+          bindtap="setPriority" 
+          data-value="P3"
+          data-priority="P3"
+        >
+          <view class="priority-label">P3</view>
+          <view class="priority-desc">次要</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 分类 -->
+    <view class="form-item">
+      <view class="form-label">分类</view>
+      <input 
+        class="form-input" 
+        placeholder="请输入分类（如：盛合智联、龙耀辉科技等）" 
+        value="{{category}}" 
+        bindinput="onCategoryInput" 
+        maxlength="20"
+      />
+    </view>
+
+    <!-- 执行人 -->
+    <view class="form-item">
+      <view class="form-label">执行人</view>
+      <picker 
+        mode="selector" 
+        range="{{executorList}}" 
+        range-key="name" 
+        value="{{executorIndex}}" 
+        bindchange="onExecutorChange"
+      >
+        <view class="form-picker {{executorIndex >= 0 ? '' : 'placeholder'}}">
+          {{executorIndex >= 0 ? executorList[executorIndex].name : '选择执行人（默认为自己）'}}
+        </view>
+      </picker>
+    </view>
+
+    <!-- 要求完成日期 -->
+    <view class="form-item">
+      <view class="form-label-inline">
+        <text class="required">*</text>
+        <text class="label-text">要求完成日期</text>
+      </view>
+      <picker 
+        mode="date" 
+        value="{{requireDate}}" 
+        bindchange="onDateChange"
+      >
+        <view class="form-picker {{requireDate ? '' : 'placeholder'}}">
+          {{requireDate || '选择日期'}}
+        </view>
+      </picker>
+    </view>
+  </view>
+
+  <!-- 底部提交按钮 -->
+  <view class="submit-section">
+    <button class="btn btn-primary btn-block submit-btn" bindtap="submitTask">
+      创建任务
+    </button>
+  </view>
+  
+  <!-- 底部占位 -->
+  <view class="tabbar-placeholder"></view>
+</view>

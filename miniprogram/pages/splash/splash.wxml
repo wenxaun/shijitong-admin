@@ -1,0 +1,20 @@
+<!--pages/splash/splash.wxml - v5.0.6 启动页-->
+<view class="splash-container">
+  <view class="splash-content">
+    <!-- Logo -->
+    <view class="logo-icon">📊</view>
+    <view class="logo-title">事绩通</view>
+    <view class="logo-subtitle">事事有绩效，分分都清楚</view>
+    
+    <!-- 加载提示 -->
+    <view wx:if="{{loading}}" class="loading-tip">
+      <text>加载中...</text>
+    </view>
+    
+    <!-- 未登录：显示登录注册按钮 -->
+    <view wx:elif="{{!isLoggedIn}}" class="splash-buttons">
+      <button class="splash-btn primary" bindtap="goLogin">登录</button>
+      <button class="splash-btn secondary" bindtap="goRegister">注册</button>
+    </view>
+  </view>
+</view>

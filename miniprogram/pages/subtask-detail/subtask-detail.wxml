@@ -1,0 +1,90 @@
+<!--pages/subtask-detail/subtask-detail.wxml - v5.0.0 子任务与清单-->
+<view class="page-container">
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading-container">
+    <view class="loading-text">加载中...</view>
+  </view>
+
+  <!-- 子任务详情 -->
+  <view wx:if="{{!loading && subtask}}" class="detail-content">
+    
+    <!-- 子任务信息卡片 -->
+    <view class="subtask-header-card">
+      <view class="subtask-name">{{subtask.task_name}}</view>
+      <view wx:if="{{subtask.task_description}}" class="subtask-desc">{{subtask.task_description}}</view>
+      
+      <view class="subtask-meta-grid">
+        <view class="meta-item">
+          <text class="meta-label">负责人</text>
+          <text class="meta-value">{{subtask.executor_name || '未分配'}}</text>
+        </view>
+        <view class="meta-item">
+          <text class="meta-label">截止日期</text>
+          <text class="meta-value {{isOverdue ? 'overdue' : ''}}">{{subtask.require_date}}</text>
+        </view>
+        <view class="meta-item">
+          <text class="meta-label">优先级</text>
+          <text class="meta-value priority-{{subtask.priority || 'P2'}}">{{subtask.priority || '普通'}}</text>
+        </view>
+        <view class="meta-item">
+          <text class="meta-label">状态</text>
+          <view class="status-tag status-{{subtask.status}}">{{statusText}}</view>
+        </view>
+      </view>
+      
+      <!-- 操作按钮 -->
+      <view class="action-buttons">
+        <view wx:if="{{subtask.status !== 'completed'}}" class="action-btn complete" bindtap="completeSubtask">
+          <text class="btn-text">✓ 完成</text>
+        </view>
+        <view class="action-btn edit" bindtap="editSubtask">
+          <text class="btn-text">编辑</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 清单模块 -->
+    <view class="checklist-section">
+      <view class="section-header">
+        <text class="section-title">检查清单</text>
+        <text class="section-count">{{checklistCompletedCount}}/{{checklist.length}}</text>
+      </view>
+      
+      <!-- 进度条 -->
+      <view wx:if="{{checklist.length > 0}}" class="checklist-progress">
+        <view class="progress-bar">
+          <view class="progress-fill" style="width: {{checklistProgress}}%"></view>
+        </view>
+        <text class="progress-text">{{checklistProgress}}%</text>
+      </view>
+      
+      <!-- 清单项列表 -->
+      <view class="checklist-container">
+        <view wx:for="{{checklist}}" wx:key="id" wx:for-item="item" class="checklist-item {{item.completed ? 'completed' : ''}}">
+          <view class="checklist-checkbox" bindtap="toggleChecklistItem" data-id="{{item.id}}">
+            <text class="checkbox-mark">{{item.completed ? '✓' : ''}}</text>
+          </view>
+          <view class="checklist-content">
+            <text class="checklist-title">{{item.title}}</text>
+            <text wx:if="{{item.completed_at}}" class="checklist-time">{{formatDateTime(item.completed_at)}}</text>
+          </view>
+          <view class="checklist-delete" bindtap="deleteChecklistItem" data-id="{{item.id}}">
+            <text class="delete-icon">×</text>
+          </view>
+        </view>
+        
+        <!-- 添加清单项 -->
+        <view class="add-checklist-item" bindtap="showAddChecklist">
+          <text class="add-icon">+</text>
+          <text class="add-text">添加检查项</text>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 空状态 -->
+    <view wx:if="{{checklist.length === 0}}" class="empty-tip">
+      暂无检查项，点击上方「+」添加
+    </view>
+    
+  </view>
+</view>

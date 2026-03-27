@@ -1,0 +1,58 @@
+{
+  "pages": [
+    "pages/splash/splash",
+    "pages/index/index",
+    "pages/create/create",
+    "pages/detail/detail",
+    "pages/profile/profile",
+    "pages/review/review",
+    "pages/edit/edit",
+    "pages/exception/exception",
+    "pages/settings/settings",
+    "pages/history/history",
+    "pages/team/team",
+    "pages/team-edit/team-edit",
+    "pages/weekly/weekly",
+    "pages/stats/stats",
+    "pages/register/register",
+    "pages/login/login",
+    "pages/org-create/org-create",
+    "pages/dept-manage/dept-manage",
+    "pages/team-manage/team-manage",
+    "pages/subtask-manage/subtask-manage",
+    "pages/subtask-create/subtask-create",
+    "pages/subtask-detail/subtask-detail",
+    "pages/subtask-flow/subtask-flow",
+    "pages/subtask-edit/subtask-edit"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#1377EB",
+    "navigationBarTitleText": "事绩通",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#F5F7FA"
+  },
+  "tabBar": {
+    "color": "#666666",
+    "selectedColor": "#1377EB",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "任务"
+      },
+      {
+        "pagePath": "pages/create/create",
+        "text": "发布"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的"
+      }
+    ]
+  },
+  "sitemapLocation": "sitemap.json",
+  "style": "v2",
+  "lazyCodeLoading": "requiredComponents"
+}
