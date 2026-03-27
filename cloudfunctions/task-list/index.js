@@ -13,34 +13,38 @@ exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext()
   const { OPENID } = wxContext
   
+  console.log('[task-list] 开始查询任务列表, OPENID:', OPENID)
+  console.log('[task-list] 查询参数:', event)
+  
   try {
     const {
       status,        // 筛选状态：pending, in_progress, completed, cancelled
       priority,      // 筛选优先级：P0, P1, P2, P3
       time_filter,   // 时间筛选：all, today, week, month
-      role = 'executor', // 角色：executor(我执行的) / publisher(我发布的)
       page = 1,
       pageSize = 20
     } = event
     
-    // 构建查询条件
-    let query = {}
-    
-    // 按角色筛选
-    if (role === 'executor') {
-      query.executor_id = OPENID
-    } else if (role === 'publisher') {
-      query.publisher_id = OPENID
-    }
+    // 构建查询条件 - 同时查询我是执行人和我是发布人的任务
+    let baseQuery = _.or([
+      { executor_id: OPENID },
+      { publisher_id: OPENID }
+    ])
     
     // 按状态筛选
     if (status) {
-      query.status = status
+      baseQuery = _.and([
+        baseQuery,
+        { status: status }
+      ])
     }
     
     // 按优先级筛选
     if (priority) {
-      query.priority = priority
+      baseQuery = _.and([
+        baseQuery,
+        { priority: priority }
+      ])
     }
     
     // 按时间筛选
@@ -49,31 +53,41 @@ exports.main = async (event, context) => {
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
     
     if (time_filter === 'today') {
-      // 今日：require_date = today
-      query.require_date = todayStr
+      baseQuery = _.and([
+        baseQuery,
+        { require_date: todayStr }
+      ])
     } else if (time_filter === 'week') {
-      // 本周：require_date >= 本周一
       const monday = new Date(today)
-      monday.setDate(monday.getDate() - monday.getDay() + 1)
+      monday.setDate(monday.getDate() - today.getDay() + 1)
       const mondayStr = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`
-      query.require_date = _.gte(mondayStr)
+      baseQuery = _.and([
+        baseQuery,
+        { require_date: _.gte(mondayStr) }
+      ])
     } else if (time_filter === 'month') {
-      // 本月：require_date >= 本月 1 号
       const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
       const firstDayStr = `${firstDay.getFullYear()}-${String(firstDay.getMonth() + 1).padStart(2, '0')}-${String(firstDay.getDate()).padStart(2, '0')}`
-      query.require_date = _.gte(firstDayStr)
+      baseQuery = _.and([
+        baseQuery,
+        { require_date: _.gte(firstDayStr) }
+      ])
     }
+    
+    console.log('[task-list] 查询条件:', JSON.stringify(baseQuery))
     
     // 查询数据库
     const result = await db.collection('tasks')
-      .where(query)
+      .where(baseQuery)
       .orderBy('created_at', 'desc')
       .skip((page - 1) * pageSize)
       .limit(pageSize)
       .get()
     
+    console.log('[task-list] 查询到的任务数:', result.data.length)
+    
     // 获取总数
-    const countResult = await db.collection('tasks').where(query).count()
+    const countResult = await db.collection('tasks').where(baseQuery).count()
     
     // 格式化返回数据
     const tasks = result.data.map(task => ({
@@ -85,6 +99,7 @@ exports.main = async (event, context) => {
       category: task.category,
       publisher_id: task.publisher_id,
       executor_id: task.executor_id,
+      executor_name: task.executor_name,
       require_date: formatDate(task.require_date),
       complete_date: task.complete_date ? formatDate(task.complete_date) : null,
       score: task.score,
@@ -96,6 +111,8 @@ exports.main = async (event, context) => {
       created_at: formatDate(task.created_at),
       updated_at: formatDate(task.updated_at)
     }))
+    
+    console.log('[task-list] 返回任务列表, 数量:', tasks.length, '总数:', countResult.total)
     
     return {
       success: true,
@@ -109,7 +126,7 @@ exports.main = async (event, context) => {
     }
     
   } catch (err) {
-    console.error('获取任务列表失败:', err)
+    console.error('[task-list] 获取任务列表失败:', err)
     return {
       success: false,
       message: '获取任务列表失败：' + err.message,

@@ -12,6 +12,8 @@ exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext()
   const { OPENID } = wxContext
   
+  console.log('[team-create] 开始创建团队, OPENID:', OPENID)
+  
   try {
     const {
       organization_id,
@@ -31,6 +33,18 @@ exports.main = async (event, context) => {
       }
     }
     
+    // 检查团队名是否已存在
+    const existTeam = await db.collection('teams').where({
+      name: name
+    }).get()
+    
+    if (existTeam.data.length > 0) {
+      return {
+        success: false,
+        message: '团队名称已存在，请换一个名称'
+      }
+    }
+    
     // 获取用户信息
     const userRes = await db.collection('users').where({
       openid: OPENID
@@ -44,19 +58,12 @@ exports.main = async (event, context) => {
     }
     
     const user = userRes.data[0]
-    
-    // 权限检查 - 所有已登录用户都可以创建团队
-    // if (!['creator', 'admin', 'manager', 'publisher'].includes(user.role)) {
-    //   return {
-    //     success: false,
-    //     message: '无权限创建团队'
-    //   }
-    // }
+    console.log('[team-create] 用户信息:', user.nickname)
     
     // 创建团队
     const result = await db.collection('teams').add({
       data: {
-        organization_id: organization_id,
+        organization_id: organization_id || null,
         name: name,
         description: description || '',
         type: type,
@@ -87,6 +94,8 @@ exports.main = async (event, context) => {
       }
     })
     
+    console.log('[team-create] 团队创建成功, team_id:', result._id)
+    
     // 更新组织的团队数量（如果有组织）
     if (organization_id) {
       try {
@@ -97,12 +106,12 @@ exports.main = async (event, context) => {
           }
         })
       } catch (err) {
-        console.log('更新组织统计失败，跳过:', err.message)
+        console.log('[team-create] 更新组织统计失败，跳过:', err.message)
       }
     }
     
     // 创建团队成员关系
-    await db.collection('team_members').add({
+    const memberResult = await db.collection('team_members').add({
       data: {
         team_id: result._id,
         user_id: OPENID,
@@ -115,6 +124,8 @@ exports.main = async (event, context) => {
       }
     })
     
+    console.log('[team-create] 团队成员关系创建成功, member_id:', memberResult._id)
+    
     return {
       success: true,
       message: '团队创建成功！',
@@ -126,7 +137,7 @@ exports.main = async (event, context) => {
     }
     
   } catch (err) {
-    console.error('创建团队失败:', err)
+    console.error('[team-create] 创建团队失败:', err)
     return {
       success: false,
       message: '创建失败：' + err.message,

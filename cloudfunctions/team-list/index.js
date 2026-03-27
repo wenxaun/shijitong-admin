@@ -13,6 +13,8 @@ exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext()
   const { OPENID } = wxContext
   
+  console.log('[team-list] 开始查询团队列表, OPENID:', OPENID)
+  
   try {
     // 查询用户加入的团队（通过 team_members 表）
     const memberRes = await db.collection('team_members')
@@ -22,10 +24,15 @@ exports.main = async (event, context) => {
       })
       .get()
     
+    console.log('[team-list] 查询到的成员记录数:', memberRes.data.length)
+    console.log('[team-list] 成员记录:', JSON.stringify(memberRes.data))
+    
     const teamIds = memberRes.data.map(m => m.team_id)
+    console.log('[team-list] 团队ID列表:', teamIds)
     
     // 如果没有加入任何团队，返回空列表
     if (teamIds.length === 0) {
+      console.log('[team-list] 用户未加入任何团队')
       return {
         success: true,
         data: {
@@ -43,6 +50,8 @@ exports.main = async (event, context) => {
       .orderBy('created_at', 'desc')
       .get()
     
+    console.log('[team-list] 查询到的团队数:', teamsRes.data.length)
+    
     // 补充用户在各团队中的角色
     const teams = teamsRes.data.map(team => {
       const memberInfo = memberRes.data.find(m => m.team_id === team._id)
@@ -53,6 +62,8 @@ exports.main = async (event, context) => {
       }
     })
     
+    console.log('[team-list] 返回团队列表, 数量:', teams.length)
+    
     return {
       success: true,
       data: {
@@ -62,7 +73,7 @@ exports.main = async (event, context) => {
     }
     
   } catch (err) {
-    console.error('获取团队列表失败:', err)
+    console.error('[team-list] 获取团队列表失败:', err)
     return {
       success: false,
       message: '获取失败：' + err.message,
