@@ -156,15 +156,14 @@ export default function SubtaskCreate() {
               <Text className="text-red-500">*</Text>
               <Text className="text-sm text-gray-700 ml-1">子任务名称</Text>
             </View>
-            <View className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
               <Input
                 placeholder="请输入子任务名称"
+                placeholderClass="text-gray-400"
                 value={taskName}
                 onInput={(e) => setTaskName(e.detail.value)}
                 maxlength={50}
-                className="bg-transparent"
+                className="bg-gray-50 border-gray-200 h-10"
               />
-            </View>
           </CardContent>
         </Card>
 
@@ -172,16 +171,15 @@ export default function SubtaskCreate() {
         <Card>
           <CardContent className="p-3">
             <Text className="text-sm text-gray-700 mb-2">任务描述</Text>
-            <View className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
               <Textarea
                 placeholder="请输入任务描述（可选）"
+                placeholderClass="text-gray-400"
                 value={taskDescription}
                 onInput={(e) => setTaskDescription(e.detail.value)}
                 maxlength={500}
-                className="bg-transparent"
-                style={{ minHeight: '80px', width: '100%' }}
+                className="bg-gray-50 border-gray-200 h-20"
+                style={{ minHeight: '80px' }}
               />
-            </View>
           </CardContent>
         </Card>
 

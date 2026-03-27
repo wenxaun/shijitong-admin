@@ -633,12 +633,13 @@ export default function Detail() {
 
               {/* 评论输入 */}
               <View className="flex items-center gap-2 mt-3">
-                <View className="flex-1 bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+                <View className="flex-1">
                   <Input
                     placeholder="写下你的评论..."
+                    placeholderClass="text-gray-400"
                     value={commentInput}
                     onInput={(e) => setCommentInput(e.detail.value)}
-                    className="bg-transparent"
+                    className="bg-gray-50 border-gray-200 h-10"
                   />
                 </View>
                 <Button size="sm" onClick={addComment}>发送</Button>

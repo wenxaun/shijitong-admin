@@ -206,7 +206,7 @@ export default function TeamEdit() {
     setInviteCode(code);
     
     try {
-      await Taro.setClipboardData({ text: code } as any);
+      await Taro.setClipboardData({ data: code });
       Taro.showToast({ title: '已复制邀请码', icon: 'success' });
     } catch (err) {
       console.error('复制失败:', err);
@@ -214,17 +214,24 @@ export default function TeamEdit() {
   };
 
   // 邀请成员
-  const inviteMember = () => {
-    Taro.showModal({
-      title: '邀请成员',
-      content: `邀请码: ${inviteCode || generateInviteCode()}\n\n分享此邀请码给需要加入的成员`,
-      confirmText: '复制邀请码',
-      success: (res) => {
+  const inviteMember = async () => {
+    const code = inviteCode || generateInviteCode();
+    setInviteCode(code);
+    
+    try {
+      await Taro.showModal({
+        title: '邀请成员',
+        content: `邀请码: ${code}\n\n分享此邀请码给需要加入的成员`,
+        confirmText: '复制邀请码'
+      }).then((res) => {
         if (res.confirm) {
           copyInviteCode();
         }
-      }
-    });
+      });
+    } catch (err) {
+      console.error('邀请成员失败:', err);
+      Taro.showToast({ title: '操作失败', icon: 'none' });
+    }
   };
 
   // 修改成员角色
@@ -372,29 +379,27 @@ export default function TeamEdit() {
           <Card>
             <CardContent className="p-4">
               <Text className="text-sm text-gray-500 mb-2">团队名称 *</Text>
-              <View className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
-                <Input
-                  placeholder="请输入团队名称"
-                  value={teamName}
-                  onInput={(e) => setTeamName(e.detail.value)}
-                  maxlength={30}
-                  disabled={!isCreator}
-                  className="bg-transparent"
-                />
-              </View>
+              <Input
+                placeholder="请输入团队名称"
+                placeholderClass="text-gray-400"
+                value={teamName}
+                onInput={(e) => setTeamName(e.detail.value)}
+                maxlength={30}
+                disabled={!isCreator}
+                className="bg-gray-50 border-gray-200 h-10"
+              />
 
               <Text className="text-sm text-gray-500 mb-2 mt-4">团队描述</Text>
-              <View className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
-                <Textarea
-                  placeholder="请输入团队描述（可选）"
-                  value={teamDesc}
-                  onInput={(e) => setTeamDesc(e.detail.value)}
-                  maxlength={200}
-                  disabled={!isCreator}
-                  className="bg-transparent"
-                  style={{ minHeight: '80px', width: '100%' }}
-                />
-              </View>
+              <Textarea
+                placeholder="请输入团队描述（可选）"
+                placeholderClass="text-gray-400"
+                value={teamDesc}
+                onInput={(e) => setTeamDesc(e.detail.value)}
+                maxlength={200}
+                disabled={!isCreator}
+                className="bg-gray-50 border-gray-200 h-20"
+                style={{ minHeight: '80px' }}
+              />
 
               {isCreator && (
                 <Button 
