@@ -59,6 +59,53 @@ export interface User {
 }
 
 /**
+ * 团队成员角色
+ */
+export type TeamMemberRole = 'owner' | 'admin' | 'member';
+
+/**
+ * 团队成员权限
+ */
+export interface TeamMemberPermissions {
+  can_create_task: boolean;      // 创建任务
+  can_assign_task: boolean;      // 分配任务
+  can_view_all_tasks: boolean;   // 查看所有任务
+  can_edit_team: boolean;        // 编辑团队信息
+  can_invite_member: boolean;    // 邀请成员
+  can_remove_member: boolean;    // 移除成员
+}
+
+/**
+ * 团队成员
+ */
+export interface TeamMember {
+  openid: string;
+  nickname: string;
+  avatar_url?: string;
+  role: TeamMemberRole;
+  permissions: TeamMemberPermissions;
+  joined_at: string;
+  task_count?: number;           // 任务数量
+  completed_count?: number;      // 完成数量
+}
+
+/**
+ * 邀请链接
+ */
+export interface InviteLink {
+  _id: string;
+  team_id: string;
+  team_name: string;
+  inviter_id: string;
+  inviter_name: string;
+  invite_code: string;
+  expires_at: string;
+  max_uses: number;
+  used_count: number;
+  created_at: string;
+}
+
+/**
  * 团队类型
  */
 export interface Team {
@@ -66,7 +113,10 @@ export interface Team {
   name: string;
   description?: string;
   leader_id: string;
+  leader_name?: string;
   members: string[];
+  member_details?: TeamMember[];
+  invite_code?: string;
   created_at: string;
 }
 

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Check, Pencil, Plus, Trash2 } from 'lucide-react-taro';
+import { Check, Pencil, Plus, Trash2, Play } from 'lucide-react-taro';
 
 // 状态映射
 const STATUS_MAP: Record<TaskStatus, { label: string; color: string }> = {
@@ -98,6 +98,33 @@ export default function SubtaskDetail() {
       loadSubtask();
     }
   });
+
+  // 开始子任务
+  const startSubtask = () => {
+    Taro.showModal({
+      title: '确认开始',
+      content: '确定开始该子任务吗？',
+      success: async (res) => {
+        if (res.confirm) {
+          try {
+            const result = await callFunction<CloudResponse>(
+              CLOUD_FUNCTIONS.SUBTASK_UPDATE,
+              { subtask_id: subtaskId, status: 'in_progress' }
+            );
+
+            if (result.success) {
+              Taro.showToast({ title: '开始成功', icon: 'success' });
+              loadSubtask();
+            } else {
+              Taro.showToast({ title: result.message || '操作失败', icon: 'none' });
+            }
+          } catch (err) {
+            Taro.showToast({ title: '操作失败', icon: 'none' });
+          }
+        }
+      }
+    });
+  };
 
   // 完成子任务
   const completeSubtask = () => {
@@ -278,7 +305,13 @@ export default function SubtaskDetail() {
 
             {/* 操作按钮 */}
             <View className="flex gap-3">
-              {subtask.status !== 'completed' && (
+              {subtask.status === 'pending' && (
+                <Button className="flex-1 bg-blue-500 text-white" onClick={startSubtask}>
+                  <Play size={16} color="#ffffff" />
+                  <Text className="text-white ml-2">开始</Text>
+                </Button>
+              )}
+              {subtask.status === 'in_progress' && (
                 <Button className="flex-1 bg-green-500 text-white" onClick={completeSubtask}>
                   <Check size={16} color="#ffffff" />
                   <Text className="text-white ml-2">完成</Text>

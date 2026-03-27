@@ -8,7 +8,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 
 interface Executor {
   openid: string;
@@ -138,11 +137,13 @@ export default function SubtaskCreate() {
     }
   };
 
+
+
   const priorityOptions = [
-    { value: 'P0', label: '紧急', color: 'bg-red-100 text-red-600' },
-    { value: 'P1', label: '高', color: 'bg-orange-100 text-orange-600' },
-    { value: 'P2', label: '中', color: 'bg-blue-100 text-blue-600' },
-    { value: 'P3', label: '低', color: 'bg-gray-100 text-gray-600' }
+    { value: 'P0', label: '紧急', color: 'bg-red-50 text-red-500' },
+    { value: 'P1', label: '高', color: 'bg-orange-50 text-orange-500' },
+    { value: 'P2', label: '中', color: 'bg-blue-50 text-blue-500' },
+    { value: 'P3', label: '低', color: 'bg-gray-50 text-gray-400' }
   ];
 
   return (
@@ -232,21 +233,44 @@ export default function SubtaskCreate() {
 
         {/* 优先级 */}
         <Card>
-          <CardContent className="p-3">
-            <Text className="text-sm text-gray-700 mb-2">优先级</Text>
-            <View className="flex gap-2">
-              {priorityOptions.map((opt) => (
-                <View
-                  key={opt.value}
-                  className={`flex-1 p-2 rounded-lg border-2 text-center ${
-                    priority === opt.value ? 'border-blue-500' : 'border-transparent'
-                  }`}
-                  onClick={() => setPriority(opt.value as any)}
-                >
-                  <Badge className={opt.color}>{opt.value}</Badge>
-                  <Text className="text-xs text-gray-500 mt-1">{opt.label}</Text>
-                </View>
-              ))}
+          <CardContent className="p-4">
+            <Text className="text-sm text-gray-700 mb-3">优先级</Text>
+            <View className="flex gap-3">
+              {priorityOptions.map((opt) => {
+                const isSelected = priority === opt.value;
+                return (
+                  <View
+                    key={opt.value}
+                    className={`flex-1 py-3 px-2 rounded-xl flex flex-col items-center justify-center transition-all ${
+                      isSelected
+                        ? opt.value === 'P0'
+                          ? 'bg-red-500'
+                          : opt.value === 'P1'
+                          ? 'bg-orange-500'
+                          : opt.value === 'P2'
+                          ? 'bg-blue-500'
+                          : 'bg-gray-400'
+                        : 'bg-gray-50'
+                    }`}
+                    onClick={() => setPriority(opt.value as any)}
+                  >
+                    <Text
+                      className={`text-sm font-semibold ${
+                        isSelected ? 'text-white' : opt.color.split(' ')[1]
+                      }`}
+                    >
+                      {opt.value}
+                    </Text>
+                    <Text
+                      className={`text-xs mt-1 ${
+                        isSelected ? 'text-white opacity-80' : 'text-gray-400'
+                      }`}
+                    >
+                      {opt.label}
+                    </Text>
+                  </View>
+                );
+              })}
             </View>
           </CardContent>
         </Card>
