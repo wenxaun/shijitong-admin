@@ -1,4 +1,4 @@
-import { View, Text, Picker } from '@tarojs/components';
+import { View, Text, Picker, Input as TaroInput, Textarea as TaroTextarea } from '@tarojs/components';
 import { useState, useEffect } from 'react';
 import Taro, { useRouter } from '@tarojs/taro';
 import { useUserStore } from '@/stores/user';
@@ -7,8 +7,6 @@ import { Task, TaskPriority, CloudResponse } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 
 // 优先级配置
@@ -236,14 +234,16 @@ export default function Edit() {
               <Text className="text-red-500 mr-1">*</Text>
               <Text>任务名称</Text>
             </Label>
-            <Input
-              placeholder="请输入任务名称"
-              placeholderClass="text-gray-400"
-              value={taskName}
-              onInput={(e) => setTaskName(e.detail.value)}
-              maxlength={50}
-              className="bg-gray-50 border-gray-200 h-10"
-            />
+            <View className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+              <TaroInput
+                placeholder="请输入任务名称"
+                placeholderClass="text-gray-400"
+                value={taskName}
+                onInput={(e) => setTaskName(e.detail.value)}
+                maxlength={50}
+                className="w-full text-sm"
+              />
+            </View>
           </CardContent>
         </Card>
 
@@ -251,15 +251,17 @@ export default function Edit() {
         <Card>
           <CardContent className="p-3">
             <Label className="text-sm text-gray-500 mb-2">任务描述</Label>
-            <Textarea
-              placeholder="请输入任务描述（可选）"
-              placeholderClass="text-gray-400"
-              value={taskDescription}
-              onInput={(e) => setTaskDescription(e.detail.value)}
-              maxlength={500}
-              className="bg-gray-50 border-gray-200 h-24"
-              style={{ minHeight: '96px' }}
-            />
+            <View className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+              <TaroTextarea
+                placeholder="请输入任务描述（可选）"
+                placeholderClass="text-gray-400"
+                value={taskDescription}
+                onInput={(e) => setTaskDescription(e.detail.value)}
+                maxlength={500}
+                className="w-full text-sm"
+                style={{ minHeight: '80px' }}
+              />
+            </View>
           </CardContent>
         </Card>
 
@@ -291,14 +293,16 @@ export default function Edit() {
         <Card>
           <CardContent className="p-3">
             <Label className="text-sm text-gray-500 mb-2">分类</Label>
-            <Input
-              placeholder="请输入分类"
-              placeholderClass="text-gray-400"
-              value={category}
-              onInput={(e) => setCategory(e.detail.value)}
-              maxlength={20}
-              className="bg-gray-50 border-gray-200 h-10"
-            />
+            <View className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+              <TaroInput
+                placeholder="请输入分类"
+                placeholderClass="text-gray-400"
+                value={category}
+                onInput={(e) => setCategory(e.detail.value)}
+                maxlength={20}
+                className="w-full text-sm"
+              />
+            </View>
           </CardContent>
         </Card>
 
@@ -354,15 +358,17 @@ export default function Edit() {
                   <Text className="text-red-500 mr-1">*</Text>
                   <Text>学习收获</Text>
                 </Label>
-                <Textarea
-                  placeholder="通过本次任务学到了什么？"
-                  placeholderClass="text-gray-400"
-                  value={learnings}
-                  onInput={(e) => setLearnings(e.detail.value)}
-                  maxlength={500}
-                  className="bg-gray-50 border-gray-200 h-24"
-                  style={{ minHeight: '96px' }}
-                />
+                <View className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+                  <TaroTextarea
+                    placeholder="通过本次任务学到了什么？"
+                    placeholderClass="text-gray-400"
+                    value={learnings}
+                    onInput={(e) => setLearnings(e.detail.value)}
+                    maxlength={500}
+                    className="w-full text-sm"
+                    style={{ minHeight: '80px' }}
+                  />
+                </View>
               </CardContent>
             </Card>
 
@@ -372,15 +378,17 @@ export default function Edit() {
                   <Text className="text-red-500 mr-1">*</Text>
                   <Text>延迟原因</Text>
                 </Label>
-                <Textarea
-                  placeholder="为什么延迟了？"
-                  placeholderClass="text-gray-400"
-                  value={delayReason}
-                  onInput={(e) => setDelayReason(e.detail.value)}
-                  maxlength={500}
-                  className="bg-gray-50 border-gray-200 h-24"
-                  style={{ minHeight: '96px' }}
-                />
+                <View className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+                  <TaroTextarea
+                    placeholder="为什么延迟了？"
+                    placeholderClass="text-gray-400"
+                    value={delayReason}
+                    onInput={(e) => setDelayReason(e.detail.value)}
+                    maxlength={500}
+                    className="w-full text-sm"
+                    style={{ minHeight: '80px' }}
+                  />
+                </View>
               </CardContent>
             </Card>
 
@@ -390,15 +398,17 @@ export default function Edit() {
                   <Text className="text-red-500 mr-1">*</Text>
                   <Text>反思改进</Text>
                 </Label>
-                <Textarea
-                  placeholder="下次如何改进？"
-                  placeholderClass="text-gray-400"
-                  value={improvements}
-                  onInput={(e) => setImprovements(e.detail.value)}
-                  maxlength={500}
-                  className="bg-gray-50 border-gray-200 h-24"
-                  style={{ minHeight: '96px' }}
-                />
+                <View className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+                  <TaroTextarea
+                    placeholder="下次如何改进？"
+                    placeholderClass="text-gray-400"
+                    value={improvements}
+                    onInput={(e) => setImprovements(e.detail.value)}
+                    maxlength={500}
+                    className="w-full text-sm"
+                    style={{ minHeight: '80px' }}
+                  />
+                </View>
               </CardContent>
             </Card>
 

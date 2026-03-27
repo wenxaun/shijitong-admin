@@ -89,18 +89,6 @@ const pageRestrictedSyntaxRules = [
   },
   {
     selector:
-      "ImportDeclaration[source.value='@tarojs/components'] ImportSpecifier[imported.name='Input']",
-    message:
-      "组件规范：Input 优先使用 '@/components/ui/input'，不要在页面中直接使用 '@tarojs/components' 的 Input。",
-  },
-  {
-    selector:
-      "ImportDeclaration[source.value='@tarojs/components'] ImportSpecifier[imported.name='Textarea']",
-    message:
-      "组件规范：Textarea 优先使用 '@/components/ui/textarea'，不要在页面中直接使用 '@tarojs/components' 的 Textarea。",
-  },
-  {
-    selector:
       "ImportDeclaration[source.value='@tarojs/components'] ImportSpecifier[imported.name='Label']",
     message:
       "组件规范：Label 优先使用 '@/components/ui/label'，不要在页面中直接使用 '@tarojs/components' 的 Label。",

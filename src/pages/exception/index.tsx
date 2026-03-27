@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Picker } from '@tarojs/components';
+import { View, Text, ScrollView, Picker, Textarea as TaroTextarea } from '@tarojs/components';
 import { useState, useEffect, useCallback } from 'react';
 import Taro, { useRouter } from '@tarojs/taro';
 import { callFunction } from '@/utils/cloud';
@@ -6,7 +6,6 @@ import type { CloudResponse } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CircleAlert, Calendar, Users, Send } from 'lucide-react-taro';
 
@@ -310,15 +309,17 @@ export default function Exception() {
               <Text className="text-red-500">*</Text>
               <Text className="text-sm font-semibold text-gray-700 ml-1">异常原因</Text>
             </View>
-              <Textarea
+            <View className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+              <TaroTextarea
                 placeholder="请详细说明异常情况、原因及解决方案..."
                 placeholderClass="text-gray-400"
                 value={reason}
                 onInput={(e) => setReason(e.detail.value)}
                 maxlength={500}
-                className="bg-gray-50 border-gray-200 h-24"
+                className="w-full text-sm"
                 style={{ minHeight: '100px' }}
               />
+            </View>
             <Text className="text-xs text-gray-400 mt-2 text-right">
               {reason.length}/500
             </Text>

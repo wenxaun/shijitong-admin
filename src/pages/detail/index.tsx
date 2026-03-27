@@ -1,4 +1,4 @@
-import { View, Text, ScrollView } from '@tarojs/components';
+import { View, Text, ScrollView, Input as TaroInput } from '@tarojs/components';
 import { useState, useEffect, useCallback } from 'react';
 import Taro, { useRouter } from '@tarojs/taro';
 import { useUserStore } from '@/stores/user';
@@ -7,7 +7,6 @@ import type { Task, TaskStatus, Subtask, CloudResponse } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
@@ -633,13 +632,13 @@ export default function Detail() {
 
               {/* 评论输入 */}
               <View className="flex items-center gap-2 mt-3">
-                <View className="flex-1">
-                  <Input
+                <View className="flex-1 bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+                  <TaroInput
                     placeholder="写下你的评论..."
                     placeholderClass="text-gray-400"
                     value={commentInput}
                     onInput={(e) => setCommentInput(e.detail.value)}
-                    className="bg-gray-50 border-gray-200 h-10"
+                    className="w-full text-sm"
                   />
                 </View>
                 <Button size="sm" onClick={addComment}>发送</Button>

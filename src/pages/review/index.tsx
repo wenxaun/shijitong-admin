@@ -1,4 +1,4 @@
-import { View, Text, ScrollView } from '@tarojs/components';
+import { View, Text, ScrollView, Textarea as TaroTextarea } from '@tarojs/components';
 import { useState, useEffect, useCallback } from 'react';
 import Taro, { useRouter } from '@tarojs/taro';
 import { useUserStore } from '@/stores/user';
@@ -7,7 +7,6 @@ import type { Task, CloudResponse } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Award, Lightbulb, CircleAlert, Check, Clock, CircleCheck, TrendingUp } from 'lucide-react-taro';
 
@@ -29,8 +28,7 @@ const ATTRIBUTION_TAGS = [
  * 2. 按时完成（completeDays = 0）：80分
  * 3. 逾期完成（completeDays > 0）：
  *    - 有异常上报：80分（按原截止日期评分）
- *    - 无异常上报，延期≤3天：80分
- *    - 无异常上报，延期>3天：60分
+ *    - 无异常上报，每逾期1天扣5分（最低60分）
  * 
  * 额外扣分：
  * - 子任务未完成：按比例扣分（最多10分）
@@ -55,14 +53,8 @@ const calculateScore = (
       // 有异常上报：按原截止日期评分（80分）
       score = 80;
     } else {
-      // 无异常上报
-      if (completeDays <= 3) {
-        // 延期≤3天：80分
-        score = 80;
-      } else {
-        // 延期>3天：60分
-        score = 60;
-      }
+      // 无异常上报：每逾期1天扣5分，最低60分
+      score = Math.max(60, 80 - completeDays * 5);
     }
   }
 
@@ -394,15 +386,17 @@ export default function Review() {
                 学习收获 {calculatedScore < 80 && <Text className="text-red-500">*</Text>}
               </Text>
             </View>
-              <Textarea
-                placeholder="记录这次任务中学到的知识、技能或经验..."
-                placeholderClass="text-gray-400"
-                value={learnings}
-                onInput={(e) => setLearnings(e.detail.value)}
-                maxlength={500}
-                className="bg-gray-50 border-gray-200 h-20"
-                style={{ minHeight: '80px' }}
-              />
+              <View className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+                <TaroTextarea
+                  placeholder="记录这次任务中学到的知识、技能或经验..."
+                  placeholderClass="text-gray-400"
+                  value={learnings}
+                  onInput={(e) => setLearnings(e.detail.value)}
+                  maxlength={500}
+                  className="w-full text-sm"
+                  style={{ minHeight: '80px' }}
+                />
+              </View>
             <Text className="text-xs text-gray-400 mt-1 text-right">{learnings.length}/500</Text>
           </CardContent>
         </Card>
@@ -420,15 +414,17 @@ export default function Review() {
                   该任务逾期完成且未上报异常，请说明延迟原因
                 </Text>
               </View>
-                <Textarea
+              <View className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+                <TaroTextarea
                   placeholder="说明任务延迟的具体原因..."
                   placeholderClass="text-gray-400"
                   value={delayReason}
                   onInput={(e) => setDelayReason(e.detail.value)}
                   maxlength={300}
-                  className="bg-gray-50 border-gray-200 h-16"
+                  className="w-full text-sm"
                   style={{ minHeight: '60px' }}
                 />
+              </View>
             </CardContent>
           </Card>
         )}
@@ -442,15 +438,17 @@ export default function Review() {
                 反思改进 {calculatedScore < 80 && <Text className="text-red-500">*</Text>}
               </Text>
             </View>
-              <Textarea
-                placeholder="总结经验教训，提出改进措施..."
-                placeholderClass="text-gray-400"
-                value={improvements}
-                onInput={(e) => setImprovements(e.detail.value)}
-                maxlength={500}
-                className="bg-gray-50 border-gray-200 h-20"
-                style={{ minHeight: '80px' }}
-              />
+              <View className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+                <TaroTextarea
+                  placeholder="总结经验教训，提出改进措施..."
+                  placeholderClass="text-gray-400"
+                  value={improvements}
+                  onInput={(e) => setImprovements(e.detail.value)}
+                  maxlength={500}
+                  className="w-full text-sm"
+                  style={{ minHeight: '80px' }}
+                />
+              </View>
           </CardContent>
         </Card>
 

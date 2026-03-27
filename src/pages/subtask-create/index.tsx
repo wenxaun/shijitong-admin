@@ -1,4 +1,4 @@
-import { View, Text, Picker } from '@tarojs/components';
+import { View, Text, Picker, Input as TaroInput, Textarea as TaroTextarea } from '@tarojs/components';
 import { useState, useEffect, useCallback } from 'react';
 import Taro, { useRouter } from '@tarojs/taro';
 import { useUserStore } from '@/stores/user';
@@ -6,8 +6,6 @@ import { callFunction, CLOUD_FUNCTIONS } from '@/utils/cloud';
 import type { CloudResponse } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 
 interface Executor {
   openid: string;
@@ -156,14 +154,16 @@ export default function SubtaskCreate() {
               <Text className="text-red-500">*</Text>
               <Text className="text-sm text-gray-700 ml-1">子任务名称</Text>
             </View>
-              <Input
+            <View className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+              <TaroInput
                 placeholder="请输入子任务名称"
                 placeholderClass="text-gray-400"
                 value={taskName}
                 onInput={(e) => setTaskName(e.detail.value)}
                 maxlength={50}
-                className="bg-gray-50 border-gray-200 h-10"
+                className="w-full text-sm"
               />
+            </View>
           </CardContent>
         </Card>
 
@@ -171,15 +171,17 @@ export default function SubtaskCreate() {
         <Card>
           <CardContent className="p-3">
             <Text className="text-sm text-gray-700 mb-2">任务描述</Text>
-              <Textarea
+            <View className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+              <TaroTextarea
                 placeholder="请输入任务描述（可选）"
                 placeholderClass="text-gray-400"
                 value={taskDescription}
                 onInput={(e) => setTaskDescription(e.detail.value)}
                 maxlength={500}
-                className="bg-gray-50 border-gray-200 h-20"
+                className="w-full text-sm"
                 style={{ minHeight: '80px' }}
               />
+            </View>
           </CardContent>
         </Card>
 

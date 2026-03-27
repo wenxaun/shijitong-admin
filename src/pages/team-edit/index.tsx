@@ -1,4 +1,4 @@
-import { View, Text, ScrollView } from '@tarojs/components';
+import { View, Text, ScrollView, Input as TaroInput, Textarea as TaroTextarea } from '@tarojs/components';
 import { useState, useEffect, useCallback } from 'react';
 import Taro, { useRouter } from '@tarojs/taro';
 import { useUserStore } from '@/stores/user';
@@ -6,9 +6,7 @@ import { callFunction } from '@/utils/cloud';
 import type { Team, CloudResponse, TeamMemberRole } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Crown, Shield, User, Menu, UserPlus, Trash2, Settings } from 'lucide-react-taro';
 
@@ -200,34 +198,22 @@ export default function TeamEdit() {
     return code;
   };
 
-  // 复制邀请码
-  const copyInviteCode = async () => {
-    const code = inviteCode || generateInviteCode();
-    setInviteCode(code);
-    
-    try {
-      await Taro.setClipboardData({ data: code });
-      Taro.showToast({ title: '已复制邀请码', icon: 'success' });
-    } catch (err) {
-      console.error('复制失败:', err);
-    }
-  };
-
   // 邀请成员
   const inviteMember = async () => {
     const code = inviteCode || generateInviteCode();
     setInviteCode(code);
     
     try {
-      await Taro.showModal({
+      const res = await Taro.showModal({
         title: '邀请成员',
         content: `邀请码: ${code}\n\n分享此邀请码给需要加入的成员`,
         confirmText: '复制邀请码'
-      }).then((res) => {
-        if (res.confirm) {
-          copyInviteCode();
-        }
       });
+      
+      if (res.confirm) {
+        await Taro.setClipboardData({ data: code });
+        Taro.showToast({ title: '已复制邀请码', icon: 'success' });
+      }
     } catch (err) {
       console.error('邀请成员失败:', err);
       Taro.showToast({ title: '操作失败', icon: 'none' });
@@ -324,6 +310,12 @@ export default function TeamEdit() {
           try {
             // H5 端模拟
             if (Taro.getEnv() !== Taro.ENV_TYPE.WEAPP) {
+              // 从本地存储删除团队
+              const storedTeams = Taro.getStorageSync('mock_teams') || '[]';
+              const teams = JSON.parse(storedTeams);
+              const filteredTeams = teams.filter((t: Team) => t._id !== teamId);
+              Taro.setStorageSync('mock_teams', JSON.stringify(filteredTeams));
+              
               Taro.showToast({ title: '已解散', icon: 'success' });
               setTimeout(() => Taro.navigateBack(), 1500);
               return;
@@ -379,27 +371,31 @@ export default function TeamEdit() {
           <Card>
             <CardContent className="p-4">
               <Text className="text-sm text-gray-500 mb-2">团队名称 *</Text>
-              <Input
-                placeholder="请输入团队名称"
-                placeholderClass="text-gray-400"
-                value={teamName}
-                onInput={(e) => setTeamName(e.detail.value)}
-                maxlength={30}
-                disabled={!isCreator}
-                className="bg-gray-50 border-gray-200 h-10"
-              />
+              <View className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+                <TaroInput
+                  placeholder="请输入团队名称"
+                  placeholderClass="text-gray-400"
+                  value={teamName}
+                  onInput={(e) => setTeamName(e.detail.value)}
+                  maxlength={30}
+                  disabled={!isCreator}
+                  className="w-full text-sm"
+                />
+              </View>
 
               <Text className="text-sm text-gray-500 mb-2 mt-4">团队描述</Text>
-              <Textarea
-                placeholder="请输入团队描述（可选）"
-                placeholderClass="text-gray-400"
-                value={teamDesc}
-                onInput={(e) => setTeamDesc(e.detail.value)}
-                maxlength={200}
-                disabled={!isCreator}
-                className="bg-gray-50 border-gray-200 h-20"
-                style={{ minHeight: '80px' }}
-              />
+              <View className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+                <TaroTextarea
+                  placeholder="请输入团队描述（可选）"
+                  placeholderClass="text-gray-400"
+                  value={teamDesc}
+                  onInput={(e) => setTeamDesc(e.detail.value)}
+                  maxlength={200}
+                  disabled={!isCreator}
+                  className="w-full text-sm"
+                  style={{ minHeight: '80px' }}
+                />
+              </View>
 
               {isCreator && (
                 <Button 
