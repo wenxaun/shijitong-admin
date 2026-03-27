@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Award, Lightbulb, CircleAlert, Check, Clock, CircleCheck } from 'lucide-react-taro';
+import { Award, Lightbulb, CircleAlert, Check, Clock, CircleCheck, TrendingUp } from 'lucide-react-taro';
 
 // 归因标签选项
 const ATTRIBUTION_TAGS = [
@@ -22,21 +22,31 @@ const ATTRIBUTION_TAGS = [
 ];
 
 // 计算自动评分
+// completeDays: 负数表示提前完成天数，0表示按时完成，正数表示逾期天数
 const calculateScore = (
-  isOverdue: boolean,
-  delayDays: number,
+  completeDays: number,
   subtaskProgress: number,
   hasSubtasks: boolean
 ): number => {
-  let score = 100;
+  let score = 80; // 基础分：按时完成80分
 
-  // 逾期扣分
-  if (isOverdue) {
-    if (delayDays <= 1) {
+  if (completeDays < 0) {
+    // 提前完成：加分（最多加20分，达到100分）
+    const earlyDays = Math.abs(completeDays);
+    if (earlyDays >= 7) {
+      score = 100; // 提前7天以上，满分
+    } else if (earlyDays >= 3) {
+      score = 95; // 提前3-6天，95分
+    } else if (earlyDays >= 1) {
+      score = 90; // 提前1-2天，90分
+    }
+  } else if (completeDays > 0) {
+    // 逾期完成：扣分
+    if (completeDays <= 1) {
       score -= 5; // 逾期1天扣5分
-    } else if (delayDays <= 3) {
+    } else if (completeDays <= 3) {
       score -= 10; // 逾期2-3天扣10分
-    } else if (delayDays <= 7) {
+    } else if (completeDays <= 7) {
       score -= 15; // 逾期4-7天扣15分
     } else {
       score -= 20; // 逾期超过7天扣20分
@@ -68,10 +78,10 @@ export default function Review() {
 
   const [loading, setLoading] = useState(true);
   const [task, setTask] = useState<Task | null>(null);
-  const [isOverdue, setIsOverdue] = useState(false);
-  const [delayDays, setDelayDays] = useState(0);
-  const [calculatedScore, setCalculatedScore] = useState(100);
+  const [completeDays, setCompleteDays] = useState(0); // 负数提前，0按时，正数逾期
+  const [calculatedScore, setCalculatedScore] = useState(80);
   const [subtaskProgress, setSubtaskProgress] = useState(100);
+  const [hasSubtasks, setHasSubtasks] = useState(false);
 
   // 复盘表单
   const [learnings, setLearnings] = useState('');
@@ -95,7 +105,7 @@ export default function Review() {
         const taskData = res.data.task;
         setTask(taskData);
 
-        // 检查是否逾期
+        // 计算完成时间差异
         if (taskData.require_date) {
           const requireDate = new Date(taskData.require_date);
           const completeDate = taskData.complete_date ? new Date(taskData.complete_date) : new Date();
@@ -105,9 +115,7 @@ export default function Review() {
           
           const diffTime = completeDate.getTime() - requireDate.getTime();
           const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-          
-          setIsOverdue(diffDays > 0);
-          setDelayDays(Math.max(0, diffDays));
+          setCompleteDays(diffDays);
         }
 
         // 如果已有复盘数据，填充表单
@@ -137,6 +145,7 @@ export default function Review() {
       if (res.success && res.data?.subtasks) {
         const subtasks = res.data.subtasks;
         if (subtasks.length > 0) {
+          setHasSubtasks(true);
           const completed = subtasks.filter(s => s.status === 'completed').length;
           const progress = Math.round((completed / subtasks.length) * 100);
           setSubtaskProgress(progress);
@@ -149,9 +158,9 @@ export default function Review() {
 
   // 计算评分
   useEffect(() => {
-    const score = calculateScore(isOverdue, delayDays, subtaskProgress, subtaskProgress < 100);
+    const score = calculateScore(completeDays, subtaskProgress, hasSubtasks);
     setCalculatedScore(score);
-  }, [isOverdue, delayDays, subtaskProgress]);
+  }, [completeDays, subtaskProgress, hasSubtasks]);
 
   useEffect(() => {
     loadTask();
@@ -174,7 +183,7 @@ export default function Review() {
       return;
     }
 
-    if (isOverdue && !delayReason.trim()) {
+    if (completeDays > 0 && !delayReason.trim()) {
       Taro.showToast({ title: '请填写延迟原因', icon: 'none' });
       return;
     }
@@ -191,7 +200,7 @@ export default function Review() {
         {
           task_id: taskId,
           learnings: learnings.trim(),
-          delay_reason: isOverdue ? delayReason.trim() : '',
+          delay_reason: completeDays > 0 ? delayReason.trim() : '',
           improvements: improvements.trim(),
           attribution_tags: selectedTags,
           score: calculatedScore,
@@ -217,17 +226,29 @@ export default function Review() {
   const getScoreNote = () => {
     const notes: string[] = [];
     
-    if (isOverdue) {
-      notes.push(`逾期${delayDays}天完成`);
+    if (completeDays < 0) {
+      notes.push(`提前${Math.abs(completeDays)}天完成`);
+    } else if (completeDays > 0) {
+      notes.push(`逾期${completeDays}天完成`);
     } else {
       notes.push('按时完成');
     }
     
-    if (subtaskProgress < 100) {
+    if (hasSubtasks && subtaskProgress < 100) {
       notes.push(`子任务完成率${subtaskProgress}%`);
     }
     
     return notes.join('；');
+  };
+
+  // 获取完成状态描述
+  const getCompletionStatus = () => {
+    if (completeDays < 0) {
+      return { text: `提前${Math.abs(completeDays)}天`, color: 'text-green-500', icon: TrendingUp };
+    } else if (completeDays > 0) {
+      return { text: `逾期${completeDays}天`, color: 'text-orange-500', icon: CircleAlert };
+    }
+    return { text: '按时完成', color: 'text-blue-500', icon: Clock };
   };
 
   if (loading) {
@@ -253,6 +274,8 @@ export default function Review() {
   }
 
   const scoreLevel = getScoreLevel(calculatedScore);
+  const completionStatus = getCompletionStatus();
+  const StatusIcon = completionStatus.icon;
 
   return (
     <View className="min-h-screen bg-gray-50">
@@ -263,8 +286,10 @@ export default function Review() {
             <Text className="text-lg font-bold text-gray-800 mb-2">{task.task_name}</Text>
             <View className="flex items-center gap-2 flex-wrap">
               <Badge className="bg-green-50 text-green-600">已完成</Badge>
-              {isOverdue && (
-                <Badge className="bg-orange-50 text-orange-600">逾期{delayDays}天</Badge>
+              {completeDays !== 0 && (
+                <Badge className={completeDays < 0 ? 'bg-green-50 text-green-600' : 'bg-orange-50 text-orange-600'}>
+                  {completeDays < 0 ? `提前${Math.abs(completeDays)}天` : `逾期${completeDays}天`}
+                </Badge>
               )}
               <Text className="text-sm text-gray-500">截止：{task.require_date}</Text>
             </View>
@@ -292,15 +317,15 @@ export default function Review() {
             <View className="bg-gray-50 rounded-lg p-3 space-y-2">
               <View className="flex items-center justify-between">
                 <View className="flex items-center">
-                  <Clock size={16} color={isOverdue ? '#F97316' : '#22C55E'} />
+                  <StatusIcon size={16} color={completeDays <= 0 ? '#22C55E' : '#F97316'} />
                   <Text className="text-sm text-gray-600 ml-2">完成时效</Text>
                 </View>
-                <Text className={`text-sm ${isOverdue ? 'text-orange-500' : 'text-green-500'}`}>
-                  {isOverdue ? `逾期${delayDays}天` : '按时完成'}
+                <Text className={`text-sm ${completionStatus.color}`}>
+                  {completionStatus.text}
                 </Text>
               </View>
               
-              {subtaskProgress < 100 && (
+              {hasSubtasks && subtaskProgress < 100 && (
                 <View className="flex items-center justify-between">
                   <View className="flex items-center">
                     <CircleCheck size={16} color="#F97316" />
@@ -308,6 +333,17 @@ export default function Review() {
                   </View>
                   <Text className="text-sm text-orange-500">{subtaskProgress}%</Text>
                 </View>
+              )}
+            </View>
+
+            {/* 评分规则说明 */}
+            <View className="mt-3 p-3 bg-blue-50 rounded-lg">
+              <Text className="text-xs text-blue-600 font-semibold mb-1">评分规则</Text>
+              <Text className="text-xs text-blue-500">• 按时完成：80分</Text>
+              <Text className="text-xs text-blue-500">• 提前1-2天：90分；提前3-6天：95分；提前7天以上：100分</Text>
+              <Text className="text-xs text-blue-500">• 逾期1天扣5分；2-3天扣10分；4-7天扣15分；7天以上扣20分</Text>
+              {hasSubtasks && (
+                <Text className="text-xs text-blue-500">• 子任务未完成：按比例扣分（最多10分）</Text>
               )}
             </View>
           </CardContent>
@@ -340,7 +376,7 @@ export default function Review() {
         </Card>
 
         {/* 延迟原因（逾期必填） */}
-        {isOverdue && (
+        {completeDays > 0 && (
           <Card className="mx-3 mt-3">
             <CardContent className="p-4">
               <View className="flex items-center mb-2">
