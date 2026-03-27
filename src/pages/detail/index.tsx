@@ -145,13 +145,15 @@ export default function Detail() {
   }, [taskId]);
 
   useEffect(() => {
-    loadTask();
-    loadSubtasks();
-  }, [loadTask, loadSubtasks]);
+    if (taskId && openid) {
+      loadTask();
+      loadSubtasks();
+    }
+  }, [taskId, openid, loadTask, loadSubtasks]);
 
   // 页面显示时刷新数据
   Taro.useDidShow(() => {
-    if (taskId) {
+    if (taskId && openid) {
       loadTask();
       loadSubtasks();
     }
@@ -444,6 +446,31 @@ export default function Detail() {
                 <Button variant="outline" className="flex-1 text-orange-500 border-orange-500" onClick={reportException}>
                   <TriangleAlert size={16} color="#F97316" />
                   <Text className="text-orange-500 ml-2">异常上报</Text>
+                </Button>
+              </View>
+            )}
+
+            {/* 异常状态处理按钮 */}
+            {canEdit && task.status === 'exception' && (
+              <View className="space-y-3">
+                <View className="bg-orange-50 rounded-lg p-3 mb-2">
+                  <Text className="text-sm text-orange-600">
+                    任务已上报异常，请根据情况处理
+                  </Text>
+                  {task.exception_type === 'delay' && task.new_deadline && (
+                    <Text className="text-xs text-orange-500 mt-1">
+                      申请延期至：{task.new_deadline}
+                    </Text>
+                  )}
+                  {task.exception_type === 'assist' && (
+                    <Text className="text-xs text-orange-500 mt-1">
+                      已申请协助
+                    </Text>
+                  )}
+                </View>
+                <Button className="w-full bg-green-500 text-white" onClick={completeTask}>
+                  <Check size={16} color="#ffffff" />
+                  <Text className="text-white ml-2">完成任务</Text>
                 </Button>
               </View>
             )}

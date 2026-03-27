@@ -33,6 +33,11 @@ export interface Task {
   attribution_tags?: string[];
   subtask_count?: number;
   progress?: number;
+  // 异常相关字段
+  exception_type?: 'delay' | 'assist';
+  exception_reason?: string;
+  new_deadline?: string;
+  assist_user_id?: string;
   created_at: string;
   updated_at: string;
 }
