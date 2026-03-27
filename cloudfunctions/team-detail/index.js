@@ -14,6 +14,8 @@ exports.main = async (event, context) => {
   const { OPENID } = wxContext
   const { team_id } = event
 
+  console.log('[team-detail] 开始查询团队详情, OPENID:', OPENID, 'team_id:', team_id)
+
   try {
     if (!team_id) {
       return {
@@ -33,37 +35,62 @@ exports.main = async (event, context) => {
     }
 
     const team = teamResult.data
+    console.log('[team-detail] 团队基本信息:', team)
 
     // 获取发布人名称
-    let leaderName = '未知'
-    if (team.leader_id) {
+    let leaderName = team.leader_name || '未知'
+    if (!team.leader_name && team.leader_id) {
       const leaderResult = await db.collection('users')
         .where({ openid: team.leader_id })
         .limit(1)
         .get()
       if (leaderResult.data.length > 0) {
-        leaderName = leaderResult.data[0].nick_name || '微信用户'
+        leaderName = leaderResult.data[0].nickname || leaderResult.data[0].nick_name || '微信用户'
       }
     }
 
-    // 构建 member_details
+    // 构建 member_details - 优先使用存储的 member_details
     let memberDetails = team.member_details || []
     
-    // 如果没有 member_details，从 users 集合查询
-    if (memberDetails.length === 0 && team.members && team.members.length > 0) {
-      const usersResult = await db.collection('users')
-        .where({
-          openid: _.in(team.members)
-        })
+    // 如果没有 member_details，尝试从 team_members 表查询
+    if (memberDetails.length === 0) {
+      console.log('[team-detail] member_details 为空，查询 team_members 表...')
+      const membersRes = await db.collection('team_members')
+        .where({ team_id: team_id })
         .get()
+      
+      if (membersRes.data.length > 0) {
+        memberDetails = membersRes.data.map(m => ({
+          openid: m.user_id,
+          nickname: m.user_name || '微信用户',
+          role: m.role === 'leader' ? 'owner' : m.role,
+          joined_at: m.joined_at
+        }))
+        console.log('[team-detail] 从 team_members 查询到成员:', memberDetails.length)
+      } else if (team.member_ids && team.member_ids.length > 0) {
+        // 如果 team_members 表也没有，从 users 表查询
+        console.log('[team-detail] team_members 表无数据，查询 users 表...')
+        const usersResult = await db.collection('users')
+          .where({
+            openid: _.in(team.member_ids)
+          })
+          .get()
 
-      memberDetails = usersResult.data.map(user => ({
-        openid: user.openid,
-        nickname: user.nick_name || '微信用户',
-        role: team.leader_id === user.openid ? 'owner' : 'member',
-        joined_at: team.created_at
-      }))
+        memberDetails = usersResult.data.map(user => ({
+          openid: user.openid,
+          nickname: user.nickname || user.nick_name || '微信用户',
+          role: team.leader_id === user.openid ? 'owner' : 'member',
+          joined_at: team.created_at
+        }))
+        console.log('[team-detail] 从 users 查询到成员:', memberDetails.length)
+      }
     }
+
+    // 确定当前用户的角色
+    const myMemberInfo = memberDetails.find(m => m.openid === OPENID)
+    const myRole = myMemberInfo?.role || (team.leader_id === OPENID ? 'owner' : 'member')
+
+    console.log('[team-detail] 返回团队详情, 成员数:', memberDetails.length)
 
     return {
       success: true,
@@ -74,16 +101,17 @@ exports.main = async (event, context) => {
           description: team.description || '',
           leader_id: team.leader_id,
           leader_name: leaderName,
-          members: team.members || [],
+          members: team.member_ids || team.members || [],
           member_details: memberDetails,
           invite_code: team.invite_code || '',
-          created_at: formatDate(team.created_at)
+          created_at: formatDate(team.created_at),
+          my_role: myRole
         }
       }
     }
 
   } catch (err) {
-    console.error('获取团队详情失败:', err)
+    console.error('[team-detail] 获取团队详情失败:', err)
     return {
       success: false,
       message: '获取团队详情失败：' + err.message,

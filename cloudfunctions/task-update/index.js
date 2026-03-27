@@ -13,6 +13,9 @@ exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext()
   const { OPENID } = wxContext
   
+  console.log('[task-update] 开始更新任务, OPENID:', OPENID)
+  console.log('[task-update] 参数:', event)
+  
   try {
     const {
       task_id,
@@ -24,10 +27,11 @@ exports.main = async (event, context) => {
       delay_reason,
       improvements,
       attribution_tags,
-      calculate_score_only = false,  // 只计算得分，不更新状态
+      calculate_score_only = false,
       task_name,
       task_description,
-      executor_id
+      executor_id,
+      executor_name
     } = event
     
     if (!task_id) {
@@ -49,11 +53,10 @@ exports.main = async (event, context) => {
     const task = taskRes.data
     
     // 验证权限（执行人或发布人才能更新）
-    // 注意：executor_id 和 publisher_id 存储的是 openid
     const isExecutor = (task.executor_id === OPENID)
     const isPublisher = (task.publisher_id === OPENID)
     
-    console.log('权限检查:', {
+    console.log('[task-update] 权限检查:', {
       task_executor: task.executor_id,
       task_publisher: task.publisher_id,
       current_openid: OPENID,
@@ -81,16 +84,6 @@ exports.main = async (event, context) => {
       }
     }
     
-    // 调试日志
-    console.log('收到更新数据:', {
-      task_id,
-      status,
-      learnings: learnings ? '有值' : '空',
-      delay_reason: delay_reason ? '有值' : '空',
-      improvements: improvements ? '有值' : '空',
-      attribution_tags: attribution_tags
-    })
-    
     // 构建更新数据
     const updateData = {
       updated_at: new Date()
@@ -100,11 +93,13 @@ exports.main = async (event, context) => {
     if (task_name !== undefined) updateData.task_name = task_name
     if (task_description !== undefined) updateData.task_description = task_description
     if (executor_id !== undefined) updateData.executor_id = executor_id
+    if (executor_name !== undefined) updateData.executor_name = executor_name
     
     if (status !== undefined) updateData.status = status
     if (priority !== undefined) updateData.priority = priority
     if (category !== undefined) updateData.category = category
-    if (require_date !== undefined) updateData.require_date = new Date(require_date)
+    // 统一使用字符串格式存储日期
+    if (require_date !== undefined) updateData.require_date = require_date
     if (learnings !== undefined) updateData.learnings = learnings || ''
     if (delay_reason !== undefined) updateData.delay_reason = delay_reason || ''
     if (improvements !== undefined) updateData.improvements = improvements || ''
@@ -112,11 +107,16 @@ exports.main = async (event, context) => {
     
     // 如果状态变为已完成，自动计算得分
     if (status === 'completed' && task.status !== 'completed') {
-      updateData.complete_date = new Date()
+      // 统一使用字符串格式
+      const today = new Date()
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+      updateData.complete_date = todayStr
       
-      const scoreResult = calculateScore(task.require_date, new Date())
+      const scoreResult = calculateScore(task.require_date, today)
       updateData.score = scoreResult.score
       updateData.score_note = scoreResult.note
+      
+      console.log('[task-update] 计算得分:', scoreResult)
       
       // 如果得分<80，检查必填字段
       if (scoreResult.score < 80) {
@@ -147,22 +147,18 @@ exports.main = async (event, context) => {
       }
     }
     
-    // 更新数据库
-    console.log('准备更新数据库:', updateData)
+    console.log('[task-update] 准备更新数据:', updateData)
     
+    // 更新数据库
     const updateResult = await db.collection('tasks').doc(task_id).update({
       data: updateData
     })
     
-    console.log('数据库更新结果:', updateResult)
+    console.log('[task-update] 更新结果:', updateResult)
     
     // 重新读取任务，确认数据已保存
     const updatedTask = await db.collection('tasks').doc(task_id).get()
-    console.log('更新后的任务数据:', {
-      score: updatedTask.data.score,
-      learnings: updatedTask.data.learnings,
-      attribution_tags: updatedTask.data.attribution_tags
-    })
+    console.log('[task-update] 更新后的任务:', updatedTask.data)
     
     return {
       success: true,
@@ -178,7 +174,7 @@ exports.main = async (event, context) => {
     }
     
   } catch (err) {
-    console.error('更新任务失败:', err)
+    console.error('[task-update] 更新任务失败:', err)
     return {
       success: false,
       message: '更新任务失败：' + err.message,
@@ -189,12 +185,17 @@ exports.main = async (event, context) => {
 
 // 计算得分函数
 function calculateScore(requireDate, completeDate) {
-  const require = new Date(requireDate)
+  // 处理字符串格式的日期
+  const require = typeof requireDate === 'string' ? new Date(requireDate) : new Date(requireDate)
   const complete = new Date(completeDate)
+  
+  // 重置时间为0点，只比较日期
+  require.setHours(0, 0, 0, 0)
+  complete.setHours(0, 0, 0, 0)
   
   // 计算天数差
   const diffTime = complete.getTime() - require.getTime()
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24))
   
   let score, note
   

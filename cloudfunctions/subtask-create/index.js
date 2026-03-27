@@ -15,9 +15,13 @@ exports.main = async (event, context) => {
     title, 
     description, 
     executor_id, 
+    executor_name,
     require_date,
     priority = 'P2'
   } = event
+
+  console.log('[subtask-create] 开始创建子任务, OPENID:', wxContext.OPENID)
+  console.log('[subtask-create] 参数:', event)
 
   // 验证必填字段
   if (!task_id || !title) {
@@ -49,6 +53,7 @@ exports.main = async (event, context) => {
     const subtaskId = `subtask_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
     // 创建子任务记录到 tasks 表（用 is_subtask 标识）
+    // 统一使用字符串格式存储日期
     await db.collection('tasks').add({
       data: {
         _id: subtaskId,
@@ -57,22 +62,25 @@ exports.main = async (event, context) => {
         is_subtask: true,
         parent_task_id: task_id,
         executor_id: executor_id || wxContext.OPENID,
+        executor_name: executor_name || '',
         publisher_id: wxContext.OPENID,
-        require_date: require_date,
+        require_date: require_date || '', // 字符串格式 YYYY-MM-DD
         priority: priority,
         status: 'pending',
         progress: 0,
-        checklist: [],  // 清单数组
-        created_at: Date.now(),
-        updated_at: Date.now()
+        checklist: [],
+        created_at: new Date(),
+        updated_at: new Date()
       }
     })
+
+    console.log('[subtask-create] 子任务创建成功, subtask_id:', subtaskId)
 
     // 更新主任务的子任务计数
     await db.collection('tasks').doc(task_id).update({
       data: {
         subtask_count: _.inc(1),
-        updated_at: Date.now()
+        updated_at: new Date()
       }
     })
 
@@ -82,11 +90,13 @@ exports.main = async (event, context) => {
     return {
       success: true,
       message: '创建成功',
-      subtask_id: subtaskId
+      data: {
+        subtask_id: subtaskId
+      }
     }
 
   } catch (err) {
-    console.error('创建子任务失败:', err)
+    console.error('[subtask-create] 创建子任务失败:', err)
     return {
       success: false,
       message: '创建失败：' + err.message,
@@ -111,12 +121,14 @@ async function calcMainTaskProgress(taskId) {
   // 计算进度
   const progress = total > 0 ? Math.round((completed / total) * 100) : 0
   
+  console.log('[subtask-create] 计算进度:', { total, completed, progress })
+  
   // 更新主任务
   await db.collection('tasks').doc(taskId).update({
     data: {
       completed_subtask_count: completed,
       progress: progress,
-      updated_at: Date.now()
+      updated_at: new Date()
     }
   })
 }

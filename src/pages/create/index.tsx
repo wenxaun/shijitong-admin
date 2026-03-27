@@ -86,7 +86,17 @@ export default function Create() {
 
     setSubmitting(true);
     try {
-      const executorId = executorIndex >= 0 ? executorList[executorIndex].openid : null;
+      const executor = executorIndex >= 0 ? executorList[executorIndex] : null;
+      const executorId = executor?.openid || null;
+      const executorName = executor?.name || '';
+      
+      console.log('[create] 创建任务参数:', {
+        task_name: taskName.trim(),
+        priority,
+        executor_id: executorId,
+        executor_name: executorName,
+        require_date: requireDate
+      });
       
       const res = await callFunction<CloudResponse>(
         CLOUD_FUNCTIONS.TASK_CREATE,
@@ -96,6 +106,7 @@ export default function Create() {
           priority,
           category: category.trim(),
           executor_id: executorId,
+          executor_name: executorName,
           require_date: requireDate
         }
       );
