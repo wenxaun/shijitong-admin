@@ -92,11 +92,51 @@ export interface Subtask {
   _id: string;
   parent_task_id: string;
   name: string;
+  task_name: string;
   description?: string;
+  task_description?: string;
   status: TaskStatus;
-  assignee_id?: string;
+  executor_id?: string;
+  executor_name?: string;
+  require_date?: string;
   due_date?: string;
+  priority?: TaskPriority;
+  is_subtask?: boolean;
+  checklist?: ChecklistItem[];
+  flow_history?: FlowHistory[];
+  collaborators?: Collaborator[];
   created_at: string;
+}
+
+/**
+ * 检查清单项
+ */
+export interface ChecklistItem {
+  id: string;
+  title: string;
+  completed: boolean;
+  completed_at?: number | null;
+}
+
+/**
+ * 流转历史
+ */
+export interface FlowHistory {
+  from_executor: string;
+  from_executor_name?: string;
+  to_executor: string;
+  to_executor_name?: string;
+  reason?: string;
+  note?: string;
+  flow_date: string | number;
+}
+
+/**
+ * 协助人
+ */
+export interface Collaborator {
+  openid: string;
+  name: string;
 }
 
 /**
