@@ -172,7 +172,7 @@ export default function SubtaskManage() {
 
   return (
     <View className="min-h-screen bg-gray-50">
-      <ScrollView className="h-screen" scrollY>
+      <ScrollView className="flex-1" scrollY style={{ height: "calc(100vh - 50px)" }}>
         {/* 进度卡片 */}
         <Card className="mx-3 mt-3">
           <CardContent className="p-4">

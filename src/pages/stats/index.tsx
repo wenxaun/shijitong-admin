@@ -132,7 +132,7 @@ export default function Stats() {
         </View>
       </View>
 
-      <ScrollView className="h-screen" scrollY>
+      <ScrollView className="flex-1" scrollY style={{ height: "calc(100vh - 50px)" }}>
         {/* 核心指标卡片 */}
         <View className="px-4 pt-4">
           <Card className="bg-gradient-to-r from-blue-500 to-blue-600 border-0">

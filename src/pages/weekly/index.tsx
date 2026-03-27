@@ -197,7 +197,7 @@ export default function Weekly() {
 
   return (
     <View className="min-h-screen bg-gray-50">
-      <ScrollView className="h-screen" scrollY>
+      <ScrollView className="flex-1" scrollY style={{ height: "calc(100vh - 50px)" }}>
         {/* 周报头部 */}
         <View className="bg-gradient-to-b from-blue-500 to-blue-600 px-4 py-6">
           <View className="flex items-center gap-2 mb-2">

@@ -255,7 +255,8 @@ export default function TeamPage() {
         </View>
       </View>
 
-      <ScrollView className="h-screen" scrollY>
+      {/* 注意：ScrollView 不要使用 h-screen，改用 flex-1 或固定高度 */}
+      <ScrollView className="flex-1" scrollY style={{ height: 'calc(100vh - 50px)' }}>
         <View className="px-4 pt-4 pb-24">
           {loading ? (
             <View className="space-y-4">

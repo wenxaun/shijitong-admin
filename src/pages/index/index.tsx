@@ -53,6 +53,10 @@ const PRIORITY_COLOR: Record<TaskPriority, string> = {
 };
 
 export default function Index() {
+  // 组件渲染时立即输出
+  console.log('===== IndexPage 组件渲染 =====');
+  console.log('[IndexPage] 当前时间:', new Date().toISOString());
+  
   const { openid } = useUserStore();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
