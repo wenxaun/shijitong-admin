@@ -13,14 +13,17 @@ exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext()
   const { OPENID } = wxContext
   
-  console.log('[task-list] 开始查询任务列表, OPENID:', OPENID)
-  console.log('[task-list] 查询参数:', event)
+  // 第一行就打印日志
+  console.log('===== task-list 开始执行 =====')
+  console.log('[task-list] 时间:', new Date().toISOString())
+  console.log('[task-list] OPENID:', OPENID)
+  console.log('[task-list] 参数:', JSON.stringify(event))
   
   try {
     const {
-      status,        // 筛选状态：pending, in_progress, completed, cancelled
-      priority,      // 筛选优先级：P0, P1, P2, P3
-      time_filter,   // 时间筛选：all, today, week, month
+      status,
+      priority,
+      time_filter,
       page = 1,
       pageSize = 20
     } = event
@@ -65,7 +68,7 @@ exports.main = async (event, context) => {
     // 构建最终查询条件
     const query = conditions.length > 1 ? _.and(conditions) : conditions[0]
     
-    console.log('[task-list] 查询条件:', JSON.stringify(query))
+    console.log('[task-list] 查询条件:', JSON.stringify(query, null, 2))
     
     // 查询数据库
     const result = await db.collection('tasks')
@@ -76,7 +79,6 @@ exports.main = async (event, context) => {
       .get()
     
     console.log('[task-list] 查询到的任务数:', result.data.length)
-    console.log('[task-list] 任务数据:', JSON.stringify(result.data))
     
     // 获取总数
     const countResult = await db.collection('tasks').where(query).count()
@@ -106,6 +108,7 @@ exports.main = async (event, context) => {
     }))
     
     console.log('[task-list] 返回任务列表, 数量:', tasks.length, '总数:', countResult.total)
+    console.log('===== task-list 执行结束 =====')
     
     return {
       success: true,
@@ -120,6 +123,7 @@ exports.main = async (event, context) => {
     
   } catch (err) {
     console.error('[task-list] 获取任务列表失败:', err)
+    console.error('[task-list] 错误堆栈:', err.stack)
     return {
       success: false,
       message: '获取任务列表失败：' + err.message,

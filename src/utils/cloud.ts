@@ -508,22 +508,34 @@ const mockCloudFunction = async (name: string, data?: any): Promise<any> => {
  * @param data 参数
  */
 export const callFunction = async <T = any>(name: string, data?: any): Promise<T> => {
-  console.log('[Cloud] 调用云函数:', name, '参数:', data);
+  const env = Taro.getEnv();
+  console.log('===== [Cloud] 开始调用云函数 =====');
+  console.log('[Cloud] 环境:', env === Taro.ENV_TYPE.WEAPP ? '微信小程序' : 'H5');
+  console.log('[Cloud] 云函数名:', name);
+  console.log('[Cloud] 参数:', JSON.stringify(data));
   
-  if (Taro.getEnv() === Taro.ENV_TYPE.WEAPP) {
+  if (env === Taro.ENV_TYPE.WEAPP) {
     // 小程序端：直接调用云函数
-    // @ts-ignore
-    const res = await wx.cloud.callFunction({
-      name,
-      data
-    });
-    console.log('[Cloud] 云函数返回:', name, res.result);
-    return res.result as T;
+    try {
+      // @ts-ignore
+      const res = await wx.cloud.callFunction({
+        name,
+        data
+      });
+      console.log('[Cloud] 云函数返回:', name, JSON.stringify(res.result));
+      console.log('===== [Cloud] 云函数调用结束 =====');
+      return res.result as T;
+    } catch (err) {
+      console.error('[Cloud] 云函数调用失败:', name, err);
+      console.log('===== [Cloud] 云函数调用结束（失败）=====');
+      throw err;
+    }
   } else {
     // H5 端：使用模拟数据
     console.log('[Cloud] H5 端使用模拟数据');
     const result = await mockCloudFunction(name, data);
-    console.log('[Cloud] 模拟返回:', name, result);
+    console.log('[Cloud] 模拟返回:', name, JSON.stringify(result));
+    console.log('===== [Cloud] 云函数调用结束 =====');
     return result as T;
   }
 };

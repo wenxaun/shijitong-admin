@@ -13,7 +13,11 @@ exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext()
   const { OPENID } = wxContext
   
-  console.log('[team-list] 开始查询团队列表, OPENID:', OPENID)
+  // 第一行就打印日志
+  console.log('===== team-list 开始执行 =====')
+  console.log('[team-list] 时间:', new Date().toISOString())
+  console.log('[team-list] OPENID:', OPENID)
+  console.log('[team-list] 参数:', JSON.stringify(event))
   
   try {
     // 方法1: 查询用户加入的团队（通过 team_members 表）
@@ -25,13 +29,13 @@ exports.main = async (event, context) => {
       .get()
     
     console.log('[team-list] 查询到的成员记录数:', memberRes.data.length)
-    console.log('[team-list] 成员记录:', JSON.stringify(memberRes.data))
     
     const teamIds = memberRes.data.map(m => m.team_id)
     console.log('[team-list] 团队ID列表:', teamIds)
     
     // 如果通过 team_members 表找到了团队
     if (teamIds.length > 0) {
+      console.log('[team-list] 查询 teams 表...')
       const teamsRes = await db.collection('teams')
         .where({
           _id: _.in(teamIds)
@@ -59,6 +63,7 @@ exports.main = async (event, context) => {
       })
       
       console.log('[team-list] 返回团队列表（方法1）, 数量:', teams.length)
+      console.log('===== team-list 执行结束 =====')
       
       return {
         success: true,
@@ -99,6 +104,7 @@ exports.main = async (event, context) => {
     })
     
     console.log('[team-list] 返回团队列表（方法2）, 数量:', teams.length)
+    console.log('===== team-list 执行结束 =====')
     
     return {
       success: true,
@@ -109,6 +115,7 @@ exports.main = async (event, context) => {
     
   } catch (err) {
     console.error('[team-list] 获取团队列表失败:', err)
+    console.error('[team-list] 错误堆栈:', err.stack)
     return {
       success: false,
       message: '获取失败：' + err.message,

@@ -13,8 +13,11 @@ exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext()
   const { OPENID } = wxContext
   
-  console.log('[task-create] 开始创建任务, OPENID:', OPENID)
-  console.log('[task-create] 参数:', event)
+  // 第一行就打印日志
+  console.log('===== task-create 开始执行 =====')
+  console.log('[task-create] 时间:', new Date().toISOString())
+  console.log('[task-create] OPENID:', OPENID)
+  console.log('[task-create] 参数:', JSON.stringify(event))
   
   try {
     const {
@@ -29,6 +32,7 @@ exports.main = async (event, context) => {
     
     // 验证必填字段
     if (!task_name || !require_date) {
+      console.log('[task-create] 参数验证失败: 缺少必填字段')
       return {
         success: false,
         message: '任务名称和要求完成日期为必填项'
@@ -42,13 +46,15 @@ exports.main = async (event, context) => {
     const finalExecutorId = executor_id || OPENID
     const finalExecutorName = executor_name || ''
     
+    console.log('[task-create] 创建任务:', { task_name, executor_id: finalExecutorId })
+    
     // 创建任务记录 - 统一使用字符串格式存储日期
     const result = await db.collection('tasks').add({
       data: {
         task_name,
         task_description: task_description || '',
-        status: 'pending', // pending, in_progress, completed, cancelled
-        priority, // P0, P1, P2, P3
+        status: 'pending',
+        priority,
         category: category || '',
         publisher_id: OPENID,
         executor_id: finalExecutorId,
@@ -68,12 +74,11 @@ exports.main = async (event, context) => {
     })
     
     console.log('[task-create] 任务创建成功, task_id:', result._id)
-    
-    // TODO: 发送通知给执行人（后续可通过订阅消息实现）
+    console.log('===== task-create 执行结束 =====')
     
     return {
       success: true,
-      message: '任务创建成功' + (executor_id ? '，已分配给执行人' : ''),
+      message: '任务创建成功',
       data: {
         task_id: result._id,
         task_name,
@@ -84,6 +89,7 @@ exports.main = async (event, context) => {
     
   } catch (err) {
     console.error('[task-create] 创建任务失败:', err)
+    console.error('[task-create] 错误堆栈:', err.stack)
     return {
       success: false,
       message: '创建任务失败：' + err.message,
