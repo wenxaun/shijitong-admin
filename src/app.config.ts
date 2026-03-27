@@ -32,15 +32,7 @@ export default defineAppConfig({
     navigationBarTextStyle: 'white',
     backgroundColor: '#F5F7FA'
   },
-  // 启用 Skyline 渲染模式
-  renderer: 'skyline',
-  rendererOptions: {
-    skyline: {
-      defaultDisplayBlock: true,
-      disableABTest: true
-    }
-  },
-  // 兼容 WebView 的页面
+  // 移除全局 Skyline 配置，改为在需要高性能渲染的页面单独配置
   lazyCodeLoading: 'requiredComponents',
   tabBar: {
     color: '#666666',
