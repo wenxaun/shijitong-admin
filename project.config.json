@@ -1,7 +1,7 @@
 {
-  "miniprogramRoot": "./dist",
-  "projectname": "coze-mini-program",
-  "description": "test",
+  "miniprogramRoot": "./dist-weapp",
+  "projectname": "事绩通",
+  "description": "事绩通 - 任务管理系统",
   "appid": "touristappid",
   "setting": {
     "urlCheck": true,
