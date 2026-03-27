@@ -185,18 +185,6 @@ export default function SubtaskManage() {
           </CardContent>
         </Card>
 
-        {/* 添加按钮（待办状态不显示） */}
-        {parentTaskStatus !== 'pending' && (
-          <Card className="mx-3 mt-3" onClick={goToAddSubtask}>
-            <CardContent className="p-4">
-              <View className="flex items-center justify-center">
-                <Plus size={20} color="#1377EB" />
-                <Text className="text-blue-500 ml-2">添加子任务</Text>
-              </View>
-            </CardContent>
-          </Card>
-        )}
-
         {/* 待办状态提示 */}
         {parentTaskStatus === 'pending' && (
           <View className="mx-3 mt-3 p-4 bg-blue-50 rounded-lg">
@@ -217,43 +205,56 @@ export default function SubtaskManage() {
               )}
             </View>
           ) : (
-            subtasks.map((subtask) => {
-              const statusInfo = STATUS_MAP[subtask.status];
-              return (
-                <Card
-                  key={subtask._id}
-                  className="mb-3"
-                  onClick={() => goToSubtaskDetail(subtask._id)}
-                >
+            <>
+              {/* 添加子任务按钮（有子任务时显示） */}
+              {parentTaskStatus !== 'pending' && (
+                <Card className="mb-3" onClick={goToAddSubtask}>
                   <CardContent className="p-3">
-                    <View className="flex items-center">
-                      <View
-                        className={`w-2 h-2 rounded-full mr-3 ${
-                          subtask.status === 'completed' ? 'bg-green-500' : 'bg-blue-500'
-                        }`}
-                      />
-                      <View className="flex-1">
-                        <Text className="text-sm font-semibold text-gray-800">
-                          {subtask.task_name || subtask.name}
-                        </Text>
-                        <View className="flex items-center gap-3 mt-2">
-                          <Text className="text-xs text-gray-500">
-                            👤 {subtask.executor_name || '未分配'}
-                          </Text>
-                          <Text className={`text-xs ${subtask.is_overdue ? 'text-red-500' : 'text-gray-500'}`}>
-                            📅 {subtask.require_date}
-                          </Text>
-                        </View>
-                      </View>
-                      <View className="flex items-center gap-2">
-                        <Badge className={statusInfo.color}>{statusInfo.label}</Badge>
-                        <ChevronRight size={18} color="#9CA3AF" />
-                      </View>
+                    <View className="flex items-center justify-center">
+                      <Plus size={20} color="#1377EB" />
+                      <Text className="text-blue-500 ml-2">添加子任务</Text>
                     </View>
                   </CardContent>
                 </Card>
-              );
-            })
+              )}
+              {subtasks.map((subtask) => {
+                const statusInfo = STATUS_MAP[subtask.status];
+                return (
+                  <Card
+                    key={subtask._id}
+                    className="mb-3"
+                    onClick={() => goToSubtaskDetail(subtask._id)}
+                  >
+                    <CardContent className="p-3">
+                      <View className="flex items-center">
+                        <View
+                          className={`w-2 h-2 rounded-full mr-3 ${
+                            subtask.status === 'completed' ? 'bg-green-500' : 'bg-blue-500'
+                          }`}
+                        />
+                        <View className="flex-1">
+                          <Text className="text-sm font-semibold text-gray-800">
+                            {subtask.task_name || subtask.name}
+                          </Text>
+                          <View className="flex items-center gap-3 mt-2">
+                            <Text className="text-xs text-gray-500">
+                              👤 {subtask.executor_name || '未分配'}
+                            </Text>
+                            <Text className={`text-xs ${subtask.is_overdue ? 'text-red-500' : 'text-gray-500'}`}>
+                              📅 {subtask.require_date}
+                            </Text>
+                          </View>
+                        </View>
+                        <View className="flex items-center gap-2">
+                          <Badge className={statusInfo.color}>{statusInfo.label}</Badge>
+                          <ChevronRight size={18} color="#9CA3AF" />
+                        </View>
+                      </View>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </>
           )}
         </View>
 

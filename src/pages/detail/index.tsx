@@ -77,6 +77,8 @@ export default function Detail() {
   const canEdit = isPublisher && task?.status === 'pending';
   // 删除权限：只有创建人且任务状态为待办时可以删除
   const canDelete = isPublisher && task?.status === 'pending';
+  // 操作权限：创建人或执行人可以操作（开始、完成、异常上报）
+  const canOperate = isPublisher || isExecutor;
 
   // 加载任务详情
   const loadTask = useCallback(async () => {
@@ -433,14 +435,14 @@ export default function Detail() {
             )}
 
             {/* 状态操作按钮 */}
-            {canEdit && task.status === 'pending' && (
+            {canOperate && task.status === 'pending' && (
               <Button className="w-full bg-blue-500 text-white" onClick={startTask}>
                 <Play size={16} color="#ffffff" />
                 <Text className="text-white ml-2">开始任务</Text>
               </Button>
             )}
 
-            {canEdit && task.status === 'in_progress' && (
+            {canOperate && task.status === 'in_progress' && (
               <View className="flex gap-3">
                 <Button className="flex-1 bg-green-500 text-white" onClick={completeTask}>
                   <Check size={16} color="#ffffff" />
@@ -454,7 +456,7 @@ export default function Detail() {
             )}
 
             {/* 异常状态处理按钮 */}
-            {canEdit && task.status === 'exception' && (
+            {canOperate && task.status === 'exception' && (
               <View className="space-y-3">
                 <View className="bg-orange-50 rounded-lg p-3 mb-2">
                   <Text className="text-sm text-orange-600">

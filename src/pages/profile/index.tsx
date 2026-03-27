@@ -15,12 +15,6 @@ const MENU_ITEMS = [
   { icon: '👥', label: '我的团队', path: '/pages/team/index' }
 ];
 
-// 信息项配置
-const INFO_ITEMS = [
-  { icon: '☁️', label: '云环境 ID', value: 'cloud1-3g7j95ax4a0f4a3f' },
-  { icon: '📱', label: '小程序 AppID', value: 'wx2be578f65935b5e8' }
-];
-
 export default function Profile() {
   const { openid, logout } = useUserStore();
   const [avatarUrl, setAvatarUrl] = useState('');
@@ -38,16 +32,6 @@ export default function Profile() {
   // 跳转页面
   const navigateTo = (path: string) => {
     Taro.navigateTo({ url: path });
-  };
-
-  // 复制文本
-  const copyText = (text: string) => {
-    Taro.setClipboardData({
-      data: text,
-      success: () => {
-        Taro.showToast({ title: '已复制', icon: 'success' });
-      }
-    });
   };
 
   // 退出登录
@@ -112,33 +96,6 @@ export default function Profile() {
                   <Text className="text-gray-400">›</Text>
                 </View>
                 {index < MENU_ITEMS.length - 1 && <Separator className="mx-4" />}
-              </View>
-            ))}
-          </CardContent>
-        </Card>
-      </View>
-
-      {/* 信息卡片 */}
-      <View className="px-3 py-2">
-        <Text className="text-sm text-gray-500 mb-2 px-1">信息</Text>
-        <Card>
-          <CardContent className="p-0">
-            {INFO_ITEMS.map((item, index) => (
-              <View key={item.label}>
-                <View
-                  className="flex items-center justify-between px-4 py-3 active:bg-gray-50"
-                  onClick={() => copyText(item.value)}
-                >
-                  <View className="flex items-center">
-                    <Text className="text-xl mr-3">{item.icon}</Text>
-                    <Text className="text-base text-gray-800">{item.label}</Text>
-                  </View>
-                  <View className="flex items-center">
-                    <Text className="text-sm text-gray-400 mr-2">{item.value}</Text>
-                    <Text className="text-gray-400">›</Text>
-                  </View>
-                </View>
-                {index < INFO_ITEMS.length - 1 && <Separator className="mx-4" />}
               </View>
             ))}
           </CardContent>
