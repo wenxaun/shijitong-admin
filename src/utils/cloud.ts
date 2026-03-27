@@ -101,6 +101,7 @@ let mockSubtasks: any[] = [
 
 /**
  * 初始化云开发（仅小程序端）
+ * @deprecated 云开发初始化已移至 app.tsx 的 useLaunch 中，此函数保留用于兼容
  */
 export const initCloud = () => {
   if (Taro.getEnv() === Taro.ENV_TYPE.WEAPP) {
@@ -529,8 +530,14 @@ export const callFunction = async <T = any>(name: string, data?: any): Promise<T
   console.log('[Cloud] 参数:', JSON.stringify(data));
   
   if (env === Taro.ENV_TYPE.WEAPP) {
-    // 小程序端：直接调用云函数
+    // 小程序端：调用云函数
     try {
+      // @ts-ignore
+      if (!wx.cloud) {
+        throw new Error('wx.cloud 不存在，请检查云开发配置');
+      }
+      
+      // 调用云函数
       // @ts-ignore
       const res = await wx.cloud.callFunction({
         name,
@@ -539,8 +546,9 @@ export const callFunction = async <T = any>(name: string, data?: any): Promise<T
       console.log('[Cloud] 云函数返回:', name, JSON.stringify(res.result));
       console.log('===== [Cloud] 云函数调用结束 =====');
       return res.result as T;
-    } catch (err) {
+    } catch (err: any) {
       console.error('[Cloud] 云函数调用失败:', name, err);
+      console.error('[Cloud] 错误详情:', err.message || err.errMsg);
       console.log('===== [Cloud] 云函数调用结束（失败）=====');
       throw err;
     }

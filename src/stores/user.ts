@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import Taro from '@tarojs/taro';
 import { User } from '@/types';
-import { getOpenId, initCloud } from '@/utils/cloud';
+import { getOpenId } from '@/utils/cloud';
 
 interface UserState {
   openid: string | null;
@@ -38,8 +38,9 @@ export const useUserStore = create<UserState>()(
       isLoading: true,
 
       init: async () => {
-        // 初始化云开发
-        initCloud();
+        console.log('[Store] 开始初始化用户状态...');
+        
+        // 云开发已在 app.tsx 的 useLaunch 中初始化，这里不再重复初始化
         
         // 获取 OpenID
         const openid = await getOpenId();
@@ -48,6 +49,7 @@ export const useUserStore = create<UserState>()(
           console.log('[Store] 用户 OpenID:', openid);
         } else {
           set({ isLoading: false });
+          console.log('[Store] 未获取到 OpenID');
         }
       },
 
