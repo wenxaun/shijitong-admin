@@ -1,7 +1,7 @@
 /**
  * 任务状态
  */
-export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
+export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled' | 'exception';
 
 /**
  * 任务优先级

@@ -30,7 +30,8 @@ const STATUS_MAP: Record<TaskStatus, string> = {
   pending: '待办',
   in_progress: '进行中',
   completed: '已完成',
-  cancelled: '已取消'
+  cancelled: '已取消',
+  exception: '异常'
 };
 
 // 状态颜色映射
@@ -38,7 +39,8 @@ const STATUS_COLOR: Record<TaskStatus, string> = {
   pending: 'bg-gray-100 text-gray-600',
   in_progress: 'bg-blue-50 text-blue-600',
   completed: 'bg-green-50 text-green-600',
-  cancelled: 'bg-red-50 text-red-500'
+  cancelled: 'bg-red-50 text-red-500',
+  exception: 'bg-orange-50 text-orange-600'
 };
 
 // 优先级颜色映射

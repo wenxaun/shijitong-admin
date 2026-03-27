@@ -29,7 +29,8 @@ const STATUS_MAP: Record<TaskStatus, { label: string; color: string }> = {
   pending: { label: '待办', color: 'bg-gray-100 text-gray-600' },
   in_progress: { label: '进行中', color: 'bg-blue-50 text-blue-600' },
   completed: { label: '已完成', color: 'bg-green-50 text-green-600' },
-  cancelled: { label: '已取消', color: 'bg-red-50 text-red-500' }
+  cancelled: { label: '已取消', color: 'bg-red-50 text-red-500' },
+  exception: { label: '异常', color: 'bg-orange-50 text-orange-600' }
 };
 
 // 优先级颜色
@@ -198,21 +199,41 @@ export default function Detail() {
       return;
     }
 
+    // 检查是否逾期
+    const requireDate = new Date(task.require_date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    requireDate.setHours(0, 0, 0, 0);
+    const isOverdue = today > requireDate;
+
     // 弹窗确认完成
     Taro.showModal({
-      title: '确认完成',
-      content: '确定要完成此任务吗？',
+      title: isOverdue ? '任务逾期确认' : '确认完成',
+      content: isOverdue 
+        ? '该任务已逾期，完成前需要填写复盘内容，确定继续吗？'
+        : '确定要完成此任务吗？',
       success: async (res) => {
         if (res.confirm) {
           try {
+            // 先更新任务状态为完成
             const result = await callFunction<CloudResponse>(
               CLOUD_FUNCTIONS.TASK_UPDATE,
-              { task_id: taskId, status: 'completed' }
+              { 
+                task_id: taskId, 
+                status: 'completed',
+                complete_date: new Date().toISOString()
+              }
             );
 
             if (result.success) {
-              Taro.showToast({ title: '完成成功', icon: 'success' });
-              loadTask();
+              // 判断是否需要复盘
+              if (isOverdue || isExecutor) {
+                // 逾期或执行人完成，跳转到复盘页面
+                Taro.redirectTo({ url: `/pages/review/index?id=${taskId}` });
+              } else {
+                Taro.showToast({ title: '完成成功', icon: 'success' });
+                loadTask();
+              }
             }
           } catch (err) {
             Taro.showToast({ title: '操作失败', icon: 'none' });
@@ -525,7 +546,7 @@ export default function Detail() {
                       <View
                         key={subtask._id}
                         className="flex items-center p-3 border-b border-gray-100 last:border-0"
-                        onClick={() => Taro.navigateTo({ url: `/pages/detail/index?id=${subtask._id}` })}
+                        onClick={() => Taro.navigateTo({ url: `/pages/subtask-detail/index?id=${subtask._id}` })}
                       >
                         <View
                           className={`w-2 h-2 rounded-full mr-3 ${
@@ -533,8 +554,8 @@ export default function Detail() {
                           }`}
                         />
                         <View className="flex-1">
-                          <Text className="text-sm text-gray-800">{subtask.name}</Text>
-                          <Text className="text-xs text-gray-400">截止：{subtask.due_date}</Text>
+                          <Text className="text-sm text-gray-800">{subtask.name || subtask.task_name}</Text>
+                          <Text className="text-xs text-gray-400">截止：{subtask.due_date || subtask.require_date}</Text>
                         </View>
                         <ChevronRight size={16} color="#D1D5DB" />
                       </View>
