@@ -331,25 +331,27 @@ export default function TeamEdit() {
           <Card>
             <CardContent className="p-4">
               <Text className="text-sm text-gray-500 mb-2">团队名称 *</Text>
-              <View className="bg-gray-50 rounded-lg px-3 py-2">
+              <View className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
                 <Input
                   placeholder="请输入团队名称"
                   value={teamName}
                   onInput={(e) => setTeamName(e.detail.value)}
                   maxlength={30}
                   disabled={!isCreator}
+                  className="bg-transparent"
                 />
               </View>
 
               <Text className="text-sm text-gray-500 mb-2 mt-4">团队描述</Text>
-              <View className="bg-gray-50 rounded-lg px-3 py-2">
+              <View className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
                 <Textarea
                   placeholder="请输入团队描述（可选）"
                   value={teamDesc}
                   onInput={(e) => setTeamDesc(e.detail.value)}
                   maxlength={200}
                   disabled={!isCreator}
-                  style={{ minHeight: '80px', width: '100%', backgroundColor: 'transparent' }}
+                  className="bg-transparent"
+                  style={{ minHeight: '80px', width: '100%' }}
                 />
               </View>
 

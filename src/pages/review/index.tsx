@@ -407,13 +407,16 @@ export default function Review() {
                 学习收获 {calculatedScore < 80 && <Text className="text-red-500">*</Text>}
               </Text>
             </View>
-            <Textarea
-              className="bg-gray-50 border-gray-200 min-h-[80px]"
-              placeholder="记录这次任务中学到的知识、技能或经验..."
-              value={learnings}
-              onInput={(e) => setLearnings(e.detail.value)}
-              maxlength={500}
-            />
+            <View className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+              <Textarea
+                placeholder="记录这次任务中学到的知识、技能或经验..."
+                value={learnings}
+                onInput={(e) => setLearnings(e.detail.value)}
+                maxlength={500}
+                className="bg-transparent"
+                style={{ minHeight: '80px', width: '100%' }}
+              />
+            </View>
             <Text className="text-xs text-gray-400 mt-1 text-right">{learnings.length}/500</Text>
           </CardContent>
         </Card>
@@ -431,13 +434,16 @@ export default function Review() {
                   该任务逾期完成且未上报异常，请说明延迟原因
                 </Text>
               </View>
-              <Textarea
-                className="bg-gray-50 border-gray-200 min-h-[60px]"
-                placeholder="说明任务延迟的具体原因..."
-                value={delayReason}
-                onInput={(e) => setDelayReason(e.detail.value)}
-                maxlength={300}
-              />
+              <View className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+                <Textarea
+                  placeholder="说明任务延迟的具体原因..."
+                  value={delayReason}
+                  onInput={(e) => setDelayReason(e.detail.value)}
+                  maxlength={300}
+                  className="bg-transparent"
+                  style={{ minHeight: '60px', width: '100%' }}
+                />
+              </View>
             </CardContent>
           </Card>
         )}
@@ -451,13 +457,16 @@ export default function Review() {
                 反思改进 {calculatedScore < 80 && <Text className="text-red-500">*</Text>}
               </Text>
             </View>
-            <Textarea
-              className="bg-gray-50 border-gray-200 min-h-[80px]"
-              placeholder="总结经验教训，提出改进措施..."
-              value={improvements}
-              onInput={(e) => setImprovements(e.detail.value)}
-              maxlength={500}
-            />
+            <View className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+              <Textarea
+                placeholder="总结经验教训，提出改进措施..."
+                value={improvements}
+                onInput={(e) => setImprovements(e.detail.value)}
+                maxlength={500}
+                className="bg-transparent"
+                style={{ minHeight: '80px', width: '100%' }}
+              />
+            </View>
           </CardContent>
         </Card>
 

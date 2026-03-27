@@ -482,13 +482,26 @@ export default function Detail() {
 
             {/* 评分信息 */}
             {task.score !== null && task.score !== undefined && (
-              <View className="mt-4 p-3 bg-gray-50 rounded-lg">
-                <Text className={`text-lg font-bold ${task.score >= 80 ? 'text-green-500' : 'text-orange-500'}`}>
-                  得分：{task.score}
-                </Text>
+              <View className="mt-4 p-4 bg-gray-50 rounded-lg">
+                <View className="flex items-center justify-between mb-2">
+                  <Text className="text-sm font-semibold text-gray-700">任务评分</Text>
+                  <Text className={`text-2xl font-bold ${task.score >= 80 ? 'text-green-500' : task.score >= 60 ? 'text-orange-500' : 'text-red-500'}`}>
+                    {task.score}分
+                  </Text>
+                </View>
                 {task.score_note && (
-                  <Text className="text-sm text-gray-500 mt-1">{task.score_note}</Text>
+                  <Text className="text-sm text-gray-500 mb-3">{task.score_note}</Text>
                 )}
+                
+                {/* 评分规则说明 */}
+                <View className="mt-3 pt-3 border-t border-gray-200">
+                  <Text className="text-xs text-gray-400 mb-2">评分规则：</Text>
+                  <Text className="text-xs text-gray-400">• 提前完成：100分</Text>
+                  <Text className="text-xs text-gray-400">• 按时完成：80分</Text>
+                  <Text className="text-xs text-gray-400">• 逾期≤3天：80分</Text>
+                  <Text className="text-xs text-gray-400">• 逾期大于3天且未上报异常：60分</Text>
+                  <Text className="text-xs text-gray-400">• 有异常上报：按原截止日期评分</Text>
+                </View>
               </View>
             )}
           </CardContent>
@@ -630,12 +643,14 @@ export default function Detail() {
 
               {/* 评论输入 */}
               <View className="flex items-center gap-2 mt-3">
-                <Input
-                  className="flex-1"
-                  placeholder="写下你的评论..."
-                  value={commentInput}
-                  onInput={(e) => setCommentInput(e.detail.value)}
-                />
+                <View className="flex-1 bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+                  <Input
+                    placeholder="写下你的评论..."
+                    value={commentInput}
+                    onInput={(e) => setCommentInput(e.detail.value)}
+                    className="bg-transparent"
+                  />
+                </View>
                 <Button size="sm" onClick={addComment}>发送</Button>
               </View>
             </TabsContent>
