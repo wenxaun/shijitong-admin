@@ -3,7 +3,6 @@
  * 支持小程序端和 H5 端
  */
 import Taro from '@tarojs/taro';
-import { Network } from '@/network';
 
 // 云开发环境 ID
 const CLOUD_ENV = 'cloud1-3g7j95ax4a0f4a3f';
@@ -26,6 +25,131 @@ export const initCloud = () => {
 };
 
 /**
+ * H5 端模拟云函数响应
+ */
+const mockCloudFunction = async (name: string, data?: any): Promise<any> => {
+  console.log('[Cloud Mock] 模拟云函数:', name, '参数:', data);
+  
+  // 模拟网络延迟
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  switch (name) {
+    case 'login':
+      return { openid: 'mock_openid_' + Date.now() };
+    
+    case 'task-create':
+      return {
+        success: true,
+        message: '创建成功',
+        data: { task_id: 'mock_task_' + Date.now() }
+      };
+    
+    case 'task-list':
+      return {
+        success: true,
+        message: '获取成功',
+        data: {
+          tasks: [
+            {
+              _id: 'mock_1',
+              task_id: 'mock_1',
+              task_name: '示例任务 1',
+              task_description: '这是一个示例任务',
+              status: 'pending',
+              priority: 'P1',
+              publisher_id: 'mock_openid',
+              executor_id: 'mock_openid',
+              require_date: new Date().toISOString().split('T')[0],
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            },
+            {
+              _id: 'mock_2',
+              task_id: 'mock_2',
+              task_name: '示例任务 2',
+              task_description: '这是另一个示例任务',
+              status: 'in_progress',
+              priority: 'P2',
+              publisher_id: 'mock_openid',
+              executor_id: 'mock_openid',
+              require_date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }
+          ],
+          hasMore: false
+        }
+      };
+    
+    case 'task-update':
+      return {
+        success: true,
+        message: '更新成功'
+      };
+    
+    case 'task-delete':
+      return {
+        success: true,
+        message: '删除成功'
+      };
+    
+    case 'subtask-create':
+      return {
+        success: true,
+        message: '创建成功',
+        data: { subtask_id: 'mock_subtask_' + Date.now() }
+      };
+    
+    case 'subtask-list':
+      return {
+        success: true,
+        message: '获取成功',
+        data: { subtasks: [] }
+      };
+    
+    case 'subtask-update':
+      return {
+        success: true,
+        message: '更新成功'
+      };
+    
+    case 'subtask-delete':
+      return {
+        success: true,
+        message: '删除成功'
+      };
+    
+    case 'comment-add':
+      return {
+        success: true,
+        message: '评论成功',
+        data: {
+          comment: {
+            _id: 'mock_comment_' + Date.now(),
+            user_name: '测试用户',
+            content: data?.content || '',
+            created_at: new Date().toISOString()
+          }
+        }
+      };
+    
+    case 'comment-list':
+      return {
+        success: true,
+        message: '获取成功',
+        data: { comments: [] }
+      };
+    
+    default:
+      console.warn('[Cloud Mock] 未知的云函数:', name);
+      return {
+        success: true,
+        message: '操作成功（模拟）'
+      };
+  }
+};
+
+/**
  * 调用云函数
  * @param name 云函数名称
  * @param data 参数
@@ -43,14 +167,11 @@ export const callFunction = async <T = any>(name: string, data?: any): Promise<T
     console.log('[Cloud] 云函数返回:', name, res.result);
     return res.result as T;
   } else {
-    // H5 端：通过后端代理调用
-    const response = await Network.request({
-      url: `/api/cloud/${name}`,
-      method: 'POST',
-      data
-    });
-    console.log('[Cloud] 云函数返回:', name, response.data);
-    return response.data as T;
+    // H5 端：使用模拟数据
+    console.log('[Cloud] H5 端使用模拟数据');
+    const result = await mockCloudFunction(name, data);
+    console.log('[Cloud] 模拟返回:', name, result);
+    return result as T;
   }
 };
 
