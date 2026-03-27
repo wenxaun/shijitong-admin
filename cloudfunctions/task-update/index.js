@@ -28,6 +28,7 @@ exports.main = async (event, context) => {
       improvements,
       attribution_tags,
       calculate_score_only = false,
+      skip_review_check = false,
       task_name,
       task_description,
       executor_id,
@@ -118,8 +119,8 @@ exports.main = async (event, context) => {
       
       console.log('[task-update] 计算得分:', scoreResult)
       
-      // 如果得分<80，检查必填字段
-      if (scoreResult.score < 80) {
+      // 如果得分<80，检查必填字段（除非跳过复盘验证）
+      if (scoreResult.score < 80 && !skip_review_check) {
         if (!learnings && !task.learnings) {
           return {
             success: false,

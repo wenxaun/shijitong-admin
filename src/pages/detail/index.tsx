@@ -222,13 +222,14 @@ export default function Detail() {
       success: async (res) => {
         if (res.confirm) {
           try {
-            // 先更新任务状态为完成
+            // 先更新任务状态为完成（跳过复盘验证，后续在复盘页面填写）
             const result = await callFunction<CloudResponse>(
               CLOUD_FUNCTIONS.TASK_UPDATE,
               { 
                 task_id: taskId, 
                 status: 'completed',
-                complete_date: new Date().toISOString()
+                complete_date: new Date().toISOString(),
+                skip_review_check: true
               }
             );
 
