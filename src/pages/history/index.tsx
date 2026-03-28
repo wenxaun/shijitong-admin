@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Calendar as CalendarPicker } from '@/components/ui/calendar';
-import { ChevronRight, Calendar, User, Award, Archive, Send, Trash2, CalendarDays } from 'lucide-react-taro';
+import { ChevronRight, Calendar, User, Award, Archive, Send, Trash2, CalendarDays, Loader } from 'lucide-react-taro';
 import { format } from 'date-fns';
 
 type TabType = 'created' | 'executed' | 'deleted';
@@ -261,10 +261,25 @@ export default function History() {
               <View className="flex items-center gap-3 mb-3 flex-wrap">
                 <Badge className={statusInfo.bgClass}>{statusInfo.label}</Badge>
                 
+                {/* 创建日期 */}
+                {task.created_at && (
+                  <View className="flex items-center gap-1">
+                    <Text className="text-xs text-gray-400">创建 {task.created_at}</Text>
+                  </View>
+                )}
+                
+                {/* 截止日期 */}
                 <View className="flex items-center gap-1">
                   <Calendar size={14} color="#9CA3AF" />
                   <Text className="text-xs text-gray-400">截止 {task.require_date}</Text>
                 </View>
+                
+                {/* 完成日期 */}
+                {task.complete_date && (
+                  <View className="flex items-center gap-1">
+                    <Text className="text-xs text-green-500">完成 {task.complete_date}</Text>
+                  </View>
+                )}
                 
                 {/* 执行人 */}
                 {task.executor_name && (
@@ -327,6 +342,16 @@ export default function History() {
 
   return (
     <View className="min-h-screen bg-gray-50">
+      {/* 加载遮罩层 */}
+      {loading && tasks.length > 0 && (
+        <View className="fixed inset-0 bg-black bg-opacity-10 flex items-center justify-center z-40 pointer-events-none">
+          <View className="bg-white rounded-xl px-4 py-3 flex items-center gap-2 shadow-lg">
+            <Loader size={18} color="#1377EB" className="animate-spin" />
+            <Text className="text-gray-600 text-sm">加载中...</Text>
+          </View>
+        </View>
+      )}
+      
       {/* Tab 选择 */}
       <View className="bg-white px-4 py-3 border-b border-gray-100">
         <View className="flex gap-2">

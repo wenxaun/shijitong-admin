@@ -44,9 +44,11 @@ exports.main = async (event, context) => {
       }
     }
     
-    // 支持自定义日期范围筛选
+    // 支持自定义日期范围筛选（按创建日期）
     if (start_date && end_date) {
-      query.require_date = _.and(_.gte(start_date), _.lte(end_date))
+      const startDateTime = new Date(start_date + ' 00:00:00')
+      const endDateTime = new Date(end_date + ' 23:59:59')
+      query.created_at = _.and(_.gte(startDateTime), _.lte(endDateTime))
     }
 
     // 查询数据库

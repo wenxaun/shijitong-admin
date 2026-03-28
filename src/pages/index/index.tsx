@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Calendar } from '@/components/ui/calendar';
 import { DeadlineReminder } from '@/components/deadline-reminder';
-import { CalendarDays } from 'lucide-react-taro';
+import { CalendarDays, Loader } from 'lucide-react-taro';
 import { format } from 'date-fns';
 
 // 状态筛选选项
@@ -274,12 +274,26 @@ export default function Index() {
               <View className="flex items-center gap-2 mb-2 flex-wrap">
                 <Badge className={STATUS_COLOR[task.status]}>{STATUS_MAP[task.status]}</Badge>
                 
+                {/* 创建日期 */}
+                {task.created_at && (
+                  <View className="flex items-center gap-1">
+                    <Text className="text-xs text-gray-400">创建 {task.created_at}</Text>
+                  </View>
+                )}
+                
                 {/* 截止日期 */}
                 <View className="flex items-center gap-1">
                   <Text className={`text-xs ${isOverdue ? 'text-orange-500 font-medium' : 'text-gray-400'}`}>
-                    {isOverdue ? `已逾期 ${Math.abs(daysLeft)} 天` : daysLeft === 0 ? '今日截止' : daysLeft === 1 ? '明日截止' : task.require_date}
+                    截止 {isOverdue ? `(已逾期${Math.abs(daysLeft)}天)` : daysLeft === 0 ? '今日' : daysLeft === 1 ? '明日' : task.require_date}
                   </Text>
                 </View>
+                
+                {/* 完成日期 */}
+                {task.complete_date && task.status === 'completed' && (
+                  <View className="flex items-center gap-1">
+                    <Text className="text-xs text-green-500">完成 {task.complete_date}</Text>
+                  </View>
+                )}
               </View>
 
               {/* 执行人和子任务信息 */}
@@ -372,6 +386,16 @@ export default function Index() {
 
   return (
     <View className="min-h-screen bg-gray-50">
+      {/* 加载遮罩层 */}
+      {loading && tasks.length > 0 && (
+        <View className="fixed inset-0 bg-black bg-opacity-10 flex items-center justify-center z-40 pointer-events-none">
+          <View className="bg-white rounded-xl px-4 py-3 flex items-center gap-2 shadow-lg">
+            <Loader size={18} color="#1377EB" className="animate-spin" />
+            <Text className="text-gray-600 text-sm">加载中...</Text>
+          </View>
+        </View>
+      )}
+      
       {/* 截止日期提醒弹窗 */}
       <DeadlineReminder />
 

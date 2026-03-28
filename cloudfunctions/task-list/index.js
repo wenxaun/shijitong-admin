@@ -52,23 +52,32 @@ exports.main = async (event, context) => {
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
     
-    // 支持自定义日期范围
+    // 支持自定义日期范围（按创建日期筛选）
     const { start_date, end_date } = event
     
     if (start_date && end_date) {
-      // 自定义日期范围筛选
-      conditions.push({ require_date: _.and(_.gte(start_date), _.lte(end_date)) })
+      // 自定义日期范围筛选（按创建日期）
+      const startDateTime = new Date(start_date + ' 00:00:00')
+      const endDateTime = new Date(end_date + ' 23:59:59')
+      conditions.push({ created_at: _.and(_.gte(startDateTime), _.lte(endDateTime)) })
     } else if (time_filter === 'today') {
-      conditions.push({ require_date: todayStr })
+      // 今日创建的任务
+      const todayStart = new Date(todayStr + ' 00:00:00')
+      const todayEnd = new Date(todayStr + ' 23:59:59')
+      conditions.push({ created_at: _.and(_.gte(todayStart), _.lte(todayEnd)) })
     } else if (time_filter === 'week') {
+      // 本周创建的任务
       const monday = new Date(today)
       monday.setDate(monday.getDate() - today.getDay() + 1)
       const mondayStr = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`
-      conditions.push({ require_date: _.gte(mondayStr) })
+      const mondayStart = new Date(mondayStr + ' 00:00:00')
+      conditions.push({ created_at: _.gte(mondayStart) })
     } else if (time_filter === 'month') {
+      // 本月创建的任务
       const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
       const firstDayStr = `${firstDay.getFullYear()}-${String(firstDay.getMonth() + 1).padStart(2, '0')}-${String(firstDay.getDate()).padStart(2, '0')}`
-      conditions.push({ require_date: _.gte(firstDayStr) })
+      const firstDayStart = new Date(firstDayStr + ' 00:00:00')
+      conditions.push({ created_at: _.gte(firstDayStart) })
     }
     
     // 构建最终查询条件

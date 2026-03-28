@@ -9,7 +9,7 @@ import type { CloudResponse } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button as UIButton } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Camera, ChevronRight, LogOut, Trash2 } from 'lucide-react-taro';
+import { Camera, ChevronRight, LogOut, Trash2, Pencil, Check, X } from 'lucide-react-taro';
 
 // 菜单项配置 - 按指定顺序排列
 const MENU_ITEMS = [
@@ -196,73 +196,82 @@ export default function Profile() {
 
   return (
     <View className="min-h-screen bg-gray-50">
-      {/* 用户头部 */}
-      <View className="bg-gradient-to-b from-blue-500 to-blue-600 px-4 pt-8 pb-6">
-        <View className="flex items-center">
-          {/* 头像（可点击修改） */}
-          <Button
-            className="bg-transparent p-0 border-0 relative"
-            openType="chooseAvatar"
-            onChooseAvatar={onChooseAvatar}
-          >
-            {avatarUrl ? (
-              <Image
-                className="w-16 h-16 rounded-full border-2 border-white"
-                src={avatarUrl}
-                mode="aspectFill"
-              />
-            ) : (
-              <View className="w-16 h-16 rounded-full bg-white bg-opacity-20 flex items-center justify-center border-2 border-white">
-                <Text className="text-2xl text-white font-semibold">
-                  {nickname ? nickname[0] : '我'}
-                </Text>
-              </View>
-            )}
-            {/* 编辑图标 */}
-            <View className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow">
-              <Camera size={14} color="#1377EB" />
-            </View>
-          </Button>
-          
-          {/* 昵称（可点击修改） */}
-          <View className="ml-4 flex-1">
-            {isEditing ? (
-              <View className="flex items-center gap-2">
-                <Input
-                  className="flex-1 bg-white bg-opacity-20 rounded-lg px-3 py-2 text-white text-base"
-                  type="nickname"
-                  placeholder="输入昵称"
-                  value={editNickname}
-                  onInput={(e) => setEditNickname(e.detail.value)}
-                />
-                <View className="flex gap-1">
-                  <View 
-                    className="px-3 py-1 bg-white bg-opacity-20 rounded-lg"
-                    onClick={saveNickname}
-                  >
-                    <Text className="text-white text-sm">{saving ? '保存中...' : '保存'}</Text>
+      {/* 用户信息卡片 */}
+      <View className="px-4 pt-6 pb-4">
+        <Card className="overflow-hidden">
+          <View className="bg-gradient-to-r from-blue-500 to-blue-600 h-24" />
+          <CardContent className="p-0">
+            <View className="flex flex-col items-center -mt-12 pb-4">
+              {/* 头像 */}
+              <Button
+                className="bg-transparent p-0 border-0 relative"
+                openType="chooseAvatar"
+                onChooseAvatar={onChooseAvatar}
+              >
+                {avatarUrl ? (
+                  <Image
+                    className="w-24 h-24 rounded-full border-4 border-white shadow-lg"
+                    src={avatarUrl}
+                    mode="aspectFill"
+                  />
+                ) : (
+                  <View className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center border-4 border-white shadow-lg">
+                    <Text className="text-3xl text-white font-bold">
+                      {nickname ? nickname[0] : '我'}
+                    </Text>
                   </View>
-                  <View 
-                    className="px-3 py-1 bg-white bg-opacity-20 rounded-lg"
-                    onClick={cancelEdit}
-                  >
-                    <Text className="text-white text-sm">取消</Text>
-                  </View>
+                )}
+                {/* 编辑图标 */}
+                <View className="absolute bottom-0 right-0 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md border border-gray-100">
+                  <Camera size={16} color="#1377EB" />
                 </View>
+              </Button>
+              
+              {/* 昵称 */}
+              <View className="mt-3 flex items-center gap-2">
+                {isEditing ? (
+                  <View className="flex items-center gap-2">
+                    <Input
+                      className="bg-gray-50 rounded-lg px-3 py-1 text-base text-gray-800 border border-gray-200"
+                      type="nickname"
+                      placeholder="输入昵称"
+                      value={editNickname}
+                      onInput={(e) => setEditNickname(e.detail.value)}
+                    />
+                    <View 
+                      className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center"
+                      onClick={saveNickname}
+                    >
+                      {saving ? (
+                        <Text className="text-white text-xs">...</Text>
+                      ) : (
+                        <Check size={16} color="#ffffff" />
+                      )}
+                    </View>
+                    <View 
+                      className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center"
+                      onClick={cancelEdit}
+                    >
+                      <X size={16} color="#6B7280" />
+                    </View>
+                  </View>
+                ) : (
+                  <View className="flex items-center gap-2" onClick={startEditNickname}>
+                    <Text className="text-lg text-gray-800 font-semibold">{nickname}</Text>
+                    <Pencil size={14} color="#9CA3AF" />
+                  </View>
+                )}
               </View>
-            ) : (
-              <View className="flex items-center" onClick={startEditNickname}>
-                <Text className="text-xl text-white font-semibold">{nickname}</Text>
-                <Text className="text-blue-100 text-sm ml-2">点击修改</Text>
-              </View>
-            )}
-            {openid && !isEditing && (
-              <Text className="text-blue-100 text-sm mt-1 block">
-                ID: {openid.slice(-8)}
-              </Text>
-            )}
-          </View>
-        </View>
+              
+              {/* 用户ID */}
+              {openid && (
+                <Text className="text-xs text-gray-400 mt-1">
+                  ID: {openid.slice(-8)}
+                </Text>
+              )}
+            </View>
+          </CardContent>
+        </Card>
       </View>
 
       {/* 功能菜单 */}
