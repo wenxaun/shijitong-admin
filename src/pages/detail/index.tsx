@@ -362,25 +362,36 @@ export default function Detail() {
       {/* 更多菜单 */}
       {showMoreMenu && (
         <View
-          className="fixed inset-0 bg-black bg-opacity-50 z-40"
+          className="fixed inset-0 z-40"
+          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
           onClick={() => setShowMoreMenu(false)}
         >
           <View
-            className="absolute right-3 top-16 bg-white rounded-lg shadow-lg overflow-hidden"
+            className="absolute right-3 top-16 bg-white rounded-lg shadow-lg overflow-hidden min-w-32"
             onClick={(e) => e.stopPropagation()}
           >
+            {/* 分享 */}
+            <Button 
+              className="flex items-center justify-start w-full px-4 py-3 bg-white border-0 text-left"
+              openType="share"
+            >
+              <Share2 size={18} color="#4B5563" />
+              <Text className="ml-2 text-base text-gray-800">分享任务</Text>
+            </Button>
+            {/* 编辑 */}
             {canEdit && (
               <View
-                className="flex items-center px-4 py-3 active:bg-gray-50"
+                className="flex items-center px-4 py-3 border-t border-gray-100 active:bg-gray-50"
                 onClick={editTask}
               >
                 <Pencil size={18} color="#4B5563" />
                 <Text className="ml-2 text-base text-gray-800">编辑任务</Text>
               </View>
             )}
+            {/* 删除 */}
             {canDelete && (
               <View
-                className="flex items-center px-4 py-3 active:bg-gray-50"
+                className="flex items-center px-4 py-3 border-t border-gray-100 active:bg-gray-50"
                 onClick={deleteTask}
               >
                 <Trash2 size={18} color="#EF4444" />
@@ -398,11 +409,13 @@ export default function Detail() {
             {/* 标题行 */}
             <View className="flex items-start justify-between mb-3">
               <Text className="text-xl font-bold text-gray-800 flex-1">{task.task_name}</Text>
-              {(canEdit || canDelete) && (
-                <View onClick={() => setShowMoreMenu(!showMoreMenu)}>
-                  <Ellipsis size={20} color="#9CA3AF" />
-                </View>
-              )}
+              {/* 所有人都可以点击更多菜单 */}
+              <View 
+                className="p-1"
+                onClick={() => setShowMoreMenu(!showMoreMenu)}
+              >
+                <Ellipsis size={20} color="#9CA3AF" />
+              </View>
             </View>
 
             {/* 描述 */}
@@ -449,19 +462,10 @@ export default function Detail() {
 
             {/* 状态操作按钮 */}
             {canOperate && task.status === 'pending' && (
-              <View className="flex gap-3">
-                <Button className="flex-1 bg-green-500 text-white rounded-lg" onClick={startTask}>
-                  <Play size={16} color="#ffffff" />
-                  <Text className="text-white ml-2">开始任务</Text>
-                </Button>
-                <Button 
-                  className="bg-green-500 text-white px-4 border-0 rounded-lg" 
-                  size="default"
-                  openType="share"
-                >
-                  <Share2 size={16} color="#ffffff" />
-                </Button>
-              </View>
+              <Button className="w-full bg-blue-500 text-white rounded-lg" onClick={startTask}>
+                <Play size={16} color="#ffffff" />
+                <Text className="text-white ml-2">开始任务</Text>
+              </Button>
             )}
 
             {canOperate && task.status === 'in_progress' && (
@@ -478,17 +482,6 @@ export default function Detail() {
                   <Text className="text-orange-500 ml-2">异常上报</Text>
                 </Button>
               </View>
-            )}
-
-            {/* 分享按钮（无操作权限时显示） */}
-            {!canOperate && (
-              <Button 
-                className="w-full bg-green-500 text-white rounded-lg"
-                openType="share"
-              >
-                <Share2 size={16} color="#ffffff" />
-                <Text className="text-white ml-2">转发任务</Text>
-              </Button>
             )}
 
             {/* 异常状态处理按钮 */}

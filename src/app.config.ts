@@ -27,10 +27,10 @@ export default defineAppConfig({
   ],
   window: {
     backgroundTextStyle: 'dark',
-    navigationBarBackgroundColor: '#07C160',
+    navigationBarBackgroundColor: '#1377EB',
     navigationBarTitleText: '事绩通',
     navigationBarTextStyle: 'white',
-    backgroundColor: '#EDEDED'
+    backgroundColor: '#F5F7FA'
   },
   // 移除全局 Skyline 配置，改为在需要高性能渲染的页面单独配置
   lazyCodeLoading: 'requiredComponents',
@@ -39,8 +39,8 @@ export default defineAppConfig({
     weui: true
   },
   tabBar: {
-    color: '#999999',
-    selectedColor: '#07C160',
+    color: '#666666',
+    selectedColor: '#1377EB',
     backgroundColor: '#FFFFFF',
     borderStyle: 'black',
     list: [
