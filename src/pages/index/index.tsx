@@ -1,5 +1,5 @@
 import { View, Text, ScrollView } from '@tarojs/components';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Taro from '@tarojs/taro';
 import { useUserStore } from '@/stores/user';
 import { callFunction, CLOUD_FUNCTIONS } from '@/utils/cloud';
@@ -74,10 +74,21 @@ export default function Index() {
   const [showDateRangeDialog, setShowDateRangeDialog] = useState(false);
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
   const [selectedDateRange, setSelectedDateRange] = useState<{ from?: Date; to?: Date }>({});
+  
+  // 使用 ref 跟踪首次加载，避免 useDidShow 重复刷新
+  const isFirstLoad = useRef(true);
+  // 使用 ref 跟踪是否正在加载
+  const isLoadingRef = useRef(false);
 
   // 加载任务列表
   const loadTasks = useCallback(async (refresh = false) => {
     console.log('===== loadTasks 开始 =====');
+    
+    // 避免重复加载
+    if (isLoadingRef.current) {
+      console.log('[Index] 正在加载中，跳过');
+      return;
+    }
     
     // 优先使用 hook 返回的 openid，否则从 store 获取
     const currentOpenid = openid || useUserStore.getState().openid;
@@ -91,7 +102,10 @@ export default function Index() {
     }
 
     console.log('[Index] 开始加载任务列表...');
-    setLoading(true);
+    isLoadingRef.current = true;
+    // 只在首次加载或无数据时显示全屏加载
+    setLoading(tasks.length === 0);
+    
     try {
       const currentPage = refresh ? 1 : page;
       
@@ -137,10 +151,11 @@ export default function Index() {
       console.error('[Index] 加载任务异常:', err);
       Taro.showToast({ title: '加载失败', icon: 'none' });
     } finally {
+      isLoadingRef.current = false;
       setLoading(false);
       console.log('===== loadTasks 结束 =====');
     }
-  }, [openid, statusFilter, timeFilter, page, selectedDateRange]);
+  }, [openid, statusFilter, timeFilter, page, selectedDateRange, tasks.length]);
 
   // 初始化加载
   useEffect(() => {
@@ -163,12 +178,19 @@ export default function Index() {
   // 页面显示时刷新数据
   Taro.useDidShow(() => {
     console.log('===== Index useDidShow =====');
+    
+    // 首次加载时跳过，避免重复刷新
+    if (isFirstLoad.current) {
+      isFirstLoad.current = false;
+      return;
+    }
+    
     const storeOpenid = useUserStore.getState().openid;
     console.log('[Index] openid:', openid);
     console.log('[Index] store 中的 openid:', storeOpenid);
     
     // 仅在有 openid 且不在加载中时刷新
-    if ((openid || storeOpenid) && !loading) {
+    if ((openid || storeOpenid) && !isLoadingRef.current) {
       loadTasks(true);
     }
   });
@@ -182,7 +204,6 @@ export default function Index() {
     
     const storeOpenid = useUserStore.getState().openid;
     if (openid || storeOpenid) {
-      // 不清空任务列表，避免黑屏
       setPage(1);
       loadTasks(true);
     }

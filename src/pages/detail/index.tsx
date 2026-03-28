@@ -450,32 +450,43 @@ export default function Detail() {
             {/* 状态操作按钮 */}
             {canOperate && task.status === 'pending' && (
               <View className="flex gap-3">
-                <Button className="flex-1 bg-blue-500 text-white" onClick={startTask}>
-                  <Play size={16} color="#ffffff" />
-                  <Text className="text-white ml-2">开始任务</Text>
+                <Button className="flex-1 bg-blue-500 text-white rounded-lg py-3" onClick={startTask}>
+                  <Play size={18} color="#ffffff" />
+                  <Text className="text-white ml-2 text-base">开始任务</Text>
                 </Button>
                 <Button 
-                  className="bg-green-500 text-white px-3 border-0" 
-                  size="mini"
+                  className="bg-green-500 text-white px-4 border-0 rounded-lg" 
+                  size="default"
                   openType="share"
                 >
-                  <Share2 size={16} color="#ffffff" />
+                  <Share2 size={18} color="#ffffff" />
                 </Button>
               </View>
             )}
 
             {canOperate && task.status === 'in_progress' && (
-              <View className="flex gap-3">
-                <Button className="flex-1 bg-green-500 text-white" onClick={completeTask}>
-                  <Check size={16} color="#ffffff" />
-                  <Text className="text-white ml-2">完成任务</Text>
-                </Button>
+              <View className="flex flex-col gap-3">
+                {/* 主要操作按钮 */}
+                <View className="flex gap-3">
+                  <Button className="flex-1 bg-green-500 text-white rounded-lg py-3" onClick={completeTask}>
+                    <Check size={18} color="#ffffff" />
+                    <Text className="text-white ml-2 text-base">完成任务</Text>
+                  </Button>
+                  <Button 
+                    className="bg-blue-500 text-white px-4 border-0 rounded-lg" 
+                    size="default"
+                    openType="share"
+                  >
+                    <Share2 size={18} color="#ffffff" />
+                  </Button>
+                </View>
+                {/* 次要操作按钮 */}
                 <Button 
-                  className="bg-blue-500 text-white px-3 border-0" 
-                  size="mini"
-                  openType="share"
+                  className="w-full text-orange-500 border border-orange-500 bg-transparent rounded-lg py-3" 
+                  onClick={reportException}
                 >
-                  <Share2 size={16} color="#ffffff" />
+                  <TriangleAlert size={18} color="#F97316" />
+                  <Text className="text-orange-500 ml-2 text-base">异常上报</Text>
                 </Button>
               </View>
             )}
@@ -483,21 +494,11 @@ export default function Detail() {
             {/* 分享按钮（待办/进行中/已完成都显示） */}
             {!canOperate && (
               <Button 
-                className="w-full bg-blue-500 text-white py-2"
+                className="w-full bg-blue-500 text-white py-3 rounded-lg"
                 openType="share"
               >
-                <Share2 size={16} color="#ffffff" />
-                <Text className="text-white ml-2">转发任务</Text>
-              </Button>
-            )}
-
-            {canOperate && task.status === 'in_progress' && (
-              <Button 
-                className="flex-1 text-orange-500 border border-orange-500 bg-transparent" 
-                onClick={reportException}
-              >
-                <TriangleAlert size={16} color="#F97316" />
-                <Text className="text-orange-500 ml-2">异常上报</Text>
+                <Share2 size={18} color="#ffffff" />
+                <Text className="text-white ml-2 text-base">转发任务</Text>
               </Button>
             )}
 
