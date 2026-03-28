@@ -34,6 +34,10 @@ export default defineAppConfig({
   },
   // 移除全局 Skyline 配置，改为在需要高性能渲染的页面单独配置
   lazyCodeLoading: 'requiredComponents',
+  // 引用 WeUI 扩展库，不占用小程序包体积
+  useExtendedLib: {
+    weui: true
+  },
   tabBar: {
     color: '#666666',
     selectedColor: '#1377EB',
