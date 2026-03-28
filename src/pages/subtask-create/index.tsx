@@ -1,13 +1,15 @@
-import { View, Text, Picker } from '@tarojs/components';
+// 注意：分享功能必须使用 Taro 原生 Button 组件，因为需要 openType="share"
+// eslint-disable-next-line no-restricted-syntax
+import { View, Text, Picker, Button } from '@tarojs/components';
 import { useState, useEffect, useCallback } from 'react';
 import Taro, { useRouter } from '@tarojs/taro';
 import { useUserStore } from '@/stores/user';
 import { callFunction, CLOUD_FUNCTIONS } from '@/utils/cloud';
 import type { CloudResponse } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Share2, Users } from 'lucide-react-taro';
 
 interface Executor {
   openid: string;
@@ -28,6 +30,10 @@ export default function SubtaskCreate() {
   const [maxDate, setMaxDate] = useState('');
   const [priority, setPriority] = useState<'P0' | 'P1' | 'P2' | 'P3'>('P2');
   const [submitting, setSubmitting] = useState(false);
+  
+  // 执行人来源类型：team-团队成员，friend-微信好友
+  const [executorSource, setExecutorSource] = useState<'team' | 'friend'>('team');
+  const [friendName, setFriendName] = useState('');
 
   // 加载主任务截止日期
   const loadParentTaskDeadline = useCallback(async () => {
@@ -102,12 +108,26 @@ export default function SubtaskCreate() {
       return;
     }
 
-    if (executorIndex < 0 || executorList.length === 0) {
-      Taro.showToast({ title: '请选择执行人', icon: 'none' });
-      return;
+    // 根据执行人来源验证
+    if (executorSource === 'team') {
+      if (executorIndex < 0 || executorList.length === 0) {
+        Taro.showToast({ title: '请选择执行人', icon: 'none' });
+        return;
+      }
+    } else {
+      if (!friendName.trim()) {
+        Taro.showToast({ title: '请输入好友昵称', icon: 'none' });
+        return;
+      }
     }
 
-    const executor = executorList[executorIndex];
+    // 获取执行人信息
+    const executorId = executorSource === 'team' && executorIndex >= 0 
+      ? executorList[executorIndex].openid 
+      : `friend_${Date.now()}`; // 微信好友使用临时ID
+    const executorName = executorSource === 'team' && executorIndex >= 0
+      ? executorList[executorIndex].nickname
+      : friendName;
 
     setSubmitting(true);
     try {
@@ -117,9 +137,11 @@ export default function SubtaskCreate() {
           task_id: parentTaskId,
           title: taskName,
           description: taskDescription,
-          executor_id: executor.openid,
+          executor_id: executorId,
+          executor_name: executorName,
           require_date: requireDate,
-          priority: priority
+          priority: priority,
+          executor_source: executorSource // 标记执行人来源
         }
       );
 
@@ -136,6 +158,15 @@ export default function SubtaskCreate() {
       setSubmitting(false);
     }
   };
+
+  // 分享配置
+  Taro.useShareAppMessage(() => {
+    return {
+      title: `请协助完成子任务：${taskName}`,
+      path: `/pages/subtask-detail/index?id=${parentTaskId}`,
+      imageUrl: ''
+    };
+  });
 
 
 
@@ -186,22 +217,76 @@ export default function SubtaskCreate() {
         <Card>
           <CardContent className="p-3">
             <Text className="text-sm text-gray-700 mb-2">执行人</Text>
-            <Picker
-              mode="selector"
-              range={executorList}
-              rangeKey="nickname"
-              value={executorIndex >= 0 ? executorIndex : 0}
-              onChange={(e) => setExecutorIndex(parseInt(String(e.detail.value)))}
-            >
-              <View className="bg-gray-50 rounded-lg px-3 py-2 flex items-center justify-between border border-gray-200">
-                <Text className={executorIndex >= 0 ? 'text-gray-800' : 'text-gray-400'}>
-                  {executorIndex >= 0 && executorList[executorIndex]
-                    ? executorList[executorIndex].nickname
-                    : '选择执行人'}
+            
+            {/* 执行人来源选择 */}
+            <View className="flex gap-2 mb-3">
+              <View 
+                className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-lg ${
+                  executorSource === 'team' ? 'bg-blue-500' : 'bg-gray-100'
+                }`}
+                onClick={() => setExecutorSource('team')}
+              >
+                <Users size={16} color={executorSource === 'team' ? '#ffffff' : '#6B7280'} />
+                <Text className={executorSource === 'team' ? 'text-white text-sm' : 'text-gray-600 text-sm'}>
+                  团队成员
                 </Text>
-                <Text className="text-gray-400">▼</Text>
               </View>
-            </Picker>
+              <View 
+                className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-lg ${
+                  executorSource === 'friend' ? 'bg-blue-500' : 'bg-gray-100'
+                }`}
+                onClick={() => setExecutorSource('friend')}
+              >
+                <Share2 size={16} color={executorSource === 'friend' ? '#ffffff' : '#6B7280'} />
+                <Text className={executorSource === 'friend' ? 'text-white text-sm' : 'text-gray-600 text-sm'}>
+                  微信好友
+                </Text>
+              </View>
+            </View>
+            
+            {/* 团队成员选择 */}
+            {executorSource === 'team' && (
+              <Picker
+                mode="selector"
+                range={executorList}
+                rangeKey="nickname"
+                value={executorIndex >= 0 ? executorIndex : 0}
+                onChange={(e) => setExecutorIndex(parseInt(String(e.detail.value)))}
+              >
+                <View className="bg-gray-50 rounded-lg px-3 py-2 flex items-center justify-between border border-gray-200">
+                  <Text className={executorIndex >= 0 ? 'text-gray-800' : 'text-gray-400'}>
+                    {executorIndex >= 0 && executorList[executorIndex]
+                      ? executorList[executorIndex].nickname
+                      : '选择执行人'}
+                  </Text>
+                  <Text className="text-gray-400">▼</Text>
+                </View>
+              </Picker>
+            )}
+            
+            {/* 微信好友输入 */}
+            {executorSource === 'friend' && (
+              <View className="space-y-2">
+                <Input
+                  placeholder="请输入好友昵称"
+                  placeholderClass="text-gray-400"
+                  value={friendName}
+                  onInput={(e) => setFriendName(e.detail.value)}
+                  className="bg-gray-50 border-gray-200"
+                />
+                <Button
+                  className="w-full bg-green-500 text-white py-2 border-0"
+                  size="mini"
+                  openType="share"
+                >
+                  <Share2 size={16} color="#ffffff" />
+                  <Text className="text-white text-sm ml-1">转发给好友</Text>
+                </Button>
+                <Text className="text-xs text-gray-400">
+                  转发给微信好友后，好友可通过小程序查看并协助完成子任务
+                </Text>
+              </View>
+            )}
           </CardContent>
         </Card>
 

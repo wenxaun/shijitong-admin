@@ -1,11 +1,13 @@
-import { View, Text, ScrollView } from '@tarojs/components';
+// 注意：分享功能必须使用 Taro 原生 Button 组件，因为需要 openType="share"
+// eslint-disable-next-line no-restricted-syntax
+import { View, Text, ScrollView, Button } from '@tarojs/components';
 import { useState, useEffect, useCallback } from 'react';
 import Taro, { useRouter } from '@tarojs/taro';
 import { useUserStore } from '@/stores/user';
 import { callFunction, CLOUD_FUNCTIONS } from '@/utils/cloud';
 import type { Task, TaskStatus, Subtask, CloudResponse } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Button as UIButton } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -21,7 +23,8 @@ import {
   ChevronRight,
   MessageCircle,
   ListTodo,
-  FileText
+  FileText,
+  Share2
 } from 'lucide-react-taro';
 
 // 状态映射
@@ -319,6 +322,15 @@ export default function Detail() {
     Taro.navigateTo({ url: `/pages/subtask-manage/index?id=${taskId}` });
   };
 
+  // 分享配置
+  Taro.useShareAppMessage(() => {
+    return {
+      title: task ? `任务：${task.task_name}` : '查看任务详情',
+      path: `/pages/detail/index?id=${taskId}`,
+      imageUrl: ''
+    };
+  });
+
   // 加载中
   if (loading) {
     return (
@@ -437,10 +449,19 @@ export default function Detail() {
 
             {/* 状态操作按钮 */}
             {canOperate && task.status === 'pending' && (
-              <Button className="w-full bg-blue-500 text-white" onClick={startTask}>
-                <Play size={16} color="#ffffff" />
-                <Text className="text-white ml-2">开始任务</Text>
-              </Button>
+              <View className="flex gap-3">
+                <Button className="flex-1 bg-blue-500 text-white" onClick={startTask}>
+                  <Play size={16} color="#ffffff" />
+                  <Text className="text-white ml-2">开始任务</Text>
+                </Button>
+                <Button 
+                  className="bg-green-500 text-white px-3 border-0" 
+                  size="mini"
+                  openType="share"
+                >
+                  <Share2 size={16} color="#ffffff" />
+                </Button>
+              </View>
             )}
 
             {canOperate && task.status === 'in_progress' && (
@@ -449,11 +470,35 @@ export default function Detail() {
                   <Check size={16} color="#ffffff" />
                   <Text className="text-white ml-2">完成任务</Text>
                 </Button>
-                <Button variant="outline" className="flex-1 text-orange-500 border-orange-500" onClick={reportException}>
-                  <TriangleAlert size={16} color="#F97316" />
-                  <Text className="text-orange-500 ml-2">异常上报</Text>
+                <Button 
+                  className="bg-blue-500 text-white px-3 border-0" 
+                  size="mini"
+                  openType="share"
+                >
+                  <Share2 size={16} color="#ffffff" />
                 </Button>
               </View>
+            )}
+
+            {/* 分享按钮（待办/进行中/已完成都显示） */}
+            {!canOperate && (
+              <Button 
+                className="w-full bg-blue-500 text-white py-2"
+                openType="share"
+              >
+                <Share2 size={16} color="#ffffff" />
+                <Text className="text-white ml-2">转发任务</Text>
+              </Button>
+            )}
+
+            {canOperate && task.status === 'in_progress' && (
+              <Button 
+                className="flex-1 text-orange-500 border border-orange-500 bg-transparent" 
+                onClick={reportException}
+              >
+                <TriangleAlert size={16} color="#F97316" />
+                <Text className="text-orange-500 ml-2">异常上报</Text>
+              </Button>
             )}
 
             {/* 异常状态处理按钮 */}
@@ -643,7 +688,7 @@ export default function Detail() {
                     className="bg-gray-50 border-gray-200"
                   />
                 </View>
-                <Button size="sm" onClick={addComment}>发送</Button>
+                <UIButton size="sm" onClick={addComment}>发送</UIButton>
               </View>
             </TabsContent>
           </Tabs>

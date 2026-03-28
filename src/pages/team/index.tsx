@@ -1,14 +1,16 @@
-import { View, Text, ScrollView } from '@tarojs/components';
+// 注意：分享功能必须使用 Taro 原生 Button 组件，因为需要 openType="share"
+// eslint-disable-next-line no-restricted-syntax
+import { View, Text, ScrollView, Button } from '@tarojs/components';
 import { useState, useEffect, useCallback } from 'react';
 import Taro from '@tarojs/taro';
 import { useUserStore } from '@/stores/user';
 import { callFunction } from '@/utils/cloud';
 import type { Team, CloudResponse } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Button as UIButton } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, ChevronRight, Users, Crown, Shield, User, Share2 } from 'lucide-react-taro';
+import { Plus, ChevronRight, Users, Crown, Shield, User, Share2, MessageCircle } from 'lucide-react-taro';
 
 export default function TeamPage() {
   const { openid } = useUserStore();
@@ -146,6 +148,32 @@ export default function TeamPage() {
     Taro.navigateTo({ url: '/pages/team-edit/index' });
   };
 
+  // 分享团队到微信群
+  const shareTeamToGroup = (e: any) => {
+    // 阻止事件冒泡
+    e.stopPropagation();
+    
+    if (Taro.getEnv() === Taro.ENV_TYPE.WEAPP) {
+      // 小程序端使用分享功能
+      Taro.showShareMenu({
+        withShareTicket: true
+      });
+      Taro.showToast({ title: '点击右上角分享', icon: 'none' });
+    } else {
+      // H5端提示
+      Taro.showToast({ title: '请在小程序中使用此功能', icon: 'none' });
+    }
+  };
+
+  // 分享消息配置
+  Taro.useShareAppMessage(() => {
+    return {
+      title: '邀请你加入我的团队',
+      path: '/pages/team-join/index',
+      imageUrl: '' // 可自定义分享图片
+    };
+  });
+
   // 获取角色图标
   const getRoleIcon = (role: string, isLeader: boolean) => {
     if (isLeader) return Crown;
@@ -211,28 +239,40 @@ export default function TeamPage() {
               </View>
             </View>
 
-            {/* 成员头像预览 */}
+            {/* 成员头像预览和操作按钮 */}
             {team.member_details && team.member_details.length > 0 && (
-              <View className="flex items-center mt-3 pt-3 border-t border-gray-100">
-                <View className="flex -space-x-2">
-                  {team.member_details.slice(0, 5).map((member, index) => (
-                    <View
-                      key={member.openid}
-                      className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center border-2 border-white"
-                      style={{ zIndex: 5 - index }}
-                    >
-                      <Text className="text-xs text-blue-500 font-semibold">
-                        {(member.nickname || '未')[0]}
-                      </Text>
-                    </View>
-                  ))}
-                  {team.member_details.length > 5 && (
-                    <View className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center border-2 border-white">
-                      <Text className="text-xs text-gray-500">
-                        +{team.member_details.length - 5}
-                      </Text>
-                    </View>
-                  )}
+              <View className="mt-3 pt-3 border-t border-gray-100">
+                <View className="flex items-center justify-between">
+                  <View className="flex -space-x-2">
+                    {team.member_details.slice(0, 5).map((member, index) => (
+                      <View
+                        key={member.openid}
+                        className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center border-2 border-white"
+                        style={{ zIndex: 5 - index }}
+                      >
+                        <Text className="text-xs text-blue-500 font-semibold">
+                          {(member.nickname || '未')[0]}
+                        </Text>
+                      </View>
+                    ))}
+                    {team.member_details.length > 5 && (
+                      <View className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center border-2 border-white">
+                        <Text className="text-xs text-gray-500">
+                          +{team.member_details.length - 5}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  
+                  {/* 团队沟通按钮 */}
+                  <Button
+                    className="flex items-center gap-1 bg-blue-50 text-blue-500 px-3 py-1 rounded-full text-sm border-0"
+                    openType="share"
+                    onClick={(e) => shareTeamToGroup(e)}
+                  >
+                    <MessageCircle size={14} color="#1377EB" />
+                    <Text className="text-blue-500 text-xs">团队沟通</Text>
+                  </Button>
                 </View>
               </View>
             )}
@@ -248,10 +288,10 @@ export default function TeamPage() {
       <View className="bg-white px-4 py-3 border-b border-gray-100">
         <View className="flex items-center justify-between">
           <Text className="text-lg font-semibold text-gray-800">我的团队</Text>
-          <Button size="sm" onClick={createTeam}>
+          <UIButton size="sm" onClick={createTeam}>
             <Plus size={16} color="#ffffff" />
             <Text className="text-white ml-1">创建团队</Text>
-          </Button>
+          </UIButton>
         </View>
       </View>
 

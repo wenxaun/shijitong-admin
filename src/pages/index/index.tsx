@@ -157,6 +157,7 @@ export default function Index() {
       console.log('[Index] openid 为空，跳过加载');
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openid]);
 
   // 页面显示时刷新数据
@@ -166,7 +167,8 @@ export default function Index() {
     console.log('[Index] openid:', openid);
     console.log('[Index] store 中的 openid:', storeOpenid);
     
-    if (openid || storeOpenid) {
+    // 仅在有 openid 且不在加载中时刷新
+    if ((openid || storeOpenid) && !loading) {
       loadTasks(true);
     }
   });
@@ -178,11 +180,13 @@ export default function Index() {
       return;
     }
     
-    if (openid || useUserStore.getState().openid) {
-      setTasks([]);
+    const storeOpenid = useUserStore.getState().openid;
+    if (openid || storeOpenid) {
+      // 不清空任务列表，避免黑屏
       setPage(1);
       loadTasks(true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter, timeFilter, selectedDateRange]);
 
   // 处理时间筛选点击
