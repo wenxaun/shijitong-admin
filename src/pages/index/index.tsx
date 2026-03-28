@@ -40,21 +40,21 @@ const STATUS_MAP: Record<TaskStatus, string> = {
   exception: '异常'
 };
 
-// 状态颜色映射
+// 状态颜色映射 - 商务简洁风格
 const STATUS_COLOR: Record<TaskStatus, string> = {
-  pending: 'bg-gray-100 text-gray-600',
-  in_progress: 'bg-blue-50 text-blue-600',
-  completed: 'bg-green-50 text-green-600',
-  cancelled: 'bg-red-50 text-red-500',
-  exception: 'bg-orange-50 text-orange-600'
+  pending: 'bg-gray-100 text-gray-700',
+  in_progress: 'bg-neutral-100 text-neutral-800',
+  completed: 'bg-emerald-50 text-emerald-700',
+  cancelled: 'bg-red-50 text-red-600',
+  exception: 'bg-amber-50 text-amber-700'
 };
 
-// 优先级颜色映射
+// 优先级颜色映射 - 商务简洁风格
 const PRIORITY_COLOR: Record<TaskPriority, string> = {
-  P0: 'bg-red-50 text-red-500',
-  P1: 'bg-orange-50 text-orange-500',
-  P2: 'bg-blue-50 text-blue-500',
-  P3: 'bg-gray-100 text-gray-400'
+  P0: 'bg-red-50 text-red-600',
+  P1: 'bg-amber-50 text-amber-600',
+  P2: 'bg-neutral-100 text-neutral-700',
+  P3: 'bg-gray-100 text-gray-500'
 };
 
 export default function Index() {
@@ -425,25 +425,25 @@ export default function Index() {
       <DeadlineReminder />
 
       {/* 筛选栏 */}
-      <View className="bg-white px-3 py-2 mb-3">
+      <View className="bg-white px-4 py-3 mb-2 border-b border-gray-100">
         {/* 时间筛选 */}
         <View className="flex items-center mb-2">
-          <Text className="text-sm text-gray-500 w-12">时间：</Text>
+          <Text className="text-sm text-gray-400 w-12">时间：</Text>
           <ScrollView scrollX className="flex-1 whitespace-nowrap">
             <View className="flex gap-2">
               {TIME_FILTERS.map((item) => (
                 <View
                   key={item.value}
-                  className={`px-3 py-1 rounded-full text-sm flex items-center gap-1 ${
+                  className={`px-3 py-2 rounded-full text-sm flex items-center gap-1 ${
                     timeFilter === item.value
-                      ? 'bg-blue-500 text-white'
+                      ? 'bg-neutral-900 text-white'
                       : 'bg-gray-100 text-gray-600'
                   }`}
                   onClick={() => handleTimeFilterClick(item.value)}
                 >
                   {item.value === 'custom' && timeFilter === 'custom' && selectedDateRange.from ? (
                     <>
-                      <CalendarDays size={14} color={timeFilter === item.value ? '#ffffff' : '#1377EB'} />
+                      <CalendarDays size={14} color={timeFilter === item.value ? '#ffffff' : '#6B7280'} />
                       <Text>{getDisplayDateRange()}</Text>
                     </>
                   ) : (
@@ -457,15 +457,15 @@ export default function Index() {
 
         {/* 状态筛选 */}
         <View className="flex items-center">
-          <Text className="text-sm text-gray-500 w-12">状态：</Text>
+          <Text className="text-sm text-gray-400 w-12">状态：</Text>
           <ScrollView scrollX className="flex-1 whitespace-nowrap">
             <View className="flex gap-2">
               {STATUS_FILTERS.map((item) => (
                 <View
                   key={item.value}
-                  className={`px-3 py-1 rounded-full text-sm ${
+                  className={`px-3 py-2 rounded-full text-sm ${
                     statusFilter === item.value
-                      ? 'bg-blue-500 text-white'
+                      ? 'bg-neutral-900 text-white'
                       : 'bg-gray-100 text-gray-600'
                   }`}
                   onClick={() => setStatusFilter(item.value)}

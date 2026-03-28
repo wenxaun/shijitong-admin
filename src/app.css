@@ -11,30 +11,30 @@ page {
 :root,
 page,
 root-portal {
-  /* 事绩通 - 飞书风格配色 */
-  --background: #F5F7FA;
-  --foreground: #333333;
+  /* 事绩通 - 商务简洁风格配色 */
+  --background: #F5F5F5;
+  --foreground: #1A1A1A;
   --card: #FFFFFF;
-  --card-foreground: #333333;
+  --card-foreground: #1A1A1A;
   --popover: #FFFFFF;
-  --popover-foreground: #333333;
-  --primary: #1377EB;
+  --popover-foreground: #1A1A1A;
+  --primary: #1A1A1A;
   --primary-foreground: #FFFFFF;
-  --secondary: #E5E6EB;
-  --secondary-foreground: #333333;
-  --muted: #F5F7FA;
+  --secondary: #F0F0F0;
+  --secondary-foreground: #1A1A1A;
+  --muted: #F5F5F5;
   --muted-foreground: #666666;
-  --accent: #E8F0FE;
-  --accent-foreground: #1377EB;
-  --destructive: #EA4335;
+  --accent: #F0F0F0;
+  --accent-foreground: #1A1A1A;
+  --destructive: #DC2626;
   --destructive-foreground: #FFFFFF;
-  --border: #E5E6EB;
-  --input: #F5F7FA;
-  --ring: #1377EB;
+  --border: #E5E5E5;
+  --input: #FFFFFF;
+  --ring: #1A1A1A;
   /* 语义色 */
-  --success: #00B365;
-  --warning: #FF7D27;
-  --error: #EA4335;
+  --success: #16A34A;
+  --warning: #D97706;
+  --error: #DC2626;
   --sidebar: lab(98.26% 0 0);
   --sidebar-foreground: lab(2.75381% 0 0);
   --sidebar-primary: lab(7.78201% -0.0000149012 0);

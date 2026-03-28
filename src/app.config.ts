@@ -26,10 +26,10 @@ export default defineAppConfig({
     'pages/subtask-edit/index'
   ],
   window: {
-    backgroundTextStyle: 'light',
-    navigationBarBackgroundColor: '#1377EB',
+    backgroundTextStyle: 'dark',
+    navigationBarBackgroundColor: '#FFFFFF',
     navigationBarTitleText: '事绩通',
-    navigationBarTextStyle: 'white',
+    navigationBarTextStyle: 'black',
     backgroundColor: '#F5F7FA'
   },
   // 移除全局 Skyline 配置，改为在需要高性能渲染的页面单独配置
@@ -39,22 +39,22 @@ export default defineAppConfig({
     weui: true
   },
   tabBar: {
-    color: '#666666',
-    selectedColor: '#1377EB',
-    backgroundColor: '#ffffff',
+    color: '#999999',
+    selectedColor: '#1A1A1A',
+    backgroundColor: '#FFFFFF',
     borderStyle: 'black',
     list: [
       {
         pagePath: 'pages/index/index',
         text: '任务',
-        iconPath: './assets/tabbar/task.png',
-        selectedIconPath: './assets/tabbar/task-active.png'
+        iconPath: './assets/tabbar/list-todo.png',
+        selectedIconPath: './assets/tabbar/list-todo-active.png'
       },
       {
         pagePath: 'pages/create/index',
         text: '发布',
-        iconPath: './assets/tabbar/create.png',
-        selectedIconPath: './assets/tabbar/create-active.png'
+        iconPath: './assets/tabbar/plus.png',
+        selectedIconPath: './assets/tabbar/plus-active.png'
       },
       {
         pagePath: 'pages/profile/index',
