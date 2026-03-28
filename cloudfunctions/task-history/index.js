@@ -16,7 +16,9 @@ exports.main = async (event, context) => {
   const {
     type = 'created', // created: 我创建的, executed: 我执行的, deleted: 已删除
     page = 1,
-    pageSize = 20
+    pageSize = 20,
+    start_date,
+    end_date
   } = event
 
   try {
@@ -40,6 +42,11 @@ exports.main = async (event, context) => {
         _openid: OPENID,
         is_deleted: true
       }
+    }
+    
+    // 支持自定义日期范围筛选
+    if (start_date && end_date) {
+      query.require_date = _.and(_.gte(start_date), _.lte(end_date))
     }
 
     // 查询数据库

@@ -6,152 +6,193 @@ cloud.init({
 })
 
 const db = cloud.database()
+const _ = db.command
+
+// 生成随机邀请码
+function generateInviteCode() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  let code = ''
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return code
+}
 
 // 云函数入口函数
 exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext()
   const { OPENID } = wxContext
+  const { action, team_id, invite_code, user_id } = event
+  
+  console.log('[team-invite] action:', action, 'openid:', OPENID)
   
   try {
-    const {
-      team_id,
-      invitee_openid,
-      invitee_username,
-      role = 'member'
-    } = event
-    
-    // 获取邀请人信息
-    const inviterRes = await db.collection('users').where({
-      openid: OPENID
-    }).get()
-    
-    if (inviterRes.data.length === 0) {
-      return {
-        success: false,
-        message: '用户未登录'
-      }
-    }
-    
-    const inviter = inviterRes.data[0]
-    
-    // 获取团队信息
-    const teamRes = await db.collection('teams').doc(team_id).get()
-    
-    if (!teamRes.data) {
-      return {
-        success: false,
-        message: '团队不存在'
-      }
-    }
-    
-    const team = teamRes.data
-    
-    // 权限检查：只有团队负责人、管理员可以邀请
-    if (team.leader_id !== OPENID && !['creator', 'admin'].includes(inviter.role)) {
-      return {
-        success: false,
-        message: '无权限邀请成员'
-      }
-    }
-    
-    // 检查被邀请人是否存在
-    let invitee
-    if (invitee_openid) {
-      const inviteeRes = await db.collection('users').where({
-        openid: invitee_openid
-      }).get()
+    // ==================== 创建邀请码 ====================
+    if (action === 'create') {
+      // 获取团队信息
+      const teamRes = await db.collection('teams').doc(team_id).get()
       
-      if (inviteeRes.data.length === 0) {
-        return {
-          success: false,
-          message: '该用户不存在'
-        }
+      if (!teamRes.data) {
+        return { success: false, message: '团队不存在' }
       }
-      invitee = inviteeRes.data[0]
-    } else if (invitee_username) {
-      const inviteeRes = await db.collection('users').where({
-        username: invitee_username
-      }).get()
       
-      if (inviteeRes.data.length === 0) {
-        return {
-          success: false,
-          message: '该用户名不存在'
-        }
+      const team = teamRes.data
+      
+      // 权限检查：只有创建者或管理员可以生成邀请码
+      const memberInfo = team.member_details?.find(m => m.openid === OPENID)
+      const isLeader = team.leader_id === OPENID
+      const canInvite = isLeader || memberInfo?.permissions?.can_invite_member || memberInfo?.role === 'admin'
+      
+      if (!canInvite) {
+        return { success: false, message: '无权限生成邀请码' }
       }
-      invitee = inviteeRes.data[0]
-      invitee_openid = invitee.openid
-    } else {
-      return {
-        success: false,
-        message: '请提供被邀请人的 OPENID 或用户名'
-      }
-    }
-    
-    // 检查是否已是成员
-    const existMember = await db.collection('team_members').where({
-      team_id: team_id,
-      user_id: invitee_openid,
-      status: 'active'
-    }).get()
-    
-    if (existMember.data.length > 0) {
-      return {
-        success: false,
-        message: '该用户已是团队成员'
-      }
-    }
-    
-    // 创建团队成员关系
-    const result = await db.collection('team_members').add({
-      data: {
-        team_id: team_id,
-        user_id: invitee_openid,
-        user_name: invitee.nickname || invitee.username,
-        role: role,
-        title: '',
-        joined_at: new Date(),
-        joined_by: OPENID,
-        status: 'active'
-      }
-    })
-    
-    // 更新团队成员列表
-    await db.collection('teams').doc(team_id).update({
-      data: {
-        member_ids: db.command.push(invitee_openid),
-        member_count: db.command.inc(1),
-        updated_at: new Date()
-      }
-    })
-    
-    // 更新被邀请人的部门信息（如果团队关联部门）
-    if (team.department_id) {
-      await db.collection('users').doc(invitee._id).update({
+      
+      // 生成邀请码（有效期7天）
+      const code = generateInviteCode()
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+      
+      // 更新团队的邀请码
+      await db.collection('teams').doc(team_id).update({
         data: {
-          department_id: team.department_id,
-          department_path: team.department_path || '',
+          invite_code: code,
+          invite_code_expires_at: expiresAt,
           updated_at: new Date()
         }
       })
-    }
-    
-    return {
-      success: true,
-      message: `已成功邀请 ${invitee.nickname || invitee.username} 加入团队！`,
-      data: {
-        member_id: result._id,
-        invitee_name: invitee.nickname || invitee.username,
-        role: role
+      
+      return {
+        success: true,
+        message: '邀请码生成成功',
+        data: {
+          invite_code: code,
+          expires_at: expiresAt.toISOString()
+        }
       }
     }
     
-  } catch (err) {
-    console.error('邀请成员失败:', err)
+    // ==================== 查询邀请码 ====================
+    if (action === 'query') {
+      if (!invite_code) {
+        return { success: false, message: '请输入邀请码' }
+      }
+      
+      // 查找包含该邀请码的团队
+      const teamRes = await db.collection('teams').where({
+        invite_code: invite_code.toUpperCase()
+      }).get()
+      
+      if (teamRes.data.length === 0) {
+        return { success: false, message: '邀请码无效或已过期' }
+      }
+      
+      const team = teamRes.data[0]
+      
+      // 检查邀请码是否过期
+      if (team.invite_code_expires_at && new Date(team.invite_code_expires_at) < new Date()) {
+        return { success: false, message: '邀请码已过期' }
+      }
+      
+      // 获取邀请人信息（团队创建者或第一个管理员）
+      const inviter = team.member_details?.find(m => m.role === 'owner') || 
+                      team.member_details?.find(m => m.role === 'admin') ||
+                      team.member_details?.[0]
+      
+      return {
+        success: true,
+        message: '查询成功',
+        data: {
+          team_id: team._id,
+          team_name: team.name,
+          team_description: team.description,
+          inviter_name: inviter?.nickname || team.leader_name || '团队管理员',
+          member_count: team.members?.length || team.member_details?.length || 0,
+          expires_at: team.invite_code_expires_at
+        }
+      }
+    }
+    
+    // ==================== 加入团队 ====================
+    if (action === 'join') {
+      if (!invite_code || !user_id) {
+        return { success: false, message: '参数不完整' }
+      }
+      
+      // 查找团队
+      const teamRes = await db.collection('teams').where({
+        invite_code: invite_code.toUpperCase()
+      }).get()
+      
+      if (teamRes.data.length === 0) {
+        return { success: false, message: '邀请码无效或已过期' }
+      }
+      
+      const team = teamRes.data[0]
+      
+      // 检查邀请码是否过期
+      if (team.invite_code_expires_at && new Date(team.invite_code_expires_at) < new Date()) {
+        return { success: false, message: '邀请码已过期' }
+      }
+      
+      // 检查是否已是成员
+      const isMember = team.members?.includes(user_id) || 
+                       team.member_details?.some(m => m.openid === user_id)
+      
+      if (isMember) {
+        return { success: false, message: '你已是该团队成员' }
+      }
+      
+      // 获取用户信息
+      const userRes = await db.collection('users').where({
+        openid: user_id
+      }).get()
+      
+      const user = userRes.data?.[0]
+      const nickname = user?.nickname || user?.username || '新成员'
+      
+      // 默认成员权限
+      const defaultPermissions = {
+        can_create_task: true,
+        can_assign_task: false,
+        can_view_all_tasks: false,
+        can_edit_team: false,
+        can_invite_member: false,
+        can_remove_member: false
+      }
+      
+      // 添加成员到团队
+      const newMember = {
+        openid: user_id,
+        nickname: nickname,
+        role: 'member',
+        permissions: defaultPermissions,
+        joined_at: new Date().toISOString()
+      }
+      
+      await db.collection('teams').doc(team._id).update({
+        data: {
+          members: _.push(user_id),
+          member_details: _.push(newMember),
+          updated_at: new Date()
+        }
+      })
+      
+      return {
+        success: true,
+        message: '加入团队成功'
+      }
+    }
+    
+    // ==================== 未知操作 ====================
     return {
       success: false,
-      message: '邀请失败：' + err.message,
-      errCode: err.errCode
+      message: '未知操作'
+    }
+    
+  } catch (err) {
+    console.error('[team-invite] 错误:', err)
+    return {
+      success: false,
+      message: '操作失败：' + err.message
     }
   }
 }

@@ -52,7 +52,13 @@ exports.main = async (event, context) => {
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
     
-    if (time_filter === 'today') {
+    // 支持自定义日期范围
+    const { start_date, end_date } = event
+    
+    if (start_date && end_date) {
+      // 自定义日期范围筛选
+      conditions.push({ require_date: _.and(_.gte(start_date), _.lte(end_date)) })
+    } else if (time_filter === 'today') {
       conditions.push({ require_date: todayStr })
     } else if (time_filter === 'week') {
       const monday = new Date(today)
