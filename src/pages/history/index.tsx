@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Calendar as CalendarPicker } from '@/components/ui/calendar';
-import { ChevronRight, Calendar, User, Award, Archive, Send, Trash2, CalendarDays, X } from 'lucide-react-taro';
+import { ChevronRight, Calendar, User, Award, Archive, Send, Trash2, CalendarDays } from 'lucide-react-taro';
 import { format } from 'date-fns';
 
 type TabType = 'created' | 'executed' | 'deleted';
@@ -425,12 +425,7 @@ export default function History() {
         <Dialog open={showDateRangeDialog} onOpenChange={setShowDateRangeDialog}>
           <DialogContent className="max-w-sm">
             <DialogHeader>
-              <DialogTitle className="flex items-center justify-between">
-                <Text>选择日期范围</Text>
-                <View onClick={clearCustomTime}>
-                  <X size={20} color="#6B7280" />
-                </View>
-              </DialogTitle>
+              <DialogTitle>选择日期范围</DialogTitle>
             </DialogHeader>
             
             <View className="py-4">
@@ -455,21 +450,36 @@ export default function History() {
               )}
             </View>
             
-            <DialogFooter>
-              <Button 
-                variant="outline" 
-                className="flex-1"
-                onClick={() => setShowDateRangeDialog(false)}
-              >
-                取消
-              </Button>
-              <Button 
-                className="flex-1"
-                onClick={confirmDateRange}
-                disabled={!dateRange.from || !dateRange.to}
-              >
-                确定
-              </Button>
+            <DialogFooter className="flex-col gap-2">
+              <View className="flex gap-2 w-full">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => setShowDateRangeDialog(false)}
+                >
+                  取消
+                </Button>
+                <Button 
+                  className="flex-1"
+                  onClick={confirmDateRange}
+                  disabled={!dateRange.from || !dateRange.to}
+                >
+                  确定
+                </Button>
+              </View>
+              {selectedDateRange.from && (
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="w-full text-gray-500"
+                  onClick={() => {
+                    clearCustomTime();
+                    setShowDateRangeDialog(false);
+                  }}
+                >
+                  清除自定义时间
+                </Button>
+              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>

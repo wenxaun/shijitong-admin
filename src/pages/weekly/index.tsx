@@ -7,8 +7,7 @@ import { Task, CloudResponse } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Calendar, TrendingUp, Lightbulb, CircleAlert, CircleCheck, ChartBar, ChevronLeft, ChevronRight } from 'lucide-react-taro';
+import { Calendar, TrendingUp, Lightbulb, CircleAlert, CircleCheck, ChartBar, ChevronLeft, ChevronRight, Loader } from 'lucide-react-taro';
 
 interface TaskWithReview extends Task {
   learnings?: string;
@@ -258,16 +257,6 @@ export default function Weekly() {
     return `${weekOffset}周后`;
   };
 
-  if (loading) {
-    return (
-      <View className="min-h-screen bg-gray-50 p-4">
-        <Skeleton className="h-24 w-full mb-4" />
-        <Skeleton className="h-48 w-full mb-4" />
-        <Skeleton className="h-32 w-full" />
-      </View>
-    );
-  }
-
   if (!weeklyData) {
     return (
       <View className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
@@ -282,6 +271,16 @@ export default function Weekly() {
 
   return (
     <View className="min-h-screen bg-gray-50">
+      {/* 加载遮罩层 */}
+      {loading && (
+        <View className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50">
+          <View className="bg-white rounded-xl px-6 py-4 flex items-center gap-2 shadow-lg">
+            <Loader size={20} color="#1377EB" className="animate-spin" />
+            <Text className="text-gray-600">加载中...</Text>
+          </View>
+        </View>
+      )}
+      
       <ScrollView className="h-screen" scrollY>
         {/* 周报头部 */}
         <View className="bg-gradient-to-b from-blue-500 to-blue-600 px-4 py-6">

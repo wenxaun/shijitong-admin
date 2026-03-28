@@ -9,15 +9,15 @@ import type { CloudResponse } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button as UIButton } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Camera, ChevronRight, LogOut } from 'lucide-react-taro';
+import { Camera, ChevronRight, LogOut, Trash2 } from 'lucide-react-taro';
 
-// 菜单项配置
+// 菜单项配置 - 按指定顺序排列
 const MENU_ITEMS = [
-  { icon: '📜', label: '历史任务', path: '/pages/history/index' },
-  { icon: '📊', label: '周报', path: '/pages/weekly/index' },
+  { icon: '👥', label: '我的团队', path: '/pages/team/index' },
   { icon: '📈', label: '数据统计', path: '/pages/stats/index' },
+  { icon: '📜', label: '历史任务', path: '/pages/history/index' },
   { icon: '⚙️', label: '提醒设置', path: '/pages/settings/index' },
-  { icon: '👥', label: '我的团队', path: '/pages/team/index' }
+  { icon: '📊', label: '周报', path: '/pages/weekly/index' }
 ];
 
 export default function Profile() {
@@ -155,6 +155,45 @@ export default function Profile() {
     });
   };
 
+  // 清除本地缓存
+  const handleClearCache = () => {
+    Taro.showModal({
+      title: '清除缓存',
+      content: '确定要清除本地缓存吗？\n\n您的用户信息、任务记录、团队信息等数据已安全存储在云端，清除后重新登录即可恢复。',
+      confirmText: '确定清除',
+      confirmColor: '#EA4335',
+      success: (res) => {
+        if (res.confirm) {
+          // 保留用户登录状态
+          const currentOpenid = useUserStore.getState().openid;
+          const token = Taro.getStorageSync('token');
+          
+          // 清除所有本地缓存
+          Taro.clearStorageSync();
+          
+          // 恢复登录状态
+          if (currentOpenid) {
+            useUserStore.setState({ openid: currentOpenid });
+          }
+          if (token) {
+            Taro.setStorageSync('token', token);
+          }
+          
+          Taro.showToast({ 
+            title: '缓存已清除', 
+            icon: 'success',
+            duration: 2000
+          });
+          
+          // 2秒后刷新页面
+          setTimeout(() => {
+            Taro.reLaunch({ url: '/pages/index/index' });
+          }, 2000);
+        }
+      }
+    });
+  };
+
   return (
     <View className="min-h-screen bg-gray-50">
       {/* 用户头部 */}
@@ -253,9 +292,24 @@ export default function Profile() {
       {/* 退出登录 */}
       {openid && (
         <View className="px-3 py-4">
+          <Card>
+            <CardContent className="p-0">
+              <View
+                className="flex items-center justify-between px-4 py-3 active:bg-gray-50"
+                onClick={handleClearCache}
+              >
+                <View className="flex items-center">
+                  <Trash2 size={18} color="#6B7280" />
+                  <Text className="text-base text-gray-600 ml-3">清除本地缓存</Text>
+                </View>
+                <ChevronRight size={20} color="#D1D5DB" />
+              </View>
+            </CardContent>
+          </Card>
+          
           <UIButton
             variant="outline"
-            className="w-full text-gray-600"
+            className="w-full text-gray-600 mt-4"
             onClick={handleLogout}
           >
             <LogOut size={16} color="#6B7280" />
