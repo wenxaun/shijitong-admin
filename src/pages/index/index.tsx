@@ -40,21 +40,21 @@ const STATUS_MAP: Record<TaskStatus, string> = {
   exception: '异常'
 };
 
-// 状态颜色映射 - 商务简洁风格
+// 状态颜色映射 - 微信风格
 const STATUS_COLOR: Record<TaskStatus, string> = {
-  pending: 'bg-gray-100 text-gray-700',
-  in_progress: 'bg-neutral-100 text-neutral-800',
-  completed: 'bg-emerald-50 text-emerald-700',
-  cancelled: 'bg-red-50 text-red-600',
-  exception: 'bg-amber-50 text-amber-700'
+  pending: 'bg-gray-100 text-gray-600',
+  in_progress: 'bg-green-50 text-green-600',
+  completed: 'bg-green-50 text-green-600',
+  cancelled: 'bg-red-50 text-red-500',
+  exception: 'bg-orange-50 text-orange-600'
 };
 
-// 优先级颜色映射 - 商务简洁风格
+// 优先级颜色映射 - 微信风格
 const PRIORITY_COLOR: Record<TaskPriority, string> = {
-  P0: 'bg-red-50 text-red-600',
-  P1: 'bg-amber-50 text-amber-600',
-  P2: 'bg-neutral-100 text-neutral-700',
-  P3: 'bg-gray-100 text-gray-500'
+  P0: 'bg-red-50 text-red-500',
+  P1: 'bg-orange-50 text-orange-500',
+  P2: 'bg-blue-50 text-blue-500',
+  P3: 'bg-gray-100 text-gray-400'
 };
 
 export default function Index() {
@@ -436,7 +436,7 @@ export default function Index() {
                   key={item.value}
                   className={`px-3 py-2 rounded-full text-sm flex items-center gap-1 ${
                     timeFilter === item.value
-                      ? 'bg-neutral-900 text-white'
+                      ? 'bg-green-500 text-white'
                       : 'bg-gray-100 text-gray-600'
                   }`}
                   onClick={() => handleTimeFilterClick(item.value)}
@@ -465,7 +465,7 @@ export default function Index() {
                   key={item.value}
                   className={`px-3 py-2 rounded-full text-sm ${
                     statusFilter === item.value
-                      ? 'bg-neutral-900 text-white'
+                      ? 'bg-green-500 text-white'
                       : 'bg-gray-100 text-gray-600'
                   }`}
                   onClick={() => setStatusFilter(item.value)}

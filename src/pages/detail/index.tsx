@@ -27,20 +27,20 @@ import {
   Share2
 } from 'lucide-react-taro';
 
-// 状态映射 - 商务简洁风格
+// 状态映射 - 微信风格
 const STATUS_MAP: Record<TaskStatus, { label: string; color: string }> = {
-  pending: { label: '待办', color: 'bg-gray-100 text-gray-700' },
-  in_progress: { label: '进行中', color: 'bg-neutral-100 text-neutral-800' },
-  completed: { label: '已完成', color: 'bg-emerald-50 text-emerald-700' },
-  cancelled: { label: '已取消', color: 'bg-red-50 text-red-600' },
-  exception: { label: '异常', color: 'bg-amber-50 text-amber-700' }
+  pending: { label: '待办', color: 'bg-gray-100 text-gray-600' },
+  in_progress: { label: '进行中', color: 'bg-green-50 text-green-600' },
+  completed: { label: '已完成', color: 'bg-green-50 text-green-600' },
+  cancelled: { label: '已取消', color: 'bg-red-50 text-red-500' },
+  exception: { label: '异常', color: 'bg-orange-50 text-orange-600' }
 };
 
-// 优先级颜色 - 商务简洁风格
+// 优先级颜色 - 微信风格
 const PRIORITY_COLOR: Record<string, string> = {
-  P0: 'text-red-600',
-  P1: 'text-amber-600',
-  P2: 'text-neutral-700',
+  P0: 'text-red-500',
+  P1: 'text-orange-500',
+  P2: 'text-blue-500',
   P3: 'text-gray-400'
 };
 
@@ -450,79 +450,68 @@ export default function Detail() {
             {/* 状态操作按钮 */}
             {canOperate && task.status === 'pending' && (
               <View className="flex gap-3">
-                <Button className="flex-1 bg-black text-white rounded-lg py-3" onClick={startTask}>
-                  <Play size={18} color="#ffffff" />
-                  <Text className="text-white ml-2 text-base">开始任务</Text>
+                <Button className="flex-1 bg-green-500 text-white rounded-lg" onClick={startTask}>
+                  <Play size={16} color="#ffffff" />
+                  <Text className="text-white ml-2">开始任务</Text>
                 </Button>
                 <Button 
-                  className="bg-gray-100 text-gray-700 px-4 border-0 rounded-lg" 
+                  className="bg-green-500 text-white px-4 border-0 rounded-lg" 
                   size="default"
                   openType="share"
                 >
-                  <Share2 size={18} color="#374151" />
+                  <Share2 size={16} color="#ffffff" />
                 </Button>
               </View>
             )}
 
             {canOperate && task.status === 'in_progress' && (
               <View className="flex gap-3">
-                <Button className="flex-1 bg-black text-white rounded-lg py-3" onClick={completeTask}>
-                  <Check size={18} color="#ffffff" />
-                  <Text className="text-white ml-2 text-base">完成任务</Text>
+                <Button className="flex-1 bg-green-500 text-white rounded-lg" onClick={completeTask}>
+                  <Check size={16} color="#ffffff" />
+                  <Text className="text-white ml-2">完成任务</Text>
                 </Button>
                 <Button 
-                  className="bg-gray-100 text-gray-700 px-4 border-0 rounded-lg" 
-                  size="default"
-                  openType="share"
+                  className="flex-1 text-orange-500 border border-orange-400 bg-transparent rounded-lg" 
+                  onClick={reportException}
                 >
-                  <Share2 size={18} color="#374151" />
+                  <TriangleAlert size={16} color="#F97316" />
+                  <Text className="text-orange-500 ml-2">异常上报</Text>
                 </Button>
               </View>
             )}
 
-            {/* 分享按钮（待办/进行中/已完成都显示） */}
+            {/* 分享按钮（无操作权限时显示） */}
             {!canOperate && (
               <Button 
-                className="w-full bg-black text-white py-3 rounded-lg"
+                className="w-full bg-green-500 text-white rounded-lg"
                 openType="share"
               >
-                <Share2 size={18} color="#ffffff" />
-                <Text className="text-white ml-2 text-base">转发任务</Text>
-              </Button>
-            )}
-
-            {/* 异常上报按钮 - 进行中状态显示 */}
-            {canOperate && task.status === 'in_progress' && (
-              <Button 
-                className="w-full text-gray-600 border border-gray-200 bg-transparent rounded-lg py-3 mt-3" 
-                onClick={reportException}
-              >
-                <TriangleAlert size={18} color="#6B7280" />
-                <Text className="text-gray-600 ml-2 text-base">异常上报</Text>
+                <Share2 size={16} color="#ffffff" />
+                <Text className="text-white ml-2">转发任务</Text>
               </Button>
             )}
 
             {/* 异常状态处理按钮 */}
             {canOperate && task.status === 'exception' && (
               <View className="space-y-3">
-                <View className="bg-amber-50 rounded-lg p-4 mb-2">
-                  <Text className="text-sm text-amber-700">
+                <View className="bg-orange-50 rounded-lg p-3 mb-2">
+                  <Text className="text-sm text-orange-600">
                     任务已上报异常，请根据情况处理
                   </Text>
                   {task.exception_type === 'delay' && task.new_deadline && (
-                    <Text className="text-xs text-amber-600 mt-1">
+                    <Text className="text-xs text-orange-500 mt-1">
                       申请延期至：{task.new_deadline}
                     </Text>
                   )}
                   {task.exception_type === 'assist' && (
-                    <Text className="text-xs text-amber-600 mt-1">
+                    <Text className="text-xs text-orange-500 mt-1">
                       已申请协助
                     </Text>
                   )}
                 </View>
-                <Button className="w-full bg-black text-white rounded-lg py-3" onClick={completeTask}>
-                  <Check size={18} color="#ffffff" />
-                  <Text className="text-white ml-2 text-base">完成任务</Text>
+                <Button className="w-full bg-green-500 text-white rounded-lg" onClick={completeTask}>
+                  <Check size={16} color="#ffffff" />
+                  <Text className="text-white ml-2">完成任务</Text>
                 </Button>
               </View>
             )}

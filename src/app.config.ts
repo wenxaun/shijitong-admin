@@ -3,14 +3,14 @@ export default defineAppConfig({
     'pages/splash/index',
     'pages/index/index',
     'pages/create/index',
-    'pages/detail/index',
+    'pages/team/index',
     'pages/profile/index',
     'pages/review/index',
+    'pages/detail/index',
     'pages/edit/index',
     'pages/exception/index',
     'pages/settings/index',
     'pages/history/index',
-    'pages/team/index',
     'pages/team-edit/index',
     'pages/team-join/index',
     'pages/weekly/index',
@@ -27,10 +27,10 @@ export default defineAppConfig({
   ],
   window: {
     backgroundTextStyle: 'dark',
-    navigationBarBackgroundColor: '#FFFFFF',
+    navigationBarBackgroundColor: '#07C160',
     navigationBarTitleText: '事绩通',
-    navigationBarTextStyle: 'black',
-    backgroundColor: '#F5F7FA'
+    navigationBarTextStyle: 'white',
+    backgroundColor: '#EDEDED'
   },
   // 移除全局 Skyline 配置，改为在需要高性能渲染的页面单独配置
   lazyCodeLoading: 'requiredComponents',
@@ -40,21 +40,27 @@ export default defineAppConfig({
   },
   tabBar: {
     color: '#999999',
-    selectedColor: '#1A1A1A',
+    selectedColor: '#07C160',
     backgroundColor: '#FFFFFF',
     borderStyle: 'black',
     list: [
       {
         pagePath: 'pages/index/index',
         text: '任务',
-        iconPath: './assets/tabbar/list-todo.png',
-        selectedIconPath: './assets/tabbar/list-todo-active.png'
+        iconPath: './assets/tabbar/clipboard-list.png',
+        selectedIconPath: './assets/tabbar/clipboard-list-active.png'
       },
       {
         pagePath: 'pages/create/index',
         text: '发布',
-        iconPath: './assets/tabbar/plus.png',
-        selectedIconPath: './assets/tabbar/plus-active.png'
+        iconPath: './assets/tabbar/plus-circle.png',
+        selectedIconPath: './assets/tabbar/plus-circle-active.png'
+      },
+      {
+        pagePath: 'pages/team/index',
+        text: '团队',
+        iconPath: './assets/tabbar/users.png',
+        selectedIconPath: './assets/tabbar/users-active.png'
       },
       {
         pagePath: 'pages/profile/index',

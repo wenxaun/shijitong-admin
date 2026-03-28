@@ -11,14 +11,14 @@ page {
 :root,
 page,
 root-portal {
-  /* 事绩通 - 商务简洁风格配色 */
-  --background: #F5F5F5;
+  /* 事绩通 - 微信风格配色 */
+  --background: #EDEDED;
   --foreground: #1A1A1A;
   --card: #FFFFFF;
   --card-foreground: #1A1A1A;
   --popover: #FFFFFF;
   --popover-foreground: #1A1A1A;
-  --primary: #1A1A1A;
+  --primary: #07C160;
   --primary-foreground: #FFFFFF;
   --secondary: #F0F0F0;
   --secondary-foreground: #1A1A1A;
@@ -26,15 +26,15 @@ root-portal {
   --muted-foreground: #666666;
   --accent: #F0F0F0;
   --accent-foreground: #1A1A1A;
-  --destructive: #DC2626;
+  --destructive: #FA5151;
   --destructive-foreground: #FFFFFF;
   --border: #E5E5E5;
   --input: #FFFFFF;
-  --ring: #1A1A1A;
+  --ring: #07C160;
   /* 语义色 */
-  --success: #16A34A;
-  --warning: #D97706;
-  --error: #DC2626;
+  --success: #07C160;
+  --warning: #FA9D3B;
+  --error: #FA5151;
   --sidebar: lab(98.26% 0 0);
   --sidebar-foreground: lab(2.75381% 0 0);
   --sidebar-primary: lab(7.78201% -0.0000149012 0);
