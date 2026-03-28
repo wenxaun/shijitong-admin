@@ -10,7 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Crown, Shield, User, Menu, UserPlus, Trash2, Settings } from 'lucide-react-taro';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Crown, Shield, User, Menu, UserPlus, Trash2, Settings, Share2, Copy, Clock, Users } from 'lucide-react-taro';
 
 // 默认权限配置
 const DEFAULT_PERMISSIONS = {
@@ -52,6 +53,14 @@ export default function TeamEdit() {
   const [teamDesc, setTeamDesc] = useState('');
   const [inviteCode, setInviteCode] = useState('');
   const [showMemberMenu, setShowMemberMenu] = useState<string | null>(null);
+  
+  // 邀请相关状态
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [inviteInfo, setInviteInfo] = useState<{
+    code: string;
+    expiresIn: string;
+    shareUrl: string;
+  } | null>(null);
 
   const isCreator = !teamId || team?.leader_id === openid;
 
@@ -200,25 +209,106 @@ export default function TeamEdit() {
     return code;
   };
 
-  // 邀请成员
-  const inviteMember = async () => {
-    const code = inviteCode || generateInviteCode();
-    setInviteCode(code);
+  // 生成邀请信息
+  const generateInvite = async () => {
+    if (!teamId || !team) return;
     
+    setShowInviteDialog(true);
     try {
-      const res = await Taro.showModal({
-        title: '邀请成员',
-        content: `邀请码: ${code}\n\n分享此邀请码给需要加入的成员`,
-        confirmText: '复制邀请码'
-      });
+      // 生成新的邀请码（有效期7天）
+      const code = inviteCode || generateInviteCode();
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      const expiresIn = `${Math.ceil((expiresAt.getTime() - Date.now()) / (24 * 60 * 60 * 1000))}天`;
       
-      if (res.confirm) {
-        await Taro.setClipboardData({ data: code });
-        Taro.showToast({ title: '已复制邀请码', icon: 'success' });
+      // H5 端模拟
+      if (Taro.getEnv() !== Taro.ENV_TYPE.WEAPP) {
+        // 保存邀请码到团队
+        if (!inviteCode) {
+          setInviteCode(code);
+          // 更新本地存储中的团队邀请码
+          const storedTeams = Taro.getStorageSync('mock_teams') || '[]';
+          const teams = JSON.parse(storedTeams);
+          const index = teams.findIndex((t: Team) => t._id === teamId);
+          if (index >= 0) {
+            teams[index].invite_code = code;
+            Taro.setStorageSync('mock_teams', JSON.stringify(teams));
+          }
+        }
+        
+        setInviteInfo({
+          code,
+          expiresIn,
+          shareUrl: `事绩通邀请码: ${code}\n团队: ${teamName}\n\n打开事绩通小程序，进入「我的团队」->「加入团队」，输入邀请码即可加入。`
+        });
+        setShowInviteDialog(true);
+        setShowInviteDialog(true);
+        return;
+      }
+
+      // 小程序端调用云函数
+      const res = await callFunction<CloudResponse<{
+        invite_code: string;
+        expires_at: string;
+      }>>('team-invite', {
+        action: 'create',
+        team_id: teamId
+      });
+
+      if (res.success && res.data) {
+        setInviteCode(res.data.invite_code);
+        setInviteInfo({
+          code: res.data.invite_code,
+          expiresIn,
+          shareUrl: `事绩通邀请码: ${res.data.invite_code}\n团队: ${teamName}\n\n打开事绩通小程序，进入「我的团队」->「加入团队」，输入邀请码即可加入。`
+        });
+        setShowInviteDialog(true);
+      } else {
+        Taro.showToast({ title: res.message || '生成失败', icon: 'none' });
       }
     } catch (err) {
-      console.error('邀请成员失败:', err);
-      Taro.showToast({ title: '操作失败', icon: 'none' });
+      console.error('生成邀请码失败:', err);
+      Taro.showToast({ title: '生成失败', icon: 'none' });
+    } finally {
+      setShowInviteDialog(true);
+    }
+  };
+
+  // 邀请成员（打开对话框）
+  const inviteMember = () => {
+    generateInvite();
+  };
+
+  // 复制邀请码
+  const copyInviteCode = async () => {
+    if (!inviteInfo) return;
+    
+    try {
+      await Taro.setClipboardData({ data: inviteInfo.code });
+      Taro.showToast({ title: '已复制邀请码', icon: 'success' });
+    } catch (err) {
+      console.error('复制失败:', err);
+      Taro.showToast({ title: '复制失败', icon: 'none' });
+    }
+  };
+
+  // 分享邀请
+  const shareInvite = async () => {
+    if (!inviteInfo) return;
+    
+    try {
+      // 小程序端使用 shareAppMessage
+      if (Taro.getEnv() === Taro.ENV_TYPE.WEAPP) {
+        // 复制分享内容
+        await Taro.setClipboardData({ data: inviteInfo.shareUrl });
+        Taro.showToast({ title: '已复制分享内容', icon: 'success' });
+      } else {
+        // H5 端直接复制
+        await Taro.setClipboardData({ data: inviteInfo.shareUrl });
+        Taro.showToast({ title: '已复制分享内容', icon: 'success' });
+      }
+    } catch (err) {
+      console.error('分享失败:', err);
+      Taro.showToast({ title: '分享失败', icon: 'none' });
     }
   };
 
@@ -413,7 +503,8 @@ export default function TeamEdit() {
             <View className="px-4 mb-3">
               <View className="flex items-center justify-between">
                 <Text className="text-base font-semibold text-gray-800">成员管理</Text>
-                {isCreator && (
+                {/* 有邀请权限的用户都可以邀请 */}
+                {(isCreator || team.member_details?.find(m => m.openid === openid)?.permissions?.can_invite_member) && (
                   <View onClick={inviteMember}>
                     <Badge className="bg-blue-50 text-blue-500">
                       <UserPlus size={14} color="#1377EB" />
@@ -559,6 +650,78 @@ export default function TeamEdit() {
               </View>
             )}
           </>
+        )}
+        
+        {/* 邀请成员对话框 */}
+        {showInviteDialog && inviteInfo && (
+          <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+            <DialogContent className="max-w-sm">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <UserPlus size={20} color="#1377EB" />
+                  <Text>邀请成员加入</Text>
+                </DialogTitle>
+              </DialogHeader>
+              
+              <View className="py-4">
+                {/* 邀请码展示 */}
+                <View className="bg-blue-50 rounded-lg p-4 mb-4">
+                  <View className="flex items-center justify-between mb-2">
+                    <Text className="text-sm text-gray-500">邀请码</Text>
+                    <View className="flex items-center gap-1">
+                      <Clock size={14} color="#6B7280" />
+                      <Text className="text-xs text-gray-400">有效期 {inviteInfo.expiresIn}</Text>
+                    </View>
+                  </View>
+                  <View className="flex items-center justify-between">
+                    <Text className="text-2xl font-bold text-blue-500 tracking-widest font-mono">
+                      {inviteInfo.code}
+                    </Text>
+                    <View 
+                      className="p-2 bg-white rounded-lg"
+                      onClick={copyInviteCode}
+                    >
+                      <Copy size={20} color="#1377EB" />
+                    </View>
+                  </View>
+                </View>
+                
+                {/* 团队信息 */}
+                <View className="flex items-center gap-2 mb-4 p-3 bg-gray-50 rounded-lg">
+                  <Users size={18} color="#6B7280" />
+                  <View>
+                    <Text className="text-sm font-medium text-gray-800">{teamName}</Text>
+                    <Text className="text-xs text-gray-400">{team?.members?.length || 0} 名成员</Text>
+                  </View>
+                </View>
+                
+                {/* 分享说明 */}
+                <View className="bg-amber-50 rounded-lg p-3 mb-4">
+                  <Text className="text-xs text-amber-700 leading-relaxed">
+                    💡 将邀请码分享给需要加入的成员，他们在「我的团队」页面点击「加入团队」输入邀请码即可加入。
+                  </Text>
+                </View>
+              </View>
+              
+              <DialogFooter className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={copyInviteCode}
+                >
+                  <Copy size={16} color="#1377EB" />
+                  <Text className="ml-1">复制邀请码</Text>
+                </Button>
+                <Button 
+                  className="flex-1"
+                  onClick={shareInvite}
+                >
+                  <Share2 size={16} color="#ffffff" />
+                  <Text className="ml-1 text-white">分享邀请</Text>
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         )}
       </ScrollView>
     </View>

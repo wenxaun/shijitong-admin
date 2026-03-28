@@ -8,7 +8,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Calendar } from '@/components/ui/calendar';
 import { DeadlineReminder } from '@/components/deadline-reminder';
+import { CalendarDays, X } from 'lucide-react-taro';
+import { format } from 'date-fns';
 
 // 状态筛选选项
 const STATUS_FILTERS = [
@@ -23,7 +27,8 @@ const TIME_FILTERS = [
   { value: 'all', label: '全部' },
   { value: 'today', label: '今日' },
   { value: 'week', label: '本周' },
-  { value: 'month', label: '本月' }
+  { value: 'month', label: '本月' },
+  { value: 'custom', label: '自定义' }
 ] as const;
 
 // 状态显示映射
@@ -64,6 +69,11 @@ export default function Index() {
   const [timeFilter, setTimeFilter] = useState<string>('all');
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  
+  // 自定义时间筛选
+  const [showDateRangeDialog, setShowDateRangeDialog] = useState(false);
+  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
+  const [selectedDateRange, setSelectedDateRange] = useState<{ from?: Date; to?: Date }>({});
 
   // 加载任务列表
   const loadTasks = useCallback(async (refresh = false) => {
@@ -84,12 +94,22 @@ export default function Index() {
     setLoading(true);
     try {
       const currentPage = refresh ? 1 : page;
-      const params = {
+      
+      // 构建请求参数
+      const params: Record<string, any> = {
         status: statusFilter === 'all' ? undefined : statusFilter,
-        time_filter: timeFilter,
         page: currentPage,
         pageSize: 20
       };
+      
+      // 处理时间筛选
+      if (timeFilter === 'custom' && selectedDateRange.from && selectedDateRange.to) {
+        params.start_date = format(selectedDateRange.from, 'yyyy-MM-dd');
+        params.end_date = format(selectedDateRange.to, 'yyyy-MM-dd');
+      } else if (timeFilter !== 'all' && timeFilter !== 'custom') {
+        params.time_filter = timeFilter;
+      }
+      
       console.log('[Index] 调用参数:', JSON.stringify(params));
       
       const res = await callFunction<CloudResponse<TaskListResponse>>(
@@ -120,7 +140,7 @@ export default function Index() {
       setLoading(false);
       console.log('===== loadTasks 结束 =====');
     }
-  }, [openid, statusFilter, timeFilter, page]);
+  }, [openid, statusFilter, timeFilter, page, selectedDateRange]);
 
   // 初始化加载
   useEffect(() => {
@@ -153,12 +173,52 @@ export default function Index() {
 
   // 筛选变化时重新加载
   useEffect(() => {
-    if (openid) {
+    // 如果选择自定义时间但未选择日期范围，不触发加载
+    if (timeFilter === 'custom' && (!selectedDateRange.from || !selectedDateRange.to)) {
+      return;
+    }
+    
+    if (openid || useUserStore.getState().openid) {
       setTasks([]);
       setPage(1);
       loadTasks(true);
     }
-  }, [statusFilter, timeFilter]);
+  }, [statusFilter, timeFilter, selectedDateRange]);
+
+  // 处理时间筛选点击
+  const handleTimeFilterClick = (value: string) => {
+    if (value === 'custom') {
+      // 打开日期范围选择器
+      setDateRange(selectedDateRange);
+      setShowDateRangeDialog(true);
+    } else {
+      setTimeFilter(value);
+    }
+  };
+
+  // 确认日期范围选择
+  const confirmDateRange = () => {
+    if (dateRange.from && dateRange.to) {
+      setSelectedDateRange(dateRange);
+      setTimeFilter('custom');
+    }
+    setShowDateRangeDialog(false);
+  };
+
+  // 清除自定义时间
+  const clearCustomTime = () => {
+    setSelectedDateRange({});
+    setDateRange({});
+    setTimeFilter('all');
+  };
+
+  // 格式化显示日期范围
+  const getDisplayDateRange = () => {
+    if (selectedDateRange.from && selectedDateRange.to) {
+      return `${format(selectedDateRange.from, 'MM/dd')}-${format(selectedDateRange.to, 'MM/dd')}`;
+    }
+    return '';
+  };
 
   // 跳转详情
   const goDetail = (taskId: string) => {
@@ -166,87 +226,126 @@ export default function Index() {
   };
 
   // 渲染任务卡片
-  const renderTaskCard = (task: Task) => (
-    <Card
-      key={task._id}
-      className="mb-3 overflow-hidden active:bg-gray-50"
-      onClick={() => goDetail(task.task_id)}
-    >
-      <CardContent className="p-0">
-        <View className="flex">
-          {/* 左侧状态条 */}
-          <View
-            className={`w-1 ${
-              task.status === 'completed'
-                ? 'bg-green-500'
-                : task.status === 'in_progress'
-                ? 'bg-blue-500'
-                : task.status === 'cancelled'
-                ? 'bg-red-500'
-                : 'bg-gray-300'
-            }`}
-          />
-          <View className="flex-1 p-3">
-            {/* 标题行 */}
-            <View className="flex items-center justify-between mb-2">
-              <Text className="text-base font-semibold text-gray-800 flex-1" numberOfLines={1}>
-                {task.task_name}
-              </Text>
-              <Badge className={PRIORITY_COLOR[task.priority]}>{task.priority}</Badge>
-            </View>
-
-            {/* 元信息行 */}
-            <View className="flex items-center gap-2 mb-2">
-              <Badge className={STATUS_COLOR[task.status]}>{STATUS_MAP[task.status]}</Badge>
-              <Text className="text-xs text-gray-400">截止：{task.require_date}</Text>
-            </View>
-
-            {/* 执行人 */}
-            {task.executor_name && (
-              <View className="flex items-center gap-1 mb-2">
-                <Text className="text-xs text-gray-500">👤 {task.executor_name}</Text>
-              </View>
-            )}
-
-            {/* 进度条 */}
-            {task.subtask_count && task.subtask_count > 0 && (
-              <View className="flex items-center gap-2 mb-2">
-                <View className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <View
-                    className="h-full bg-blue-500 rounded-full"
-                    style={{ width: `${task.progress || 0}%` }}
-                  />
-                </View>
-                <Text className="text-xs text-gray-400">{task.progress || 0}%</Text>
-              </View>
-            )}
-
-            {/* 评分 */}
-            {task.score !== null && task.score !== undefined && (
-              <View className="flex items-center gap-2">
-                <Text
-                  className={`text-sm font-semibold ${
-                    task.score >= 100
-                      ? 'text-green-500'
-                      : task.score >= 80
-                      ? 'text-blue-500'
-                      : 'text-orange-500'
-                  }`}
-                >
-                  {task.score}分
-                </Text>
-                {task.score_note && (
-                  <Text className="text-xs text-gray-400" numberOfLines={1}>
-                    {task.score_note}
+  const renderTaskCard = (task: Task) => {
+    // 判断是否逾期
+    const requireDate = new Date(task.require_date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    requireDate.setHours(0, 0, 0, 0);
+    const isOverdue = today > requireDate && task.status !== 'completed' && task.status !== 'cancelled';
+    
+    // 计算剩余天数
+    const daysLeft = Math.ceil((requireDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    return (
+      <Card
+        key={task._id}
+        className="mb-3 overflow-hidden active:bg-gray-50"
+        onClick={() => goDetail(task.task_id)}
+      >
+        <CardContent className="p-0">
+          <View className="flex">
+            {/* 左侧状态条 */}
+            <View
+              className={`w-1 ${
+                task.status === 'completed'
+                  ? 'bg-green-500'
+                  : task.status === 'in_progress'
+                  ? 'bg-blue-500'
+                  : task.status === 'cancelled'
+                  ? 'bg-red-500'
+                  : isOverdue
+                  ? 'bg-orange-500'
+                  : 'bg-gray-300'
+              }`}
+            />
+            <View className="flex-1 p-3">
+              {/* 标题行 */}
+              <View className="flex items-start justify-between mb-2">
+                <View className="flex-1 mr-2">
+                  <Text className={`text-base font-semibold ${task.status === 'cancelled' ? 'text-gray-400 line-through' : 'text-gray-800'}`} numberOfLines={2}>
+                    {task.task_name}
                   </Text>
+                </View>
+                <Badge className={PRIORITY_COLOR[task.priority]}>{task.priority}</Badge>
+              </View>
+
+              {/* 元信息行 */}
+              <View className="flex items-center gap-2 mb-2 flex-wrap">
+                <Badge className={STATUS_COLOR[task.status]}>{STATUS_MAP[task.status]}</Badge>
+                
+                {/* 截止日期 */}
+                <View className="flex items-center gap-1">
+                  <Text className={`text-xs ${isOverdue ? 'text-orange-500 font-medium' : 'text-gray-400'}`}>
+                    {isOverdue ? `已逾期 ${Math.abs(daysLeft)} 天` : daysLeft === 0 ? '今日截止' : daysLeft === 1 ? '明日截止' : task.require_date}
+                  </Text>
+                </View>
+              </View>
+
+              {/* 执行人和子任务信息 */}
+              <View className="flex items-center justify-between">
+                <View className="flex items-center gap-3">
+                  {/* 执行人 */}
+                  {task.executor_name && (
+                    <View className="flex items-center gap-1">
+                      <View className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center">
+                        <Text className="text-xs text-blue-500">{task.executor_name[0]}</Text>
+                      </View>
+                      <Text className="text-xs text-gray-500">{task.executor_name}</Text>
+                    </View>
+                  )}
+                  
+                  {/* 子任务数量 */}
+                  {task.subtask_count && task.subtask_count > 0 && (
+                    <View className="flex items-center gap-1">
+                      <Text className="text-xs text-gray-400">📋 {task.subtask_count} 项子任务</Text>
+                    </View>
+                  )}
+                </View>
+                
+                {/* 进度条 */}
+                {task.subtask_count && task.subtask_count > 0 && (
+                  <View className="flex items-center gap-2">
+                    <View className="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <View
+                        className={`h-full rounded-full ${
+                          task.progress === 100 ? 'bg-green-500' : 'bg-blue-500'
+                        }`}
+                        style={{ width: `${task.progress || 0}%` }}
+                      />
+                    </View>
+                    <Text className="text-xs text-gray-400">{task.progress || 0}%</Text>
+                  </View>
                 )}
               </View>
-            )}
+
+              {/* 评分 */}
+              {task.score !== null && task.score !== undefined && (
+                <View className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-100">
+                  <Text
+                    className={`text-sm font-semibold ${
+                      task.score >= 100
+                        ? 'text-green-500'
+                        : task.score >= 80
+                        ? 'text-blue-500'
+                        : 'text-orange-500'
+                    }`}
+                  >
+                    {task.score}分
+                  </Text>
+                  {task.score_note && (
+                    <Text className="text-xs text-gray-400" numberOfLines={1}>
+                      {task.score_note}
+                    </Text>
+                  )}
+                </View>
+              )}
+            </View>
           </View>
-        </View>
-      </CardContent>
-    </Card>
-  );
+        </CardContent>
+      </Card>
+    );
+  };
 
   // 渲染空状态
   const renderEmpty = () => (
@@ -286,14 +385,21 @@ export default function Index() {
               {TIME_FILTERS.map((item) => (
                 <View
                   key={item.value}
-                  className={`px-3 py-1 rounded-full text-sm ${
+                  className={`px-3 py-1 rounded-full text-sm flex items-center gap-1 ${
                     timeFilter === item.value
                       ? 'bg-blue-500 text-white'
                       : 'bg-gray-100 text-gray-600'
                   }`}
-                  onClick={() => setTimeFilter(item.value)}
+                  onClick={() => handleTimeFilterClick(item.value)}
                 >
-                  <Text>{item.label}</Text>
+                  {item.value === 'custom' && timeFilter === 'custom' && selectedDateRange.from ? (
+                    <>
+                      <CalendarDays size={14} color={timeFilter === item.value ? '#ffffff' : '#1377EB'} />
+                      <Text>{getDisplayDateRange()}</Text>
+                    </>
+                  ) : (
+                    <Text>{item.label}</Text>
+                  )}
                 </View>
               ))}
             </View>
@@ -347,6 +453,61 @@ export default function Index() {
           </>
         )}
       </View>
+      
+      {/* 日期范围选择器弹窗 */}
+      {showDateRangeDialog && (
+        <Dialog open={showDateRangeDialog} onOpenChange={setShowDateRangeDialog}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="flex items-center justify-between">
+                <Text>选择日期范围</Text>
+                <View onClick={clearCustomTime}>
+                  <X size={20} color="#6B7280" />
+                </View>
+              </DialogTitle>
+            </DialogHeader>
+            
+            <View className="py-4">
+              <Calendar
+                mode="range"
+                selected={dateRange}
+                onSelect={(range) => setDateRange(range || {})}
+                className="rounded-md border"
+              />
+              
+              {/* 已选择的日期范围显示 */}
+              {dateRange.from && (
+                <View className="mt-4 p-3 bg-blue-50 rounded-lg">
+                  <View className="flex items-center justify-between">
+                    <Text className="text-sm text-gray-500">已选择：</Text>
+                    <Text className="text-sm font-medium text-blue-500">
+                      {format(dateRange.from, 'yyyy年MM月dd日')}
+                      {dateRange.to && ` - ${format(dateRange.to, 'yyyy年MM月dd日')}`}
+                    </Text>
+                  </View>
+                </View>
+              )}
+            </View>
+            
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => setShowDateRangeDialog(false)}
+              >
+                取消
+              </Button>
+              <Button 
+                className="flex-1"
+                onClick={confirmDateRange}
+                disabled={!dateRange.from || !dateRange.to}
+              >
+                确定
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </View>
   );
 }

@@ -6,8 +6,9 @@ import { callFunction } from '@/utils/cloud';
 import { Task, CloudResponse } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Calendar, TrendingUp, Lightbulb, CircleAlert, CircleCheck, ChartBar } from 'lucide-react-taro';
+import { Calendar, TrendingUp, Lightbulb, CircleAlert, CircleCheck, ChartBar, ChevronLeft, ChevronRight } from 'lucide-react-taro';
 
 interface TaskWithReview extends Task {
   learnings?: string;
@@ -43,33 +44,42 @@ const TAG_NAMES: Record<string, string> = {
   external: '外部因素'
 };
 
+// 获取周的日期范围
+const getWeekRange = (offset: number = 0) => {
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1) + offset * 7);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+
+  const formatDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  return {
+    start: formatDate(monday),
+    end: formatDate(sunday),
+    label: `${formatDate(monday).slice(5)} 至 ${formatDate(sunday).slice(5)}`
+  };
+};
+
 export default function Weekly() {
   const { openid } = useUserStore();
   const [loading, setLoading] = useState(true);
   const [weeklyData, setWeeklyData] = useState<WeeklyAnalysis | null>(null);
-  const [weekRange, setWeekRange] = useState({ start: '', end: '' });
+  
+  // 周选择
+  const [weekOffset, setWeekOffset] = useState(0); // 0=本周, -1=上周, 1=下周
+  const [weekRange, setWeekRange] = useState(getWeekRange(0));
 
-  // 计算本周日期范围
+  // 更新周范围
   useEffect(() => {
-    const now = new Date();
-    const dayOfWeek = now.getDay();
-    const monday = new Date(now);
-    monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
-
-    const formatDate = (date: Date) => {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    };
-
-    setWeekRange({
-      start: formatDate(monday),
-      end: formatDate(sunday)
-    });
-  }, []);
+    setWeekRange(getWeekRange(weekOffset));
+  }, [weekOffset]);
 
   const loadWeekly = useCallback(async () => {
     if (!openid) return;
@@ -212,12 +222,40 @@ export default function Weekly() {
     }
   }, [loadWeekly, weekRange, openid]);
 
+  // 切换到上一周
+  const prevWeek = () => {
+    setWeekOffset(prev => prev - 1);
+  };
+
+  // 切换到下一周
+  const nextWeek = () => {
+    // 不允许查看未来周
+    if (weekOffset >= 0) {
+      Taro.showToast({ title: '无法查看未来周报', icon: 'none' });
+      return;
+    }
+    setWeekOffset(prev => prev + 1);
+  };
+
+  // 回到本周
+  const goToCurrentWeek = () => {
+    setWeekOffset(0);
+  };
+
   // 获取分数颜色
   const getScoreColor = (score: number) => {
     if (score >= 100) return 'text-green-500';
     if (score >= 80) return 'text-blue-500';
     if (score >= 60) return 'text-orange-500';
     return 'text-red-500';
+  };
+
+  // 获取周标签
+  const getWeekLabel = () => {
+    if (weekOffset === 0) return '本周';
+    if (weekOffset === -1) return '上周';
+    if (weekOffset < -1) return `${Math.abs(weekOffset)}周前`;
+    return `${weekOffset}周后`;
   };
 
   if (loading) {
@@ -249,15 +287,54 @@ export default function Weekly() {
         <View className="bg-gradient-to-b from-blue-500 to-blue-600 px-4 py-6">
           <View className="flex items-center gap-2 mb-2">
             <Calendar size={20} color="#ffffff" />
-            <Text className="text-xl text-white font-bold">本周复盘报告</Text>
+            <Text className="text-xl text-white font-bold">周复盘报告</Text>
           </View>
           <Text className="text-blue-100 text-sm">
-            {weekRange.start} 至 {weekRange.end}
+            {weekRange.label}
           </Text>
         </View>
 
-        {/* 核心指标 */}
+        {/* 周选择器 */}
         <View className="px-4 -mt-4">
+          <Card>
+            <CardContent className="p-3">
+              <View className="flex items-center justify-between">
+                <View 
+                  className="p-2 rounded-lg active:bg-gray-100"
+                  onClick={prevWeek}
+                >
+                  <ChevronLeft size={24} color="#1377EB" />
+                </View>
+                
+                <View className="flex flex-col items-center">
+                  <Badge className={`${weekOffset === 0 ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                    {getWeekLabel()}
+                  </Badge>
+                  <Text className="text-xs text-gray-500 mt-1">{weekRange.label}</Text>
+                </View>
+                
+                <View 
+                  className={`p-2 rounded-lg ${weekOffset >= 0 ? 'opacity-30' : 'active:bg-gray-100'}`}
+                  onClick={nextWeek}
+                >
+                  <ChevronRight size={24} color={weekOffset >= 0 ? '#9CA3AF' : '#1377EB'} />
+                </View>
+              </View>
+              
+              {/* 快速回到本周 */}
+              {weekOffset !== 0 && (
+                <View className="mt-2 pt-2 border-t border-gray-100">
+                  <Button variant="ghost" size="sm" className="w-full" onClick={goToCurrentWeek}>
+                    回到本周
+                  </Button>
+                </View>
+              )}
+            </CardContent>
+          </Card>
+        </View>
+
+        {/* 核心指标 */}
+        <View className="px-4 mt-4">
           <Card>
             <CardContent className="p-4">
               <View className="grid grid-cols-4 gap-2">

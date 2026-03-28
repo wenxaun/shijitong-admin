@@ -8,7 +8,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ChevronRight, Calendar, User, Award, Archive, Send, Trash2 } from 'lucide-react-taro';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Calendar as CalendarPicker } from '@/components/ui/calendar';
+import { ChevronRight, Calendar, User, Award, Archive, Send, Trash2, CalendarDays, X } from 'lucide-react-taro';
+import { format } from 'date-fns';
 
 type TabType = 'created' | 'executed' | 'deleted';
 
@@ -36,6 +39,15 @@ const TAB_CONFIG: { value: TabType; label: string; icon: typeof Archive }[] = [
   { value: 'deleted', label: '已删除', icon: Trash2 }
 ];
 
+// 时间筛选选项
+const TIME_FILTERS = [
+  { value: 'all', label: '全部' },
+  { value: 'today', label: '今日' },
+  { value: 'week', label: '本周' },
+  { value: 'month', label: '本月' },
+  { value: 'custom', label: '自定义' }
+] as const;
+
 export default function History() {
   const { openid } = useUserStore();
   const [currentTab, setCurrentTab] = useState<TabType>('created');
@@ -43,6 +55,12 @@ export default function History() {
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(false);
   const [page, setPage] = useState(1);
+  
+  // 时间筛选
+  const [timeFilter, setTimeFilter] = useState<string>('all');
+  const [showDateRangeDialog, setShowDateRangeDialog] = useState(false);
+  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
+  const [selectedDateRange, setSelectedDateRange] = useState<{ from?: Date; to?: Date }>({});
 
   // 加载历史任务
   const loadTasks = useCallback(async (refresh = false) => {
@@ -108,13 +126,24 @@ export default function History() {
         return;
       }
 
+      // 构建请求参数
+      const params: Record<string, any> = {
+        type: currentTab,
+        page: currentPage,
+        pageSize: 20
+      };
+
+      // 处理时间筛选
+      if (timeFilter === 'custom' && selectedDateRange.from && selectedDateRange.to) {
+        params.start_date = format(selectedDateRange.from, 'yyyy-MM-dd');
+        params.end_date = format(selectedDateRange.to, 'yyyy-MM-dd');
+      } else if (timeFilter !== 'all' && timeFilter !== 'custom') {
+        params.time_filter = timeFilter;
+      }
+
       const res = await callFunction<CloudResponse<TaskListResponse>>(
         'task-history',
-        {
-          type: currentTab,
-          page: currentPage,
-          pageSize: 20
-        }
+        params
       );
 
       if (res.success && res.data) {
@@ -129,11 +158,11 @@ export default function History() {
     } finally {
       setLoading(false);
     }
-  }, [openid, currentTab, page, tasks]);
+  }, [openid, currentTab, page, tasks, timeFilter, selectedDateRange]);
 
   useEffect(() => {
     loadTasks(true);
-  }, [currentTab]);
+  }, [currentTab, timeFilter, selectedDateRange]);
 
   // 跳转详情
   const goDetail = (taskId: string) => {
@@ -154,10 +183,52 @@ export default function History() {
     return '#EA4335';
   };
 
+  // 处理时间筛选点击
+  const handleTimeFilterClick = (value: string) => {
+    if (value === 'custom') {
+      setDateRange(selectedDateRange);
+      setShowDateRangeDialog(true);
+    } else {
+      setTimeFilter(value);
+    }
+  };
+
+  // 确认日期范围选择
+  const confirmDateRange = () => {
+    if (dateRange.from && dateRange.to) {
+      setSelectedDateRange(dateRange);
+      setTimeFilter('custom');
+    }
+    setShowDateRangeDialog(false);
+  };
+
+  // 清除自定义时间
+  const clearCustomTime = () => {
+    setSelectedDateRange({});
+    setDateRange({});
+    setTimeFilter('all');
+  };
+
+  // 格式化显示日期范围
+  const getDisplayDateRange = () => {
+    if (selectedDateRange.from && selectedDateRange.to) {
+      return `${format(selectedDateRange.from, 'MM/dd')}-${format(selectedDateRange.to, 'MM/dd')}`;
+    }
+    return '';
+  };
+
   // 渲染任务卡片
   const renderTaskCard = (task: Task) => {
     const statusInfo = STATUS_MAP[task.status] || STATUS_MAP.pending;
     const priorityStyle = PRIORITY_STYLE[task.priority || 'P2'];
+    
+    // 计算逾期天数（如果任务已逾期）
+    const requireDate = task.require_date ? new Date(task.require_date) : null;
+    const completeDate = task.complete_date ? new Date(task.complete_date) : null;
+    let overdueDays = 0;
+    if (requireDate && completeDate) {
+      overdueDays = Math.ceil((completeDate.getTime() - requireDate.getTime()) / (1000 * 60 * 60 * 24));
+    }
 
     return (
       <Card
@@ -166,66 +237,85 @@ export default function History() {
         onClick={() => goDetail(task.task_id)}
       >
         <CardContent className="p-0">
-          {/* 顶部状态条 */}
-          <View 
-            className="h-1"
-            style={{ backgroundColor: statusInfo.color }}
-          />
-          
-          <View className="p-4">
-            {/* 标题行 */}
-            <View className="flex items-start justify-between mb-3">
-              <View className="flex-1 mr-3">
-                <Text className="text-base font-semibold text-gray-800 leading-6" numberOfLines={2}>
-                  {task.task_name}
-                </Text>
-              </View>
-              <Badge className={`${priorityStyle.bg} ${priorityStyle.text}`}>
-                {task.priority || 'P2'}
-              </Badge>
-            </View>
-
-            {/* 信息行 */}
-            <View className="flex items-center gap-4 mb-3">
-              <View className="flex items-center gap-1">
-                <Calendar size={14} color="#9CA3AF" />
-                <Text className="text-xs text-gray-400">{task.require_date}</Text>
-              </View>
-              <Badge className={statusInfo.bgClass}>{statusInfo.label}</Badge>
-            </View>
-
-            {/* 评分 */}
-            {task.score !== null && task.score !== undefined && (
-              <View className="flex items-center justify-between pt-3 border-t border-gray-100">
-                <View className="flex items-center gap-2">
-                  <Award size={16} color={getScoreColor(task.score)} />
-                  <Text className="text-sm text-gray-500">任务评分</Text>
-                </View>
-                <View className="flex items-center gap-2">
-                  <Text 
-                    className="text-lg font-bold"
-                    style={{ color: getScoreColor(task.score) }}
-                  >
-                    {task.score}
+          <View className="flex">
+            {/* 左侧状态条 */}
+            <View 
+              className="w-1"
+              style={{ backgroundColor: statusInfo.color }}
+            />
+            
+            <View className="flex-1 p-4">
+              {/* 标题行 */}
+              <View className="flex items-start justify-between mb-2">
+                <View className="flex-1 mr-3">
+                  <Text className={`text-base font-semibold leading-6 ${task.status === 'cancelled' ? 'text-gray-400 line-through' : 'text-gray-800'}`} numberOfLines={2}>
+                    {task.task_name}
                   </Text>
-                  <Text className="text-sm text-gray-400">分</Text>
                 </View>
+                <Badge className={`${priorityStyle.bg} ${priorityStyle.text}`}>
+                  {task.priority || 'P2'}
+                </Badge>
               </View>
-            )}
 
-            {/* 评分备注 */}
-            {task.score_note && (
-              <View className="mt-2 px-3 py-2 bg-gray-50 rounded-lg">
-                <Text className="text-xs text-gray-500" numberOfLines={1}>
-                  {task.score_note}
-                </Text>
+              {/* 信息行 */}
+              <View className="flex items-center gap-3 mb-3 flex-wrap">
+                <Badge className={statusInfo.bgClass}>{statusInfo.label}</Badge>
+                
+                <View className="flex items-center gap-1">
+                  <Calendar size={14} color="#9CA3AF" />
+                  <Text className="text-xs text-gray-400">截止 {task.require_date}</Text>
+                </View>
+                
+                {/* 执行人 */}
+                {task.executor_name && (
+                  <View className="flex items-center gap-1">
+                    <View className="w-4 h-4 rounded-full bg-blue-100 flex items-center justify-center">
+                      <Text className="text-xs text-blue-500">{task.executor_name[0]}</Text>
+                    </View>
+                    <Text className="text-xs text-gray-400">{task.executor_name}</Text>
+                  </View>
+                )}
               </View>
-            )}
-          </View>
 
-          {/* 右箭头 */}
-          <View className="absolute right-3 top-1/2 -translate-y-1/2">
-            <ChevronRight size={20} color="#D1D5DB" />
+              {/* 评分区域 */}
+              {task.score !== null && task.score !== undefined && (
+                <View className="pt-3 border-t border-gray-100">
+                  <View className="flex items-center justify-between">
+                    <View className="flex items-center gap-2">
+                      <Award size={16} color={getScoreColor(task.score)} />
+                      <Text className="text-sm text-gray-500">任务评分</Text>
+                      {overdueDays > 0 && (
+                        <Text className="text-xs text-orange-500">(逾期{overdueDays}天)</Text>
+                      )}
+                      {overdueDays < 0 && (
+                        <Text className="text-xs text-green-500">(提前{Math.abs(overdueDays)}天)</Text>
+                      )}
+                    </View>
+                    <View className="flex items-center gap-1">
+                      <Text 
+                        className="text-xl font-bold"
+                        style={{ color: getScoreColor(task.score) }}
+                      >
+                        {task.score}
+                      </Text>
+                      <Text className="text-sm text-gray-400">分</Text>
+                    </View>
+                  </View>
+                  
+                  {/* 评分备注 */}
+                  {task.score_note && (
+                    <View className="mt-2 px-3 py-2 bg-gray-50 rounded-lg">
+                      <Text className="text-xs text-gray-500">{task.score_note}</Text>
+                    </View>
+                  )}
+                </View>
+              )}
+              
+              {/* 右箭头 */}
+              <View className="absolute right-3 top-1/2 -translate-y-1/2">
+                <ChevronRight size={20} color="#D1D5DB" />
+              </View>
+            </View>
           </View>
         </CardContent>
       </Card>
@@ -262,6 +352,34 @@ export default function History() {
             );
           })}
         </View>
+      </View>
+
+      {/* 时间筛选 */}
+      <View className="bg-white px-4 py-2 border-b border-gray-100">
+        <ScrollView scrollX className="whitespace-nowrap">
+          <View className="flex gap-2">
+            {TIME_FILTERS.map((item) => (
+              <View
+                key={item.value}
+                className={`px-3 py-1 rounded-full text-sm flex items-center gap-1 ${
+                  timeFilter === item.value
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-100 text-gray-600'
+                }`}
+                onClick={() => handleTimeFilterClick(item.value)}
+              >
+                {item.value === 'custom' && timeFilter === 'custom' && selectedDateRange.from ? (
+                  <>
+                    <CalendarDays size={14} color={timeFilter === item.value ? '#ffffff' : '#1377EB'} />
+                    <Text>{getDisplayDateRange()}</Text>
+                  </>
+                ) : (
+                  <Text>{item.label}</Text>
+                )}
+              </View>
+            ))}
+          </View>
+        </ScrollView>
       </View>
 
       {/* 任务列表 */}
@@ -301,6 +419,61 @@ export default function History() {
           )}
         </View>
       </ScrollView>
+
+      {/* 日期范围选择器弹窗 */}
+      {showDateRangeDialog && (
+        <Dialog open={showDateRangeDialog} onOpenChange={setShowDateRangeDialog}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="flex items-center justify-between">
+                <Text>选择日期范围</Text>
+                <View onClick={clearCustomTime}>
+                  <X size={20} color="#6B7280" />
+                </View>
+              </DialogTitle>
+            </DialogHeader>
+            
+            <View className="py-4">
+              <CalendarPicker
+                mode="range"
+                selected={dateRange}
+                onSelect={(range) => setDateRange(range || {})}
+                className="rounded-md border"
+              />
+              
+              {/* 已选择的日期范围显示 */}
+              {dateRange.from && (
+                <View className="mt-4 p-3 bg-blue-50 rounded-lg">
+                  <View className="flex items-center justify-between">
+                    <Text className="text-sm text-gray-500">已选择：</Text>
+                    <Text className="text-sm font-medium text-blue-500">
+                      {format(dateRange.from, 'yyyy年MM月dd日')}
+                      {dateRange.to && ` - ${format(dateRange.to, 'yyyy年MM月dd日')}`}
+                    </Text>
+                  </View>
+                </View>
+              )}
+            </View>
+            
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => setShowDateRangeDialog(false)}
+              >
+                取消
+              </Button>
+              <Button 
+                className="flex-1"
+                onClick={confirmDateRange}
+                disabled={!dateRange.from || !dateRange.to}
+              >
+                确定
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </View>
   );
 }
