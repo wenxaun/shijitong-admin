@@ -436,7 +436,7 @@ export default function Index() {
                   key={item.value}
                   className={`px-3 py-2 rounded-full text-sm flex items-center gap-1 ${
                     timeFilter === item.value
-                      ? 'bg-green-500 text-white'
+                      ? 'bg-blue-500 text-white'
                       : 'bg-gray-100 text-gray-600'
                   }`}
                   onClick={() => handleTimeFilterClick(item.value)}
@@ -465,7 +465,7 @@ export default function Index() {
                   key={item.value}
                   className={`px-3 py-2 rounded-full text-sm ${
                     statusFilter === item.value
-                      ? 'bg-green-500 text-white'
+                      ? 'bg-blue-500 text-white'
                       : 'bg-gray-100 text-gray-600'
                   }`}
                   onClick={() => setStatusFilter(item.value)}
