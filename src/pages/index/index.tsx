@@ -75,10 +75,12 @@ export default function Index() {
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
   const [selectedDateRange, setSelectedDateRange] = useState<{ from?: Date; to?: Date }>({});
   
-  // 使用 ref 跟踪首次加载，避免 useDidShow 重复刷新
-  const isFirstLoad = useRef(true);
   // 使用 ref 跟踪是否正在加载
   const isLoadingRef = useRef(false);
+  // 使用 ref 存储任务数量，避免 useCallback 依赖 tasks.length
+  const tasksCountRef = useRef(0);
+  // 使用 ref 跟踪是否已初始化（用于 useDidShow 判断）
+  const hasInitializedRef = useRef(false);
 
   // 加载任务列表
   const loadTasks = useCallback(async (refresh = false) => {
@@ -104,7 +106,7 @@ export default function Index() {
     console.log('[Index] 开始加载任务列表...');
     isLoadingRef.current = true;
     // 只在首次加载或无数据时显示全屏加载
-    setLoading(tasks.length === 0);
+    setLoading(tasksCountRef.current === 0);
     
     try {
       const currentPage = refresh ? 1 : page;
@@ -138,9 +140,14 @@ export default function Index() {
         console.log('[Index] 任务数量:', newTasks.length);
         if (refresh) {
           setTasks(newTasks);
+          tasksCountRef.current = newTasks.length;
           setPage(1);
         } else {
-          setTasks(prev => [...prev, ...newTasks]);
+          setTasks(prev => {
+            const updated = [...prev, ...newTasks];
+            tasksCountRef.current = updated.length;
+            return updated;
+          });
         }
         setHasMore(res.data.hasMore);
       } else {
@@ -155,7 +162,7 @@ export default function Index() {
       setLoading(false);
       console.log('===== loadTasks 结束 =====');
     }
-  }, [openid, statusFilter, timeFilter, page, selectedDateRange, tasks.length]);
+  }, [openid, statusFilter, timeFilter, page, selectedDateRange]);
 
   // 初始化加载
   useEffect(() => {
@@ -168,6 +175,7 @@ export default function Index() {
     
     if (openid || storeOpenid) {
       loadTasks(true);
+      hasInitializedRef.current = true;
     } else {
       console.log('[Index] openid 为空，跳过加载');
       setLoading(false);
@@ -175,13 +183,13 @@ export default function Index() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openid]);
 
-  // 页面显示时刷新数据
+  // 页面显示时刷新数据（从其他页面返回时触发）
   Taro.useDidShow(() => {
     console.log('===== Index useDidShow =====');
+    console.log('[Index] hasInitialized:', hasInitializedRef.current);
     
-    // 首次加载时跳过，避免重复刷新
-    if (isFirstLoad.current) {
-      isFirstLoad.current = false;
+    // 如果还未初始化，跳过（等待 useEffect 初始化）
+    if (!hasInitializedRef.current) {
       return;
     }
     
@@ -191,6 +199,7 @@ export default function Index() {
     
     // 仅在有 openid 且不在加载中时刷新
     if ((openid || storeOpenid) && !isLoadingRef.current) {
+      console.log('[Index] 触发刷新');
       loadTasks(true);
     }
   });

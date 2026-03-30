@@ -273,7 +273,10 @@ export default function Weekly() {
     <View className="min-h-screen bg-gray-50">
       {/* 加载遮罩层 */}
       {loading && (
-        <View className="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50">
+        <View 
+          className="fixed inset-0 flex items-center justify-center z-50"
+          style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}
+        >
           <View className="bg-white rounded-xl px-6 py-4 flex items-center gap-2 shadow-lg">
             <Loader size={20} color="#1377EB" className="animate-spin" />
             <Text className="text-gray-600">加载中...</Text>
