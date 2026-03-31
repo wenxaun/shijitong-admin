@@ -1,5 +1,5 @@
 import { View, Text, ScrollView } from '@tarojs/components';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Taro from '@tarojs/taro';
 import { useUserStore } from '@/stores/user';
 import { callFunction } from '@/utils/cloud';
@@ -78,11 +78,6 @@ export default function History() {
   const [groups, setGroups] = useState<TaskGroup[]>([]);
   const [showFilterDialog, setShowFilterDialog] = useState(false);
   
-  // 使用 ref 跟踪是否有过数据（用于遮罩层显示）
-  const hasDataRef = useRef(false);
-  // 跟踪是否正在切换筛选条件
-  const isFilteringRef = useRef(false);
-
   // 加载分组列表
   const loadGroups = async () => {
     try {
@@ -109,10 +104,6 @@ export default function History() {
   const loadTasks = useCallback(async (refresh = false) => {
     if (!openid) return;
 
-    // 标记正在加载
-    if (refresh) {
-      isFilteringRef.current = true;
-    }
     setLoading(true);
     try {
       const currentPage = refresh ? 1 : page;
@@ -200,7 +191,6 @@ export default function History() {
           }
           
           setTasks(filteredTasks);
-          hasDataRef.current = filteredTasks.length > 0;
         }
         setHasMore(false);
         setLoading(false);
@@ -235,7 +225,6 @@ export default function History() {
       if (res.success && res.data) {
         const newTasks = res.data.tasks || [];
         setTasks(refresh ? newTasks : [...tasks, ...newTasks]);
-        hasDataRef.current = (refresh ? newTasks : [...tasks, ...newTasks]).length > 0;
         setHasMore(res.data.hasMore);
         setPage(currentPage);
       }
@@ -244,7 +233,6 @@ export default function History() {
       Taro.showToast({ title: '加载失败', icon: 'none' });
     } finally {
       setLoading(false);
-      isFilteringRef.current = false;
     }
   }, [openid, currentTab, page, tasks, timeFilter, selectedDateRange, statusFilter, priorityFilter, groupFilter]);
 
@@ -477,8 +465,8 @@ export default function History() {
 
   return (
     <View className="min-h-screen bg-gray-50">
-      {/* 加载遮罩层 - 筛选切换时显示 */}
-      {loading && (hasDataRef.current || isFilteringRef.current) && (
+      {/* 加载遮罩层 - 有数据时筛选切换显示 */}
+      {loading && tasks.length > 0 && (
         <View 
           className="fixed inset-0 flex items-center justify-center z-50"
           style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}
