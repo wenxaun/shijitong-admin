@@ -14,6 +14,9 @@ import { DeadlineReminder } from '@/components/deadline-reminder';
 import { CalendarDays, Loader } from 'lucide-react-taro';
 import { format } from 'date-fns';
 
+// 缓存时间（毫秒）
+const CACHE_DURATION = 2 * 60 * 1000; // 2分钟
+
 // 状态筛选选项
 const STATUS_FILTERS = [
   { value: 'all', label: '全部' },
@@ -40,7 +43,7 @@ const STATUS_MAP: Record<TaskStatus, string> = {
   exception: '异常'
 };
 
-// 状态颜色映射 - 微信风格
+// 状态颜色映射
 const STATUS_COLOR: Record<TaskStatus, string> = {
   pending: 'bg-gray-100 text-gray-600',
   in_progress: 'bg-green-50 text-green-600',
@@ -49,7 +52,7 @@ const STATUS_COLOR: Record<TaskStatus, string> = {
   exception: 'bg-orange-50 text-orange-600'
 };
 
-// 优先级颜色映射 - 微信风格
+// 优先级颜色映射
 const PRIORITY_COLOR: Record<TaskPriority, string> = {
   P0: 'bg-red-50 text-red-500',
   P1: 'bg-orange-50 text-orange-500',
@@ -57,11 +60,16 @@ const PRIORITY_COLOR: Record<TaskPriority, string> = {
   P3: 'bg-gray-100 text-gray-400'
 };
 
+// 获取缓存键
+const getCacheKey = (statusFilter: string, timeFilter: string, customDateRange?: { from?: Date; to?: Date }) => {
+  let key = `tasks_cache_${statusFilter}_${timeFilter}`;
+  if (timeFilter === 'custom' && customDateRange?.from && customDateRange?.to) {
+    key += `_${format(customDateRange.from, 'yyyyMMdd')}_${format(customDateRange.to, 'yyyyMMdd')}`;
+  }
+  return key;
+};
+
 export default function Index() {
-  // 组件渲染时立即输出
-  console.log('===== IndexPage 组件渲染 =====');
-  console.log('[IndexPage] 当前时间:', new Date().toISOString());
-  
   const { openid } = useUserStore();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,50 +83,92 @@ export default function Index() {
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
   const [selectedDateRange, setSelectedDateRange] = useState<{ from?: Date; to?: Date }>({});
   
-  // 使用 ref 跟踪是否正在加载
+  // 使用 ref 跟踪加载状态
   const isLoadingRef = useRef(false);
-  // 使用 ref 存储任务数量，避免 useCallback 依赖 tasks.length
   const tasksCountRef = useRef(0);
-  // 使用 ref 跟踪是否已初始化（用于 useDidShow 判断）
   const hasInitializedRef = useRef(false);
+  const lastLoadTimeRef = useRef(0);
+
+  // 从缓存加载数据
+  const loadFromCache = useCallback((status: string, time: string, customDateRange?: { from?: Date; to?: Date }) => {
+    try {
+      const cacheKey = getCacheKey(status, time, customDateRange);
+      const cached = Taro.getStorageSync(cacheKey);
+      if (cached) {
+        const cacheData = JSON.parse(cached);
+        const cacheTime = cacheData.timestamp;
+        // 检查缓存是否过期
+        if (Date.now() - cacheTime < CACHE_DURATION) {
+          console.log('[Index] 使用缓存数据');
+          return cacheData;
+        }
+      }
+    } catch (e) {
+      console.error('[Index] 解析缓存失败:', e);
+    }
+    return null;
+  }, []);
+
+  // 保存到缓存
+  const saveToCache = useCallback((status: string, time: string, data: Task[], customDateRange?: { from?: Date; to?: Date }) => {
+    try {
+      const cacheKey = getCacheKey(status, time, customDateRange);
+      Taro.setStorageSync(cacheKey, JSON.stringify({
+        tasks: data,
+        timestamp: Date.now()
+      }));
+    } catch (e) {
+      console.error('[Index] 保存缓存失败:', e);
+    }
+  }, []);
 
   // 加载任务列表
-  const loadTasks = useCallback(async (refresh = false) => {
-    console.log('===== loadTasks 开始 =====');
-    
+  const loadTasks = useCallback(async (refresh = false, forceRefresh = false) => {
     // 避免重复加载
     if (isLoadingRef.current) {
       console.log('[Index] 正在加载中，跳过');
       return;
     }
     
-    // 优先使用 hook 返回的 openid，否则从 store 获取
-    const currentOpenid = openid || useUserStore.getState().openid;
-    console.log('[Index] openid:', openid);
-    console.log('[Index] currentOpenid:', currentOpenid);
+    // 限流：最少间隔1秒
+    const now = Date.now();
+    if (!refresh && now - lastLoadTimeRef.current < 1000) {
+      console.log('[Index] 请求过于频繁，跳过');
+      return;
+    }
     
+    const currentOpenid = openid || useUserStore.getState().openid;
     if (!currentOpenid) {
-      console.log('[Index] openid 为空，跳过加载');
       setLoading(false);
       return;
     }
 
-    console.log('[Index] 开始加载任务列表...');
+    // 非强制刷新时，先尝试从缓存加载
+    if (!forceRefresh && refresh) {
+      const cachedData = loadFromCache(statusFilter, timeFilter, selectedDateRange);
+      if (cachedData && cachedData.tasks) {
+        setTasks(cachedData.tasks);
+        tasksCountRef.current = cachedData.tasks.length;
+        setLoading(false);
+        // 后台静默刷新
+        setTimeout(() => loadTasks(true, true), 100);
+        return;
+      }
+    }
+
     isLoadingRef.current = true;
-    // 只在首次加载或无数据时显示全屏加载
+    lastLoadTimeRef.current = now;
     setLoading(tasksCountRef.current === 0);
     
     try {
       const currentPage = refresh ? 1 : page;
       
-      // 构建请求参数
       const params: Record<string, any> = {
         status: statusFilter === 'all' ? undefined : statusFilter,
         page: currentPage,
         pageSize: 20
       };
       
-      // 处理时间筛选
       if (timeFilter === 'custom' && selectedDateRange.from && selectedDateRange.to) {
         params.start_date = format(selectedDateRange.from, 'yyyy-MM-dd');
         params.end_date = format(selectedDateRange.to, 'yyyy-MM-dd');
@@ -126,22 +176,19 @@ export default function Index() {
         params.time_filter = timeFilter;
       }
       
-      console.log('[Index] 调用参数:', JSON.stringify(params));
-      
       const res = await callFunction<CloudResponse<TaskListResponse>>(
         CLOUD_FUNCTIONS.TASK_LIST,
         params
       );
 
-      console.log('[Index] 任务列表返回:', JSON.stringify(res));
-
       if (res.success && res.data) {
         const newTasks = res.data.tasks || [];
-        console.log('[Index] 任务数量:', newTasks.length);
         if (refresh) {
           setTasks(newTasks);
           tasksCountRef.current = newTasks.length;
           setPage(1);
+          // 保存到缓存
+          saveToCache(statusFilter, timeFilter, newTasks, selectedDateRange);
         } else {
           setTasks(prev => {
             const updated = [...prev, ...newTasks];
@@ -151,7 +198,6 @@ export default function Index() {
         }
         setHasMore(res.data.hasMore);
       } else {
-        console.error('[Index] 加载任务失败:', res.message);
         Taro.showToast({ title: res.message || '加载失败', icon: 'none' });
       }
     } catch (err) {
@@ -160,53 +206,35 @@ export default function Index() {
     } finally {
       isLoadingRef.current = false;
       setLoading(false);
-      console.log('===== loadTasks 结束 =====');
     }
-  }, [openid, statusFilter, timeFilter, page, selectedDateRange]);
+  }, [openid, statusFilter, timeFilter, page, selectedDateRange, loadFromCache, saveToCache]);
 
   // 初始化加载
   useEffect(() => {
-    console.log('===== Index useEffect =====');
-    console.log('[Index] openid:', openid);
-    
-    // 如果 hook 返回的 openid 为空，尝试从 store 直接获取
     const storeOpenid = useUserStore.getState().openid;
-    console.log('[Index] store 中的 openid:', storeOpenid);
-    
     if (openid || storeOpenid) {
       loadTasks(true);
       hasInitializedRef.current = true;
     } else {
-      console.log('[Index] openid 为空，跳过加载');
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openid]);
 
-  // 页面显示时刷新数据（从其他页面返回时触发）
+  // 页面显示时刷新数据
   Taro.useDidShow(() => {
-    console.log('===== Index useDidShow =====');
-    console.log('[Index] hasInitialized:', hasInitializedRef.current);
-    
-    // 如果还未初始化，跳过（等待 useEffect 初始化）
     if (!hasInitializedRef.current) {
       return;
     }
     
     const storeOpenid = useUserStore.getState().openid;
-    console.log('[Index] openid:', openid);
-    console.log('[Index] store 中的 openid:', storeOpenid);
-    
-    // 仅在有 openid 且不在加载中时刷新
     if ((openid || storeOpenid) && !isLoadingRef.current) {
-      console.log('[Index] 触发刷新');
       loadTasks(true);
     }
   });
 
   // 筛选变化时重新加载
   useEffect(() => {
-    // 如果选择自定义时间但未选择日期范围，不触发加载
     if (timeFilter === 'custom' && (!selectedDateRange.from || !selectedDateRange.to)) {
       return;
     }
@@ -222,7 +250,6 @@ export default function Index() {
   // 处理时间筛选点击
   const handleTimeFilterClick = (value: string) => {
     if (value === 'custom') {
-      // 打开日期范围选择器
       setDateRange(selectedDateRange);
       setShowDateRangeDialog(true);
     } else {
@@ -261,14 +288,11 @@ export default function Index() {
 
   // 渲染任务卡片
   const renderTaskCard = (task: Task) => {
-    // 判断是否逾期
     const requireDate = new Date(task.require_date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     requireDate.setHours(0, 0, 0, 0);
     const isOverdue = today > requireDate && task.status !== 'completed' && task.status !== 'cancelled';
-    
-    // 计算剩余天数
     const daysLeft = Math.ceil((requireDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     
     return (
@@ -279,7 +303,6 @@ export default function Index() {
       >
         <CardContent className="p-0">
           <View className="flex">
-            {/* 左侧状态条 */}
             <View
               className={`w-1 ${
                 task.status === 'completed'
@@ -294,7 +317,6 @@ export default function Index() {
               }`}
             />
             <View className="flex-1 p-3">
-              {/* 标题行 */}
               <View className="flex items-start justify-between mb-2">
                 <View className="flex-1 mr-2">
                   <Text className={`text-base font-semibold ${task.status === 'cancelled' ? 'text-gray-400 line-through' : 'text-gray-800'}`} numberOfLines={2}>
@@ -304,25 +326,27 @@ export default function Index() {
                 <Badge className={PRIORITY_COLOR[task.priority]}>{task.priority}</Badge>
               </View>
 
-              {/* 元信息行 */}
               <View className="flex items-center gap-2 mb-2 flex-wrap">
                 <Badge className={STATUS_COLOR[task.status]}>{STATUS_MAP[task.status]}</Badge>
                 
-                {/* 创建日期 */}
+                {task.group_name && (
+                  <View className="px-2 py-1 bg-purple-50 rounded">
+                    <Text className="text-xs text-purple-500">{task.group_name}</Text>
+                  </View>
+                )}
+                
                 {task.created_at && (
                   <View className="flex items-center gap-1">
                     <Text className="text-xs text-gray-400">创建 {task.created_at}</Text>
                   </View>
                 )}
                 
-                {/* 截止日期 */}
                 <View className="flex items-center gap-1">
                   <Text className={`text-xs ${isOverdue ? 'text-orange-500 font-medium' : 'text-gray-400'}`}>
                     截止 {isOverdue ? `(已逾期${Math.abs(daysLeft)}天)` : daysLeft === 0 ? '今日' : daysLeft === 1 ? '明日' : task.require_date}
                   </Text>
                 </View>
                 
-                {/* 完成日期 */}
                 {task.complete_date && task.status === 'completed' && (
                   <View className="flex items-center gap-1">
                     <Text className="text-xs text-green-500">完成 {task.complete_date}</Text>
@@ -330,10 +354,8 @@ export default function Index() {
                 )}
               </View>
 
-              {/* 执行人和子任务信息 */}
               <View className="flex items-center justify-between">
                 <View className="flex items-center gap-3">
-                  {/* 执行人 */}
                   {task.executor_name && (
                     <View className="flex items-center gap-1">
                       <View className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center">
@@ -343,7 +365,6 @@ export default function Index() {
                     </View>
                   )}
                   
-                  {/* 子任务数量 */}
                   {task.subtask_count && task.subtask_count > 0 && (
                     <View className="flex items-center gap-1">
                       <Text className="text-xs text-gray-400">📋 {task.subtask_count} 项子任务</Text>
@@ -351,7 +372,6 @@ export default function Index() {
                   )}
                 </View>
                 
-                {/* 进度条 */}
                 {task.subtask_count && task.subtask_count > 0 && (
                   <View className="flex items-center gap-2">
                     <View className="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -367,16 +387,15 @@ export default function Index() {
                 )}
               </View>
 
-              {/* 评分 */}
               {task.score !== null && task.score !== undefined && (
                 <View className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-100">
                   <Text
                     className={`text-sm font-semibold ${
-                      task.score >= 100
+                      task.score >= 80
                         ? 'text-green-500'
-                        : task.score >= 80
-                        ? 'text-blue-500'
-                        : 'text-orange-500'
+                        : task.score >= 60
+                        ? 'text-orange-500'
+                        : 'text-red-500'
                     }`}
                   >
                     {task.score}分
@@ -528,7 +547,6 @@ export default function Index() {
                 className="rounded-md border"
               />
               
-              {/* 已选择的日期范围显示 */}
               {dateRange.from && (
                 <View className="mt-4 p-3 bg-blue-50 rounded-lg">
                   <View className="flex items-center justify-between">

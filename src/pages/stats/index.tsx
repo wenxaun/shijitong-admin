@@ -7,8 +7,7 @@ import type { CloudResponse } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { ClipboardList, CircleCheck, TrendingUp, Target, ChartBar, CircleAlert } from 'lucide-react-taro';
+import { ClipboardList, CircleCheck, ChartBar, CircleAlert, Award, Clock } from 'lucide-react-taro';
 
 type RangeType = 'week' | 'month' | 'all';
 
@@ -21,16 +20,59 @@ interface Metrics {
 
 interface ScoreDistribution {
   range: string;
+  label: string;
   count: number;
   percentage: number;
   color: string;
+  bgClass: string;
 }
 
 interface PriorityDistribution {
   priority: string;
   count: number;
   percentage: number;
+  color: string;
+  bgClass: string;
+  textClass: string;
 }
+
+// 分数颜色配置
+const getScoreColor = (score: number): { color: string; bgClass: string; textClass: string } => {
+  if (score >= 80) {
+    return { color: '#00B365', bgClass: 'bg-green-500', textClass: 'text-green-500' };
+  } else if (score >= 60) {
+    return { color: '#FF7D27', bgClass: 'bg-orange-500', textClass: 'text-orange-500' };
+  } else {
+    return { color: '#EA4335', bgClass: 'bg-red-500', textClass: 'text-red-500' };
+  }
+};
+
+// 按时率颜色配置
+const getRateColor = (rate: number): { color: string; bgClass: string; textClass: string } => {
+  if (rate >= 80) {
+    return { color: '#00B365', bgClass: 'bg-green-500', textClass: 'text-green-500' };
+  } else if (rate >= 60) {
+    return { color: '#FF7D27', bgClass: 'bg-orange-500', textClass: 'text-orange-500' };
+  } else {
+    return { color: '#EA4335', bgClass: 'bg-red-500', textClass: 'text-red-500' };
+  }
+};
+
+// 优先级配置
+const PRIORITY_CONFIG: Record<string, { color: string; bgClass: string; textClass: string; label: string }> = {
+  P0: { color: '#EA4335', bgClass: 'bg-red-500', textClass: 'text-red-500', label: '紧急重要' },
+  P1: { color: '#FF7D27', bgClass: 'bg-orange-500', textClass: 'text-orange-500', label: '重要' },
+  P2: { color: '#1377EB', bgClass: 'bg-blue-500', textClass: 'text-blue-500', label: '普通' },
+  P3: { color: '#9CA3AF', bgClass: 'bg-gray-400', textClass: 'text-gray-400', label: '次要' }
+};
+
+// 分数分布配置
+const SCORE_DISTRIBUTION_CONFIG: { range: string; label: string; color: string; bgClass: string }[] = [
+  { range: '100', label: '100分 (满分)', color: '#00B365', bgClass: 'bg-green-500' },
+  { range: '80-99', label: '80-99分 (优秀)', color: '#1377EB', bgClass: 'bg-blue-500' },
+  { range: '60-79', label: '60-79分 (合格)', color: '#FF7D27', bgClass: 'bg-orange-500' },
+  { range: '0-59', label: '<60分 (待改进)', color: '#EA4335', bgClass: 'bg-red-500' }
+];
 
 export default function Stats() {
   const { openid } = useUserStore();
@@ -47,31 +89,65 @@ export default function Stats() {
   const [scoreDistribution, setScoreDistribution] = useState<ScoreDistribution[]>([]);
   const [priorityDistribution, setPriorityDistribution] = useState<PriorityDistribution[]>([]);
 
-  const loadStats = useCallback(async () => {
+  // 加载统计并缓存
+  const loadStats = useCallback(async (forceRefresh = false) => {
     if (!openid) return;
+
+    // 尝试从缓存加载（非强制刷新时）
+    if (!forceRefresh && rangeType === 'month') {
+      const cached = Taro.getStorageSync('stats_cache_month');
+      if (cached) {
+        try {
+          const cacheData = JSON.parse(cached);
+          const cacheTime = cacheData.timestamp;
+          // 缓存5分钟有效
+          if (Date.now() - cacheTime < 5 * 60 * 1000) {
+            setMetrics(cacheData.metrics);
+            setScoreDistribution(cacheData.scoreDistribution);
+            setPriorityDistribution(cacheData.priorityDistribution);
+            return;
+          }
+        } catch (e) {
+          console.error('解析缓存失败:', e);
+        }
+      }
+    }
 
     setLoading(true);
     try {
       // H5 端模拟数据
       if (Taro.getEnv() !== Taro.ENV_TYPE.WEAPP) {
-        setMetrics({
+        const mockMetrics = {
           totalTasks: 15,
           completedTasks: 12,
           avgScore: 85,
           onTimeRate: 80
-        });
-        setScoreDistribution([
-          { range: '100分', count: 5, percentage: 42, color: '#00B365' },
-          { range: '80-99分', count: 4, percentage: 33, color: '#1377EB' },
-          { range: '60-79分', count: 2, percentage: 17, color: '#FF7D27' },
-          { range: '<60分', count: 1, percentage: 8, color: '#EA4335' }
-        ]);
-        setPriorityDistribution([
-          { priority: 'P0', count: 2, percentage: 13 },
-          { priority: 'P1', count: 5, percentage: 33 },
-          { priority: 'P2', count: 6, percentage: 40 },
-          { priority: 'P3', count: 2, percentage: 14 }
-        ]);
+        };
+        const mockScoreDistribution = [
+          { range: '100', label: '100分 (满分)', count: 5, percentage: 42, color: '#00B365', bgClass: 'bg-green-500' },
+          { range: '80-99', label: '80-99分 (优秀)', count: 4, percentage: 33, color: '#1377EB', bgClass: 'bg-blue-500' },
+          { range: '60-79', label: '60-79分 (合格)', count: 2, percentage: 17, color: '#FF7D27', bgClass: 'bg-orange-500' },
+          { range: '0-59', label: '<60分 (待改进)', count: 1, percentage: 8, color: '#EA4335', bgClass: 'bg-red-500' }
+        ];
+        const mockPriorityDistribution = [
+          { priority: 'P0', count: 2, percentage: 13, color: '#EA4335', bgClass: 'bg-red-500', textClass: 'text-red-500' },
+          { priority: 'P1', count: 5, percentage: 33, color: '#FF7D27', bgClass: 'bg-orange-500', textClass: 'text-orange-500' },
+          { priority: 'P2', count: 6, percentage: 40, color: '#1377EB', bgClass: 'bg-blue-500', textClass: 'text-blue-500' },
+          { priority: 'P3', count: 2, percentage: 14, color: '#9CA3AF', bgClass: 'bg-gray-400', textClass: 'text-gray-400' }
+        ];
+        
+        setMetrics(mockMetrics);
+        setScoreDistribution(mockScoreDistribution);
+        setPriorityDistribution(mockPriorityDistribution);
+        
+        // 缓存数据
+        Taro.setStorageSync('stats_cache_month', JSON.stringify({
+          metrics: mockMetrics,
+          scoreDistribution: mockScoreDistribution,
+          priorityDistribution: mockPriorityDistribution,
+          timestamp: Date.now()
+        }));
+        
         setLoading(false);
         return;
       }
@@ -89,6 +165,16 @@ export default function Stats() {
         setMetrics(res.data.metrics);
         setScoreDistribution(res.data.scoreDistribution);
         setPriorityDistribution(res.data.priorityDistribution);
+        
+        // 缓存数据
+        if (rangeType === 'month') {
+          Taro.setStorageSync('stats_cache_month', JSON.stringify({
+            metrics: res.data.metrics,
+            scoreDistribution: res.data.scoreDistribution,
+            priorityDistribution: res.data.priorityDistribution,
+            timestamp: Date.now()
+          }));
+        }
       }
     } catch (err) {
       console.error('加载统计失败:', err);
@@ -106,6 +192,11 @@ export default function Stats() {
   const completionRate = metrics.totalTasks > 0 
     ? Math.round((metrics.completedTasks / metrics.totalTasks) * 100) 
     : 0;
+
+  // 获取分数颜色
+  const avgScoreStyle = getScoreColor(metrics.avgScore);
+  const onTimeRateStyle = getRateColor(metrics.onTimeRate);
+  const completionRateStyle = getRateColor(completionRate);
 
   return (
     <View className="min-h-screen bg-gray-50">
@@ -152,11 +243,14 @@ export default function Stats() {
               <View>
                 <View className="flex justify-between mb-1">
                   <Text className="text-white opacity-60 text-xs">完成率</Text>
-                  <Text className="text-white text-xs font-semibold">{completionRate}%</Text>
+                  <View className="flex items-center gap-1">
+                    <Text className="text-white text-xs font-semibold">{completionRate}%</Text>
+                    {completionRate >= 80 && <Text className="text-xs">✨</Text>}
+                  </View>
                 </View>
                 <View className="h-2 bg-white bg-opacity-20 rounded-full overflow-hidden">
                   <View 
-                    className="h-full bg-white rounded-full transition-all"
+                    className={`h-full rounded-full transition-all ${completionRateStyle.bgClass}`}
                     style={{ width: `${completionRate}%` }}
                   />
                 </View>
@@ -172,13 +266,23 @@ export default function Stats() {
             <Card>
               <CardContent className="p-4">
                 <View className="flex items-center gap-3">
-                  <View className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
-                    <TrendingUp size={20} color="#1377EB" />
+                  <View className={`w-10 h-10 rounded-xl flex items-center justify-center ${avgScoreStyle.bgClass} bg-opacity-10`} style={{ backgroundColor: `${avgScoreStyle.color}15` }}>
+                    <Award size={20} color={avgScoreStyle.color} />
                   </View>
                   <View>
                     <Text className="text-xs text-gray-400">平均分</Text>
-                    <Text className="text-xl font-bold text-gray-800">{metrics.avgScore}</Text>
+                    <View className="flex items-baseline gap-1">
+                      <Text className={`text-xl font-bold ${avgScoreStyle.textClass}`}>{metrics.avgScore}</Text>
+                      {metrics.avgScore >= 80 && <Text className="text-xs">⭐</Text>}
+                      {metrics.avgScore >= 90 && <Text className="text-xs">⭐</Text>}
+                    </View>
                   </View>
+                </View>
+                {/* 分数等级指示条 */}
+                <View className="mt-3 flex gap-1">
+                  <View className={`flex-1 h-1 rounded-full ${metrics.avgScore < 60 ? 'bg-red-500' : 'bg-gray-200'}`} />
+                  <View className={`flex-1 h-1 rounded-full ${metrics.avgScore >= 60 && metrics.avgScore < 80 ? 'bg-orange-500' : metrics.avgScore >= 80 ? 'bg-green-500' : 'bg-gray-200'}`} />
+                  <View className={`flex-1 h-1 rounded-full ${metrics.avgScore >= 80 ? 'bg-green-500' : 'bg-gray-200'}`} />
                 </View>
               </CardContent>
             </Card>
@@ -187,13 +291,23 @@ export default function Stats() {
             <Card>
               <CardContent className="p-4">
                 <View className="flex items-center gap-3">
-                  <View className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center">
-                    <Target size={20} color="#00B365" />
+                  <View className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${onTimeRateStyle.color}15` }}>
+                    <Clock size={20} color={onTimeRateStyle.color} />
                   </View>
                   <View>
                     <Text className="text-xs text-gray-400">按时率</Text>
-                    <Text className="text-xl font-bold text-gray-800">{metrics.onTimeRate}%</Text>
+                    <View className="flex items-baseline gap-1">
+                      <Text className={`text-xl font-bold ${onTimeRateStyle.textClass}`}>{metrics.onTimeRate}分</Text>
+                      {metrics.onTimeRate >= 80 && <Text className="text-xs">✓</Text>}
+                    </View>
                   </View>
+                </View>
+                {/* 按时率指示条 */}
+                <View className="mt-3 h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <View 
+                    className={`h-full rounded-full transition-all ${onTimeRateStyle.bgClass}`}
+                    style={{ width: `${metrics.onTimeRate}%` }}
+                  />
                 </View>
               </CardContent>
             </Card>
@@ -218,9 +332,17 @@ export default function Stats() {
                             className="w-3 h-3 rounded-full"
                             style={{ backgroundColor: item.color }}
                           />
-                          <Text className="text-sm text-gray-600">{item.range}</Text>
+                          <Text className="text-sm text-gray-600">{item.label}</Text>
                         </View>
-                        <Text className="text-sm text-gray-500">{item.count}个 ({item.percentage}%)</Text>
+                        <View className="flex items-center gap-2">
+                          <Text className="text-sm font-medium text-gray-800">{item.count}个</Text>
+                          <View 
+                            className="px-2 py-1 rounded-full"
+                            style={{ backgroundColor: `${item.color}15` }}
+                          >
+                            <Text className="text-xs font-medium" style={{ color: item.color }}>{item.percentage}%</Text>
+                          </View>
+                        </View>
                       </View>
                       <View className="h-2 bg-gray-100 rounded-full overflow-hidden">
                         <View
@@ -230,6 +352,19 @@ export default function Stats() {
                       </View>
                     </View>
                   ))}
+                  
+                  {/* 分数图例说明 */}
+                  <View className="mt-4 pt-3 border-t border-gray-100">
+                    <Text className="text-xs text-gray-400 mb-2">分数说明：</Text>
+                    <View className="flex flex-wrap gap-2">
+                      {SCORE_DISTRIBUTION_CONFIG.map((config) => (
+                        <View key={config.range} className="flex items-center gap-1">
+                          <View className="w-2 h-2 rounded-full" style={{ backgroundColor: config.color }} />
+                          <Text className="text-xs text-gray-500">{config.range}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
                 </View>
               ) : (
                 <View className="flex flex-col items-center justify-center py-8">
@@ -250,30 +385,51 @@ export default function Stats() {
                 <Text className="text-base font-semibold text-gray-800">优先级分布</Text>
               </View>
               {priorityDistribution.length > 0 ? (
-                <View className="space-y-2">
+                <View className="space-y-3">
                   {priorityDistribution.map((item) => {
-                    const colorMap: Record<string, { bg: string; text: string; bar: string }> = {
-                      P0: { bg: 'bg-red-50', text: 'text-red-500', bar: '#EA4335' },
-                      P1: { bg: 'bg-orange-50', text: 'text-orange-500', bar: '#FF7D27' },
-                      P2: { bg: 'bg-blue-50', text: 'text-blue-500', bar: '#1377EB' },
-                      P3: { bg: 'bg-gray-100', text: 'text-gray-400', bar: '#9CA3AF' }
-                    };
-                    const colors = colorMap[item.priority] || colorMap.P2;
+                    const config = PRIORITY_CONFIG[item.priority] || PRIORITY_CONFIG.P2;
                     
                     return (
-                      <View key={item.priority} className="flex items-center gap-3">
-                        <Badge className={`w-10 justify-center ${colors.bg} ${colors.text}`}>
-                          {item.priority}
-                        </Badge>
-                        <View className="flex-1">
-                          <Progress value={item.percentage} className="h-2" />
+                      <View key={item.priority}>
+                        <View className="flex items-center justify-between mb-1">
+                          <View className="flex items-center gap-2">
+                            <Badge className={`px-2 ${config.bgClass} bg-opacity-10`} style={{ backgroundColor: `${config.color}15` }}>
+                              <Text style={{ color: config.color }}>{item.priority}</Text>
+                            </Badge>
+                            <Text className="text-xs text-gray-500">{config.label}</Text>
+                          </View>
+                          <View className="flex items-center gap-2">
+                            <Text className="text-sm font-medium text-gray-800">{item.count}个</Text>
+                            <View 
+                              className="px-2 py-1 rounded-full"
+                              style={{ backgroundColor: `${config.color}15` }}
+                            >
+                              <Text className="text-xs font-medium" style={{ color: config.color }}>{item.percentage}%</Text>
+                            </View>
+                          </View>
                         </View>
-                        <Text className="text-sm text-gray-500 w-14 text-right">
-                          {item.count}个
-                        </Text>
+                        <View className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <View
+                            className="h-full rounded-full transition-all"
+                            style={{ width: `${item.percentage}%`, backgroundColor: config.color }}
+                          />
+                        </View>
                       </View>
                     );
                   })}
+                  
+                  {/* 优先级图例说明 */}
+                  <View className="mt-4 pt-3 border-t border-gray-100">
+                    <Text className="text-xs text-gray-400 mb-2">优先级说明：</Text>
+                    <View className="flex flex-wrap gap-3">
+                      {Object.entries(PRIORITY_CONFIG).map(([key, config]) => (
+                        <View key={key} className="flex items-center gap-1">
+                          <View className="w-2 h-2 rounded-full" style={{ backgroundColor: config.color }} />
+                          <Text className="text-xs text-gray-500">{key} {config.label}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
                 </View>
               ) : (
                 <View className="flex flex-col items-center justify-center py-8">
@@ -290,10 +446,10 @@ export default function Stats() {
           <Button
             variant="outline"
             className="w-full"
-            onClick={loadStats}
+            onClick={() => loadStats(true)}
             disabled={loading}
           >
-            刷新数据
+            {loading ? '刷新中...' : '刷新数据'}
           </Button>
         </View>
 
