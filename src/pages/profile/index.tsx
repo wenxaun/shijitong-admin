@@ -33,21 +33,10 @@ export default function Profile() {
     loadMenuOrder();
   }, []);
 
-  // 页面显示时重新加载菜单排序（解决返回后不刷新的问题）
+  // 页面显示时重新加载菜单排序
   Taro.useDidShow(() => {
     loadMenuOrder();
   });
-
-  // 监听菜单排序变更事件
-  useEffect(() => {
-    const handleMenuOrderChange = () => {
-      loadMenuOrder();
-    };
-    Taro.eventCenter.on('menuOrderChanged', handleMenuOrderChange);
-    return () => {
-      Taro.eventCenter.off('menuOrderChanged', handleMenuOrderChange);
-    };
-  }, []);
 
   // 加载菜单排序
   const loadMenuOrder = () => {
