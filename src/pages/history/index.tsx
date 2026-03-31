@@ -1,5 +1,5 @@
 import { View, Text, ScrollView } from '@tarojs/components';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Taro from '@tarojs/taro';
 import { useUserStore } from '@/stores/user';
 import { callFunction } from '@/utils/cloud';
@@ -80,6 +80,8 @@ export default function History() {
   
   // 刷新状态（独立于 tasks，用于遮罩层显示）
   const [isRefreshing, setIsRefreshing] = useState(false);
+  // 请求 ID，用于确保只有最新的请求才会关闭遮罩层
+  const refreshIdRef = useRef(0);
   
   // 加载分组列表
   const loadGroups = async () => {
@@ -104,13 +106,8 @@ export default function History() {
   }, []);
 
   // 加载历史任务
-  const loadTasks = useCallback(async (refresh = false) => {
+  const loadTasks = useCallback(async (refresh = false, refreshId?: number) => {
     if (!openid) return;
-    
-    // 如果是刷新操作，设置刷新状态（用于遮罩层显示）
-    if (refresh) {
-      setIsRefreshing(true);
-    }
     
     setLoading(true);
     try {
@@ -241,12 +238,23 @@ export default function History() {
       Taro.showToast({ title: '加载失败', icon: 'none' });
     } finally {
       setLoading(false);
-      setIsRefreshing(false);
+      // 只有最新的请求才会关闭遮罩层
+      if (refreshId === undefined || refreshId === refreshIdRef.current) {
+        setIsRefreshing(false);
+      }
     }
   }, [openid, currentTab, page, tasks, timeFilter, selectedDateRange, statusFilter, priorityFilter, groupFilter]);
 
+  // 筛选条件变化时，立即显示遮罩层，然后加载数据
   useEffect(() => {
-    loadTasks(true);
+    // 生成新的请求 ID
+    const currentRefreshId = ++refreshIdRef.current;
+    
+    // 立即设置刷新状态（同步执行，确保遮罩层立即显示）
+    setIsRefreshing(true);
+    
+    // 加载数据
+    loadTasks(true, currentRefreshId);
   }, [currentTab, timeFilter, selectedDateRange, statusFilter, priorityFilter, groupFilter]);
 
   // 跳转详情
