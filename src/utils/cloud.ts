@@ -688,6 +688,8 @@ export const CLOUD_FUNCTIONS = {
   LOGIN: 'login',
   USER_LOGIN: 'user-login',
   USER_UPDATE: 'user-update',
+  USER_SET_MANAGER: 'user-set-manager',
+  USER_LIST_FOR_MANAGER: 'user-list-for-manager',
   TASK_LIST: 'task-list',
   TASK_CREATE: 'task-create',
   TASK_UPDATE: 'task-update',

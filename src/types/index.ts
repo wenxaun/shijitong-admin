@@ -56,6 +56,19 @@ export interface User {
   role: 'executor' | 'publisher' | 'admin';
   created_at: string;
   last_login: string;
+  
+  // 汇报关系（独立于团队功能）
+  manager_id?: string;           // 直属上级 openid
+  manager_name?: string;         // 直属上级姓名
+  report_to?: string[];          // 汇报对象 openid 列表
+  receive_daily?: boolean;       // 是否接收日报
+  receive_weekly?: boolean;      // 是否接收周报
+  
+  // 企业微信关联（预留，后续企业微信接入使用）
+  wecom_userid?: string;         // 企业微信成员 UserID
+  wecom_corpid?: string;         // 所属企业 ID
+  department_id?: string;        // 主部门 ID
+  department_name?: string;      // 主部门名称
 }
 
 /**

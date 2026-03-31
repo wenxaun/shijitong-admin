@@ -1,0 +1,9 @@
+{
+  "name": "user-set-manager",
+  "version": "1.0.0",
+  "description": "设置直属上级",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

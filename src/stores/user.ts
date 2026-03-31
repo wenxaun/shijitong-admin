@@ -7,6 +7,11 @@ import { getOpenId } from '@/utils/cloud';
 interface UserInfo {
   nickName: string;
   avatarUrl: string;
+  // 汇报关系
+  manager_id?: string;
+  manager_name?: string;
+  receive_daily?: boolean;
+  receive_weekly?: boolean;
 }
 
 interface UserState {
