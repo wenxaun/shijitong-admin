@@ -107,9 +107,13 @@ export default function History() {
 
   // 加载历史任务
   const loadTasks = useCallback(async (refresh = false, refreshId?: number) => {
-    if (!openid) return;
+    if (!openid) {
+      // 如果没有 openid，重置加载状态
+      setLoading(false);
+      setIsRefreshing(false);
+      return;
+    }
     
-    setLoading(true);
     try {
       const currentPage = refresh ? 1 : page;
 
@@ -250,8 +254,9 @@ export default function History() {
     // 生成新的请求 ID
     const currentRefreshId = ++refreshIdRef.current;
     
-    // 立即设置刷新状态（同步执行，确保遮罩层立即显示）
+    // 立即设置刷新状态和加载状态（同步执行，确保遮罩层立即显示）
     setIsRefreshing(true);
+    setLoading(true);
     
     // 加载数据
     loadTasks(true, currentRefreshId);
@@ -265,6 +270,7 @@ export default function History() {
   // 加载更多
   const loadMore = () => {
     if (!loading && hasMore) {
+      setLoading(true);
       loadTasks();
     }
   };
