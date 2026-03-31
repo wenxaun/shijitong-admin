@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ChevronRight, X, Search } from 'lucide-react-taro';
+import { ChevronRight, X, Search, FolderOpen, ArrowRightLeft } from 'lucide-react-taro';
 
 interface Settings {
   enableReminder: boolean;
@@ -289,6 +289,45 @@ export default function Settings() {
                 checked={settings.receiveWeekly}
                 onCheckedChange={(checked) => saveSettings({ receiveWeekly: checked })}
               />
+            </View>
+          </CardContent>
+        </Card>
+
+        {/* 任务分组 */}
+        <Card>
+          <CardContent className="p-4">
+            <Text className="text-base font-semibold text-gray-800 mb-4">📁 任务分组</Text>
+            
+            <View className="bg-blue-50 rounded-lg p-3 mb-4">
+              <Text className="text-xs text-blue-600">
+                任务分组帮助您按项目、客户或类型对任务进行分类管理
+              </Text>
+            </View>
+
+            {/* 分组管理 */}
+            <View 
+              className="flex items-center justify-between py-3 active:bg-gray-50 -mx-4 px-4"
+              onClick={() => Taro.navigateTo({ url: '/pages/group-manage/index' })}
+            >
+              <View className="flex items-center">
+                <FolderOpen size={18} color="#6B7280" />
+                <Text className="text-sm text-gray-800 ml-3">任务分组管理</Text>
+              </View>
+              <ChevronRight size={20} color="#D1D5DB" />
+            </View>
+
+            <Separator className="my-1" />
+
+            {/* 分组划分 */}
+            <View 
+              className="flex items-center justify-between py-3 active:bg-gray-50 -mx-4 px-4"
+              onClick={() => Taro.navigateTo({ url: '/pages/group-assign/index' })}
+            >
+              <View className="flex items-center">
+                <ArrowRightLeft size={18} color="#6B7280" />
+                <Text className="text-sm text-gray-800 ml-3">任务分组划分</Text>
+              </View>
+              <ChevronRight size={20} color="#D1D5DB" />
             </View>
           </CardContent>
         </Card>

@@ -19,6 +19,8 @@ export interface Task {
   status: TaskStatus;
   priority: TaskPriority;
   category?: string;
+  group_id?: string;
+  group_name?: string;
   publisher_id: string;
   publisher_name?: string;
   executor_id?: string;
@@ -207,6 +209,28 @@ export interface FlowHistory {
 export interface Collaborator {
   openid: string;
   name: string;
+}
+
+/**
+ * 任务分组
+ */
+export interface TaskGroup {
+  _id: string;
+  name: string;
+  user_id: string;
+  order: number;
+  task_count?: number;
+  created_at: string;
+}
+
+/**
+ * 功能菜单项
+ */
+export interface MenuItem {
+  icon: string;
+  label: string;
+  path: string;
+  order?: number;
 }
 
 /**

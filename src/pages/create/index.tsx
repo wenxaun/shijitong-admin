@@ -2,12 +2,13 @@ import { View, Text, Picker } from '@tarojs/components';
 import { useState, useEffect } from 'react';
 import Taro from '@tarojs/taro';
 import { callFunction, CLOUD_FUNCTIONS } from '@/utils/cloud';
-import { TaskPriority, CloudResponse } from '@/types';
+import { TaskPriority, CloudResponse, TaskGroup } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 // 优先级配置
 const PRIORITY_OPTIONS: { value: TaskPriority; label: string; desc: string }[] = [
@@ -35,15 +36,21 @@ export default function Create() {
   const [taskName, setTaskName] = useState('');
   const [taskDescription, setTaskDescription] = useState('');
   const [priority, setPriority] = useState<TaskPriority>('P1');
-  const [category, setCategory] = useState('');
+  const [groupId, setGroupId] = useState('');
+  const [groupName, setGroupName] = useState('');
+  const [groups, setGroups] = useState<TaskGroup[]>([]);
   const [requireDate, setRequireDate] = useState('');
   const [executorList, setExecutorList] = useState<Executor[]>([]);
   const [executorIndex, setExecutorIndex] = useState(-1);
   const [submitting, setSubmitting] = useState(false);
+  const [showAddGroupDialog, setShowAddGroupDialog] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
+  const [addingGroup, setAddingGroup] = useState(false);
 
-  // 加载执行人列表
+  // 加载数据
   useEffect(() => {
     loadExecutors();
+    loadGroups();
   }, []);
 
   const loadExecutors = async () => {
@@ -72,6 +79,89 @@ export default function Create() {
     }
   };
 
+  // 加载任务分组
+  const loadGroups = async () => {
+    try {
+      // H5 端使用本地存储
+      if (Taro.getEnv() !== Taro.ENV_TYPE.WEAPP) {
+        const storedGroups = Taro.getStorageSync('mock_groups') || '[]';
+        let groupList = JSON.parse(storedGroups);
+        
+        if (groupList.length === 0) {
+          // 默认分组
+          groupList = [
+            { _id: 'default1', name: '工作', user_id: 'test', order: 1, created_at: new Date().toISOString() },
+            { _id: 'default2', name: '个人', user_id: 'test', order: 2, created_at: new Date().toISOString() }
+          ];
+          Taro.setStorageSync('mock_groups', JSON.stringify(groupList));
+        }
+        
+        setGroups(groupList.sort((a: TaskGroup, b: TaskGroup) => a.order - b.order));
+        return;
+      }
+      
+      // 小程序端
+      const res = await callFunction<CloudResponse<{ groups: TaskGroup[] }>>('group-list', {});
+      if (res.success && res.data) {
+        setGroups(res.data.groups || []);
+      }
+    } catch (err) {
+      console.error('加载分组失败:', err);
+    }
+  };
+
+  // 新增分组
+  const addNewGroup = async () => {
+    if (!newGroupName.trim()) {
+      Taro.showToast({ title: '请输入分组名称', icon: 'none' });
+      return;
+    }
+    
+    setAddingGroup(true);
+    try {
+      // H5 端
+      if (Taro.getEnv() !== Taro.ENV_TYPE.WEAPP) {
+        const newGroup: TaskGroup = {
+          _id: `group_${Date.now()}`,
+          name: newGroupName.trim(),
+          user_id: 'test',
+          order: groups.length + 1,
+          created_at: new Date().toISOString()
+        };
+        const updatedGroups = [...groups, newGroup];
+        Taro.setStorageSync('mock_groups', JSON.stringify(updatedGroups));
+        setGroups(updatedGroups);
+        setGroupId(newGroup._id);
+        setGroupName(newGroup.name);
+        setShowAddGroupDialog(false);
+        setNewGroupName('');
+        Taro.showToast({ title: '添加成功', icon: 'success' });
+        return;
+      }
+      
+      // 小程序端
+      const res = await callFunction<CloudResponse<{ group: TaskGroup }>>('group-create', {
+        name: newGroupName.trim()
+      });
+      
+      if (res.success && res.data) {
+        setGroups([...groups, res.data.group]);
+        setGroupId(res.data.group._id);
+        setGroupName(res.data.group.name);
+        setShowAddGroupDialog(false);
+        setNewGroupName('');
+        Taro.showToast({ title: '添加成功', icon: 'success' });
+      } else {
+        Taro.showToast({ title: res.message || '添加失败', icon: 'none' });
+      }
+    } catch (err) {
+      console.error('添加分组失败:', err);
+      Taro.showToast({ title: '添加失败', icon: 'none' });
+    } finally {
+      setAddingGroup(false);
+    }
+  };
+
   // 提交任务
   const submitTask = async () => {
     // 验证
@@ -93,6 +183,8 @@ export default function Create() {
       console.log('[create] 创建任务参数:', {
         task_name: taskName.trim(),
         priority,
+        group_id: groupId || undefined,
+        group_name: groupName || undefined,
         executor_id: executorId,
         executor_name: executorName,
         require_date: requireDate
@@ -104,7 +196,9 @@ export default function Create() {
           task_name: taskName.trim(),
           task_description: taskDescription.trim(),
           priority,
-          category: category.trim(),
+          category: groupName || undefined, // 兼容旧字段
+          group_id: groupId || undefined,
+          group_name: groupName || undefined,
           executor_id: executorId,
           executor_name: executorName,
           require_date: requireDate
@@ -136,6 +230,23 @@ export default function Create() {
   // 执行人选择
   const onExecutorChange = (e) => {
     setExecutorIndex(parseInt(e.detail.value));
+  };
+
+  // 分组选择（picker 的 range 包含分组列表 + "新增分组"）
+  const getGroupPickerRange = () => {
+    const groupNames = groups.map(g => g.name);
+    return [...groupNames, '+ 新增分组'];
+  };
+
+  const onGroupChange = (e) => {
+    const index = parseInt(e.detail.value);
+    if (index === groups.length) {
+      // 选择了"新增分组"
+      setShowAddGroupDialog(true);
+    } else {
+      setGroupId(groups[index]._id);
+      setGroupName(groups[index].name);
+    }
   };
 
   return (
@@ -197,18 +308,23 @@ export default function Create() {
           </CardContent>
         </Card>
 
-        {/* 分类 */}
+        {/* 任务分组 */}
         <Card>
           <CardContent className="p-3">
-            <Label className="text-sm text-gray-500 mb-2">分类</Label>
-            <Input
-              placeholder="请输入分类（如：盛合智联、龙耀辉科技等）"
-              placeholderClass="text-gray-400"
-              value={category}
-              onInput={(e) => setCategory(e.detail.value)}
-              maxlength={20}
-              className="bg-gray-50 border-gray-200"
-            />
+            <Label className="text-sm text-gray-500 mb-2">任务分组</Label>
+            <Picker
+              mode="selector"
+              range={getGroupPickerRange()}
+              value={groupId ? groups.findIndex(g => g._id === groupId) : 0}
+              onChange={onGroupChange}
+            >
+              <View className="bg-gray-50 rounded-lg px-3 py-2 flex items-center justify-between border border-gray-200">
+                <Text className={groupName ? 'text-gray-800' : 'text-gray-400'}>
+                  {groupName || '选择分组（可选）'}
+                </Text>
+                <Text className="text-gray-400">▼</Text>
+              </View>
+            </Picker>
           </CardContent>
         </Card>
 
@@ -260,6 +376,44 @@ export default function Create() {
           {submitting ? '创建中...' : '创建任务'}
         </Button>
       </View>
+
+      {/* 新增分组对话框 */}
+      {showAddGroupDialog && (
+        <Dialog open={showAddGroupDialog} onOpenChange={setShowAddGroupDialog}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>新增任务分组</DialogTitle>
+            </DialogHeader>
+            
+            <View className="mt-4">
+              <Input
+                placeholder="请输入分组名称"
+                value={newGroupName}
+                onInput={(e) => setNewGroupName(e.detail.value)}
+                maxlength={20}
+                className="bg-gray-50 border-gray-200"
+              />
+            </View>
+            
+            <View className="flex gap-3 mt-4">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setShowAddGroupDialog(false)}
+              >
+                取消
+              </Button>
+              <Button
+                className="flex-1 bg-blue-500 text-white"
+                onClick={addNewGroup}
+                disabled={addingGroup}
+              >
+                {addingGroup ? '添加中...' : '确定'}
+              </Button>
+            </View>
+          </DialogContent>
+        </Dialog>
+      )}
     </View>
   );
 }

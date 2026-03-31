@@ -5,18 +5,19 @@ import { useEffect, useState } from 'react';
 import Taro from '@tarojs/taro';
 import { useUserStore } from '@/stores/user';
 import { callFunction } from '@/utils/cloud';
-import type { CloudResponse } from '@/types';
+import type { CloudResponse, MenuItem } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button as UIButton } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Camera, ChevronRight, LogOut, Trash2, Pencil, Check, X } from 'lucide-react-taro';
 
-// 菜单项配置 - 移除"我的团队"（已有独立TabBar页面）
-const MENU_ITEMS = [
-  { icon: '📈', label: '数据统计', path: '/pages/stats/index' },
-  { icon: '📜', label: '历史任务', path: '/pages/history/index' },
-  { icon: '⚙️', label: '设置', path: '/pages/settings/index' },
-  { icon: '📊', label: '周报', path: '/pages/weekly/index' }
+// 默认菜单项配置
+const DEFAULT_MENU_ITEMS: MenuItem[] = [
+  { icon: '📈', label: '数据统计', path: '/pages/stats/index', order: 1 },
+  { icon: '📜', label: '历史任务', path: '/pages/history/index', order: 2 },
+  { icon: '⚙️', label: '设置', path: '/pages/settings/index', order: 3 },
+  { icon: '📊', label: '周报', path: '/pages/weekly/index', order: 4 },
+  { icon: '🔄', label: '功能排序', path: '/pages/menu-sort/index', order: 5 }
 ];
 
 export default function Profile() {
@@ -26,10 +27,28 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [editNickname, setEditNickname] = useState('');
   const [saving, setSaving] = useState(false);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(DEFAULT_MENU_ITEMS);
 
   useEffect(() => {
     loadUserInfo();
+    loadMenuOrder();
   }, []);
+
+  // 加载菜单排序
+  const loadMenuOrder = () => {
+    const storedOrder = Taro.getStorageSync('menu_order');
+    if (storedOrder) {
+      const orderMap = new Map<string, number>(storedOrder.map((item: { path: string; order: number }) => [item.path, item.order]));
+      const sortedItems = [...DEFAULT_MENU_ITEMS].sort((a, b) => {
+        const orderA: number = orderMap.get(a.path) ?? a.order ?? 0;
+        const orderB: number = orderMap.get(b.path) ?? b.order ?? 0;
+        return orderA - orderB;
+      });
+      setMenuItems(sortedItems);
+    } else {
+      setMenuItems(DEFAULT_MENU_ITEMS);
+    }
+  };
 
   // 加载用户信息
   const loadUserInfo = () => {
@@ -278,7 +297,7 @@ export default function Profile() {
         <Text className="text-sm text-gray-500 mb-2 px-1">功能</Text>
         <Card>
           <CardContent className="p-0">
-            {MENU_ITEMS.map((item, index) => (
+            {menuItems.map((item, index) => (
               <View key={item.path}>
                 <View
                   className="flex items-center justify-between px-4 py-3 active:bg-gray-50"
@@ -290,7 +309,7 @@ export default function Profile() {
                   </View>
                   <ChevronRight size={20} color="#D1D5DB" />
                 </View>
-                {index < MENU_ITEMS.length - 1 && <Separator className="mx-4" />}
+                {index < menuItems.length - 1 && <Separator className="mx-4" />}
               </View>
             ))}
           </CardContent>

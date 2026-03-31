@@ -33,9 +33,10 @@ const baseRestrictedSyntaxRules = [
     message:
       '微信小程序兼容性：不支持 Tailwind 的 peer-*（如 peer-checked、peer-disabled）。',
   },
+  // group-* 规则限制为只检查 className 属性，避免误报云函数名称
   {
     selector:
-      'Literal[value=/(^|\\s)group-[a-z0-9-]+\\b/], TemplateElement[value.raw=/(^|\\s)group-[a-z0-9-]+\\b/]',
+      "JSXAttribute[name.name='className'] :matches(Literal[value=/(^|\\s)group-[a-z0-9-]+\\b/], TemplateElement[value.raw=/(^|\\s)group-[a-z0-9-]+\\b/])",
     message: '微信小程序兼容性：不支持 Tailwind 的 group-*（如 group-hover）。',
   },
   {

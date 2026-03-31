@@ -23,7 +23,10 @@ export default defineAppConfig({
     'pages/subtask-create/index',
     'pages/subtask-detail/index',
     'pages/subtask-flow/index',
-    'pages/subtask-edit/index'
+    'pages/subtask-edit/index',
+    'pages/group-manage/index',
+    'pages/group-assign/index',
+    'pages/menu-sort/index'
   ],
   window: {
     backgroundTextStyle: 'dark',
