@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ChevronRight, X, Search, FolderOpen, ArrowRightLeft } from 'lucide-react-taro';
+import { ChevronRight, X, Search, FolderOpen, ArrowRightLeft, Trash2 } from 'lucide-react-taro';
 
 interface Settings {
   enableReminder: boolean;
@@ -213,6 +213,50 @@ export default function Settings() {
     });
   };
 
+  // 清除我的记录
+  const handleClearMyRecords = () => {
+    Taro.showModal({
+      title: '清除我的记录',
+      content: '确定要清除您的所有任务记录吗？\n\n• 记录将在您的视图中隐藏\n• 不影响其他相关人员查阅\n• 此操作不可撤销',
+      confirmText: '确定清除',
+      confirmColor: '#EF4444',
+      success: async (res) => {
+        if (res.confirm) {
+          Taro.showLoading({ title: '处理中...', mask: true });
+          
+          try {
+            // H5 端模拟
+            if (Taro.getEnv() !== Taro.ENV_TYPE.WEAPP) {
+              // 模拟清除操作
+              Taro.setStorageSync('mock_records_hidden', 'true');
+              Taro.hideLoading();
+              Taro.showToast({ title: '已清除', icon: 'success' });
+              return;
+            }
+            
+            // 小程序端调用云函数
+            const result = await callFunction<CloudResponse>(
+              'user-hide-records',
+              {}
+            );
+            
+            Taro.hideLoading();
+            
+            if (result.success) {
+              Taro.showToast({ title: '已清除', icon: 'success' });
+            } else {
+              Taro.showToast({ title: result.message || '清除失败', icon: 'none' });
+            }
+          } catch (err) {
+            console.error('[Settings] 清除记录失败:', err);
+            Taro.hideLoading();
+            Taro.showToast({ title: '清除失败', icon: 'none' });
+          }
+        }
+      }
+    });
+  };
+
   // 保存设置
   const saveSettings = (newSettings: Partial<Settings>) => {
     const updated = { ...settings, ...newSettings };
@@ -326,6 +370,50 @@ export default function Settings() {
               <View className="flex items-center">
                 <ArrowRightLeft size={18} color="#6B7280" />
                 <Text className="text-sm text-gray-800 ml-3">任务分组划分</Text>
+              </View>
+              <ChevronRight size={20} color="#D1D5DB" />
+            </View>
+          </CardContent>
+        </Card>
+
+        {/* 界面设置 */}
+        <Card>
+          <CardContent className="p-4">
+            <Text className="text-base font-semibold text-gray-800 mb-4">🎨 界面设置</Text>
+            
+            {/* 功能排序 */}
+            <View 
+              className="flex items-center justify-between py-3 active:bg-gray-50 -mx-4 px-4"
+              onClick={() => Taro.navigateTo({ url: '/pages/menu-sort/index' })}
+            >
+              <View className="flex items-center">
+                <Text className="text-lg mr-3">🔄</Text>
+                <Text className="text-sm text-gray-800">功能排序</Text>
+              </View>
+              <ChevronRight size={20} color="#D1D5DB" />
+            </View>
+          </CardContent>
+        </Card>
+
+        {/* 数据管理 */}
+        <Card>
+          <CardContent className="p-4">
+            <Text className="text-base font-semibold text-gray-800 mb-4">🗑️ 数据管理</Text>
+            
+            <View className="bg-yellow-50 rounded-lg p-3 mb-4">
+              <Text className="text-xs text-yellow-700">
+                清除记录后，任务将在您自己的视图中隐藏，但不影响其他相关人员（发布人、执行人、协助人）查阅
+              </Text>
+            </View>
+
+            {/* 清除我的记录 */}
+            <View 
+              className="flex items-center justify-between py-3 active:bg-gray-50 -mx-4 px-4"
+              onClick={handleClearMyRecords}
+            >
+              <View className="flex items-center">
+                <Trash2 size={18} color="#EF4444" />
+                <Text className="text-sm text-red-500 ml-3">清除我的记录</Text>
               </View>
               <ChevronRight size={20} color="#D1D5DB" />
             </View>

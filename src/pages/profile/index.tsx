@@ -11,13 +11,12 @@ import { Button as UIButton } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Camera, ChevronRight, LogOut, Trash2, Pencil, Check, X } from 'lucide-react-taro';
 
-// 默认菜单项配置
+// 默认菜单项配置（不包含功能排序，功能排序放在设置页面）
 const DEFAULT_MENU_ITEMS: MenuItem[] = [
   { icon: '📈', label: '数据统计', path: '/pages/stats/index', order: 1 },
   { icon: '📜', label: '历史任务', path: '/pages/history/index', order: 2 },
   { icon: '⚙️', label: '设置', path: '/pages/settings/index', order: 3 },
-  { icon: '📊', label: '周报', path: '/pages/weekly/index', order: 4 },
-  { icon: '🔄', label: '功能排序', path: '/pages/menu-sort/index', order: 5 }
+  { icon: '📊', label: '周报', path: '/pages/weekly/index', order: 4 }
 ];
 
 export default function Profile() {
@@ -32,6 +31,22 @@ export default function Profile() {
   useEffect(() => {
     loadUserInfo();
     loadMenuOrder();
+  }, []);
+
+  // 页面显示时重新加载菜单排序（解决返回后不刷新的问题）
+  Taro.useDidShow(() => {
+    loadMenuOrder();
+  });
+
+  // 监听菜单排序变更事件
+  useEffect(() => {
+    const handleMenuOrderChange = () => {
+      loadMenuOrder();
+    };
+    Taro.eventCenter.on('menuOrderChanged', handleMenuOrderChange);
+    return () => {
+      Taro.eventCenter.off('menuOrderChanged', handleMenuOrderChange);
+    };
   }, []);
 
   // 加载菜单排序

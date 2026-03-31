@@ -66,6 +66,10 @@ export default function MenuSort() {
     }));
     Taro.setStorageSync('menu_order', orderData);
     setHasChanged(false);
+    
+    // 发送事件通知"我的"页面刷新菜单排序
+    Taro.eventCenter.trigger('menuOrderChanged');
+    
     Taro.showToast({ title: '保存成功', icon: 'success' });
     
     // 延迟返回上一页
@@ -84,6 +88,10 @@ export default function MenuSort() {
           Taro.removeStorageSync('menu_order');
           setMenuItems(DEFAULT_MENU_ITEMS);
           setHasChanged(false);
+          
+          // 发送事件通知"我的"页面刷新菜单排序
+          Taro.eventCenter.trigger('menuOrderChanged');
+          
           Taro.showToast({ title: '已重置', icon: 'success' });
         }
       }

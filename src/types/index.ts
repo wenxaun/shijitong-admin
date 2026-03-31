@@ -42,6 +42,8 @@ export interface Task {
   assist_user_id?: string;
   has_exception?: boolean; // 是否已上报异常
   exception_approved?: boolean; // 异常申请是否已批准
+  hidden_for_users?: string[]; // 对特定用户隐藏（软删除）
+  hidden_at?: string; // 隐藏时间
   created_at: string;
   updated_at: string;
 }

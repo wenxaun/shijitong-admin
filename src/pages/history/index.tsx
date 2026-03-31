@@ -3,14 +3,14 @@ import { useState, useEffect, useCallback } from 'react';
 import Taro from '@tarojs/taro';
 import { useUserStore } from '@/stores/user';
 import { callFunction } from '@/utils/cloud';
-import { Task, CloudResponse, TaskListResponse } from '@/types';
+import { Task, CloudResponse, TaskListResponse, TaskGroup } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Calendar as CalendarPicker } from '@/components/ui/calendar';
-import { ChevronRight, Calendar, User, Award, Archive, Send, Trash2, CalendarDays, Loader } from 'lucide-react-taro';
+import { ChevronRight, Calendar, User, Award, Archive, Send, Trash2, CalendarDays, Loader, X, Funnel } from 'lucide-react-taro';
 import { format } from 'date-fns';
 
 type TabType = 'created' | 'executed' | 'deleted';
@@ -23,6 +23,15 @@ const STATUS_MAP: Record<string, { label: string; color: string; bgClass: string
   cancelled: { label: '已取消', color: '#EA4335', bgClass: 'bg-red-50 text-red-500' },
   deleted: { label: '已删除', color: '#9CA3AF', bgClass: 'bg-gray-100 text-gray-400' }
 };
+
+// 优先级配置
+const PRIORITY_OPTIONS = [
+  { value: '', label: '全部优先级' },
+  { value: 'P0', label: 'P0 紧急重要' },
+  { value: 'P1', label: 'P1 重要' },
+  { value: 'P2', label: 'P2 普通' },
+  { value: 'P3', label: 'P3 次要' }
+];
 
 // 优先级颜色
 const PRIORITY_STYLE: Record<string, { bg: string; text: string }> = {
@@ -61,6 +70,35 @@ export default function History() {
   const [showDateRangeDialog, setShowDateRangeDialog] = useState(false);
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
   const [selectedDateRange, setSelectedDateRange] = useState<{ from?: Date; to?: Date }>({});
+  
+  // 多条件筛选
+  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [priorityFilter, setPriorityFilter] = useState<string>('');
+  const [groupFilter, setGroupFilter] = useState<string>('');
+  const [groups, setGroups] = useState<TaskGroup[]>([]);
+  const [showFilterDialog, setShowFilterDialog] = useState(false);
+
+  // 加载分组列表
+  const loadGroups = async () => {
+    try {
+      if (Taro.getEnv() !== Taro.ENV_TYPE.WEAPP) {
+        const storedGroups = Taro.getStorageSync('mock_groups') || '[]';
+        setGroups(JSON.parse(storedGroups));
+        return;
+      }
+      
+      const res = await callFunction<CloudResponse<{ groups: TaskGroup[] }>>('group-list', {});
+      if (res.success && res.data) {
+        setGroups(res.data.groups || []);
+      }
+    } catch (err) {
+      console.error('[History] 加载分组失败:', err);
+    }
+  };
+
+  useEffect(() => {
+    loadGroups();
+  }, []);
 
   // 加载历史任务
   const loadTasks = useCallback(async (refresh = false) => {
@@ -73,13 +111,16 @@ export default function History() {
       // H5 端模拟数据
       if (Taro.getEnv() !== Taro.ENV_TYPE.WEAPP) {
         if (refresh) {
-          setTasks([
+          const mockTasks: Task[] = [
             {
               _id: '1',
               task_id: '1',
               task_name: '示例任务1（提前完成）',
+              task_description: '任务描述内容',
               status: 'completed',
               priority: 'P1',
+              group_id: 'default1',
+              group_name: '工作',
               publisher_id: openid,
               executor_name: '测试用户',
               require_date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
@@ -95,6 +136,8 @@ export default function History() {
               task_name: '示例任务2（按时完成）',
               status: 'completed',
               priority: 'P2',
+              group_id: 'default1',
+              group_name: '工作',
               publisher_id: openid,
               executor_name: '测试用户',
               require_date: new Date().toISOString().split('T')[0],
@@ -110,6 +153,8 @@ export default function History() {
               task_name: '示例任务3（逾期完成）',
               status: 'completed',
               priority: 'P1',
+              group_id: 'default2',
+              group_name: '个人',
               publisher_id: openid,
               executor_name: '测试用户',
               require_date: new Date(Date.now() - 3 * 86400000).toISOString().split('T')[0],
@@ -118,8 +163,34 @@ export default function History() {
               score_note: '逾期3天完成',
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
+            },
+            {
+              _id: '4',
+              task_id: '4',
+              task_name: '示例任务4（进行中）',
+              status: 'in_progress',
+              priority: 'P0',
+              publisher_id: openid,
+              executor_name: '测试用户',
+              require_date: new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0],
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
             }
-          ]);
+          ];
+          
+          // 应用筛选
+          let filteredTasks = [...mockTasks];
+          if (priorityFilter) {
+            filteredTasks = filteredTasks.filter(t => t.priority === priorityFilter);
+          }
+          if (groupFilter) {
+            filteredTasks = filteredTasks.filter(t => t.group_id === groupFilter);
+          }
+          if (statusFilter) {
+            filteredTasks = filteredTasks.filter(t => t.status === statusFilter);
+          }
+          
+          setTasks(filteredTasks);
         }
         setHasMore(false);
         setLoading(false);
@@ -141,6 +212,11 @@ export default function History() {
         params.time_filter = timeFilter;
       }
 
+      // 处理多条件筛选
+      if (statusFilter) params.status = statusFilter;
+      if (priorityFilter) params.priority = priorityFilter;
+      if (groupFilter) params.group_id = groupFilter;
+
       const res = await callFunction<CloudResponse<TaskListResponse>>(
         'task-history',
         params
@@ -158,11 +234,11 @@ export default function History() {
     } finally {
       setLoading(false);
     }
-  }, [openid, currentTab, page, tasks, timeFilter, selectedDateRange]);
+  }, [openid, currentTab, page, tasks, timeFilter, selectedDateRange, statusFilter, priorityFilter, groupFilter]);
 
   useEffect(() => {
     loadTasks(true);
-  }, [currentTab, timeFilter, selectedDateRange]);
+  }, [currentTab, timeFilter, selectedDateRange, statusFilter, priorityFilter, groupFilter]);
 
   // 跳转详情
   const goDetail = (taskId: string) => {
@@ -217,6 +293,46 @@ export default function History() {
     return '';
   };
 
+  // 清除所有筛选
+  const clearAllFilters = () => {
+    setStatusFilter('');
+    setPriorityFilter('');
+    setGroupFilter('');
+  };
+
+  // 获取筛选条件数量
+  const getActiveFilterCount = () => {
+    let count = 0;
+    if (statusFilter) count++;
+    if (priorityFilter) count++;
+    if (groupFilter) count++;
+    return count;
+  };
+
+  // 获取已选筛选条件的标签
+  const getActiveFilterTags = () => {
+    const tags: { type: string; label: string }[] = [];
+    if (statusFilter) {
+      const statusInfo = STATUS_MAP[statusFilter];
+      tags.push({ type: 'status', label: statusInfo?.label || statusFilter });
+    }
+    if (priorityFilter) {
+      tags.push({ type: 'priority', label: priorityFilter });
+    }
+    if (groupFilter) {
+      const group = groups.find(g => g._id === groupFilter);
+      tags.push({ type: 'group', label: group?.name || groupFilter });
+    }
+    return tags;
+  };
+
+  // 移除单个筛选条件
+  const removeFilter = (type: string) => {
+    if (type === 'status') setStatusFilter('');
+    if (type === 'priority') setPriorityFilter('');
+    if (type === 'group') setGroupFilter('');
+  };
+
   // 渲染任务卡片
   const renderTaskCard = (task: Task) => {
     const statusInfo = STATUS_MAP[task.status] || STATUS_MAP.pending;
@@ -260,6 +376,13 @@ export default function History() {
               {/* 信息行 */}
               <View className="flex items-center gap-3 mb-3 flex-wrap">
                 <Badge className={statusInfo.bgClass}>{statusInfo.label}</Badge>
+                
+                {/* 任务分组 */}
+                {task.group_name && (
+                  <View className="px-2 py-1 bg-purple-50 rounded">
+                    <Text className="text-xs text-purple-500">{task.group_name}</Text>
+                  </View>
+                )}
                 
                 {/* 创建日期 */}
                 {task.created_at && (
@@ -403,9 +526,50 @@ export default function History() {
                 )}
               </View>
             ))}
+            
+            {/* 筛选按钮 */}
+            <View 
+              className={`px-3 py-1 rounded-full text-sm flex items-center gap-1 ${
+                getActiveFilterCount() > 0 ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600'
+              }`}
+              onClick={() => setShowFilterDialog(true)}
+            >
+              <Funnel size={14} color={getActiveFilterCount() > 0 ? '#ffffff' : '#6B7280'} />
+              <Text>筛选</Text>
+              {getActiveFilterCount() > 0 && (
+                <View className="ml-1 px-1 bg-white bg-opacity-20 rounded-full">
+                  <Text className="text-xs">{getActiveFilterCount()}</Text>
+                </View>
+              )}
+            </View>
           </View>
         </ScrollView>
       </View>
+
+      {/* 已选筛选条件标签 */}
+      {getActiveFilterCount() > 0 && (
+        <View className="bg-white px-4 py-2 border-b border-gray-100">
+          <View className="flex items-center gap-2 flex-wrap">
+            {getActiveFilterTags().map((tag) => (
+              <View 
+                key={tag.type}
+                className="flex items-center gap-1 px-2 py-1 bg-blue-50 rounded-full"
+              >
+                <Text className="text-xs text-blue-500">{tag.label}</Text>
+                <View onClick={() => removeFilter(tag.type)}>
+                  <X size={12} color="#3B82F6" />
+                </View>
+              </View>
+            ))}
+            <View 
+              className="px-2 py-1 text-xs text-gray-400"
+              onClick={clearAllFilters}
+            >
+              <Text>清除全部</Text>
+            </View>
+          </View>
+        </View>
+      )}
 
       {/* 任务列表 */}
       <ScrollView className="h-screen" scrollY>
@@ -505,6 +669,103 @@ export default function History() {
                   清除自定义时间
                 </Button>
               )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* 多条件筛选弹窗 */}
+      {showFilterDialog && (
+        <Dialog open={showFilterDialog} onOpenChange={setShowFilterDialog}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>筛选条件</DialogTitle>
+            </DialogHeader>
+            
+            <View className="py-4 space-y-4">
+              {/* 状态筛选 */}
+              <View>
+                <Text className="text-sm text-gray-500 mb-2">任务状态</Text>
+                <ScrollView scrollX className="whitespace-nowrap">
+                  <View className="flex gap-2">
+                    <View
+                      className={`px-3 py-2 rounded-lg ${!statusFilter ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600'}`}
+                      onClick={() => setStatusFilter('')}
+                    >
+                      <Text className="text-sm">全部</Text>
+                    </View>
+                    {Object.entries(STATUS_MAP).filter(([key]) => key !== 'deleted').map(([key, value]) => (
+                      <View
+                        key={key}
+                        className={`px-3 py-2 rounded-lg ${statusFilter === key ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600'}`}
+                        onClick={() => setStatusFilter(key)}
+                      >
+                        <Text className="text-sm">{value.label}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </ScrollView>
+              </View>
+              
+              {/* 优先级筛选 */}
+              <View>
+                <Text className="text-sm text-gray-500 mb-2">优先级</Text>
+                <ScrollView scrollX className="whitespace-nowrap">
+                  <View className="flex gap-2">
+                    {PRIORITY_OPTIONS.map((item) => (
+                      <View
+                        key={item.value}
+                        className={`px-3 py-2 rounded-lg ${priorityFilter === item.value ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600'}`}
+                        onClick={() => setPriorityFilter(item.value)}
+                      >
+                        <Text className="text-sm">{item.label}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </ScrollView>
+              </View>
+              
+              {/* 分组筛选 */}
+              <View>
+                <Text className="text-sm text-gray-500 mb-2">任务分组</Text>
+                <ScrollView scrollX className="whitespace-nowrap">
+                  <View className="flex gap-2">
+                    <View
+                      className={`px-3 py-2 rounded-lg ${!groupFilter ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600'}`}
+                      onClick={() => setGroupFilter('')}
+                    >
+                      <Text className="text-sm">全部分组</Text>
+                    </View>
+                    {groups.map((group) => (
+                      <View
+                        key={group._id}
+                        className={`px-3 py-2 rounded-lg ${groupFilter === group._id ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600'}`}
+                        onClick={() => setGroupFilter(group._id)}
+                      >
+                        <Text className="text-sm">{group.name}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </ScrollView>
+              </View>
+            </View>
+            
+            <DialogFooter>
+              <View className="flex gap-2 w-full">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={clearAllFilters}
+                >
+                  清除筛选
+                </Button>
+                <Button 
+                  className="flex-1 bg-blue-500 text-white"
+                  onClick={() => setShowFilterDialog(false)}
+                >
+                  确定
+                </Button>
+              </View>
             </DialogFooter>
           </DialogContent>
         </Dialog>

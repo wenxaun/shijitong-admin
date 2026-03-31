@@ -1,0 +1,9 @@
+{
+  "name": "user-hide-records",
+  "version": "1.0.0",
+  "description": "隐藏用户所有记录（软删除）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}
