@@ -1,5 +1,5 @@
 import { View, Text, ScrollView } from '@tarojs/components';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Taro from '@tarojs/taro';
 import { useUserStore } from '@/stores/user';
 import { callFunction } from '@/utils/cloud';
@@ -78,8 +78,8 @@ export default function History() {
   const [groups, setGroups] = useState<TaskGroup[]>([]);
   const [showFilterDialog, setShowFilterDialog] = useState(false);
   
-  // 使用 ref 跟踪是否有过数据（用于遮罩层显示，避免筛选切换时黑屏）
-  const hasDataRef = useRef(false);
+  // 刷新状态（用于遮罩层显示，避免筛选切换时黑屏）
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   // 加载分组列表
   const loadGroups = async () => {
@@ -107,9 +107,9 @@ export default function History() {
   const loadTasks = useCallback(async (refresh = false) => {
     if (!openid) return;
 
-    // 在开始加载前，记录当前是否有数据（用于遮罩层显示）
-    if (refresh && tasks.length > 0) {
-      hasDataRef.current = true;
+    // 标记是否为刷新操作（用于遮罩层显示）
+    if (refresh) {
+      setIsRefreshing(true);
     }
     
     setLoading(true);
@@ -199,10 +199,10 @@ export default function History() {
           }
           
           setTasks(filteredTasks);
-          hasDataRef.current = filteredTasks.length > 0;
         }
         setHasMore(false);
         setLoading(false);
+        setIsRefreshing(false);
         return;
       }
 
@@ -235,7 +235,6 @@ export default function History() {
         const newTasks = res.data.tasks || [];
         const updatedTasks = refresh ? newTasks : [...tasks, ...newTasks];
         setTasks(updatedTasks);
-        hasDataRef.current = updatedTasks.length > 0;
         setHasMore(res.data.hasMore);
         setPage(currentPage);
       }
@@ -244,6 +243,7 @@ export default function History() {
       Taro.showToast({ title: '加载失败', icon: 'none' });
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   }, [openid, currentTab, page, tasks, timeFilter, selectedDateRange, statusFilter, priorityFilter, groupFilter]);
 
@@ -476,8 +476,8 @@ export default function History() {
 
   return (
     <View className="min-h-screen bg-gray-50">
-      {/* 加载遮罩层 - 有数据时筛选切换显示 */}
-      {loading && hasDataRef.current && (
+      {/* 加载遮罩层 - 切换筛选条件时显示 */}
+      {loading && isRefreshing && (
         <View 
           className="fixed inset-0 flex items-center justify-center z-50"
           style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}
