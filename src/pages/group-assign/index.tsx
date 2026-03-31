@@ -1,5 +1,5 @@
 import { View, Text, ScrollView, Checkbox } from '@tarojs/components';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Taro from '@tarojs/taro';
 import { useUserStore } from '@/stores/user';
 import { callFunction } from '@/utils/cloud';
@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
+import { Loader } from 'lucide-react-taro';
 
 export default function GroupAssign() {
   const { openid } = useUserStore();
@@ -18,6 +19,9 @@ export default function GroupAssign() {
   const [selectedGroup, setSelectedGroup] = useState<string>('');
   const [filter, setFilter] = useState<'all' | 'ungrouped'>('all');
   const [submitting, setSubmitting] = useState(false);
+  
+  // 是否有数据的标记
+  const hasDataRef = useRef(false);
 
   useEffect(() => {
     loadData();
@@ -60,6 +64,7 @@ export default function GroupAssign() {
         }
         
         setTasks(taskList);
+        hasDataRef.current = true;
         return;
       }
       
@@ -74,6 +79,7 @@ export default function GroupAssign() {
       }
       if (tasksRes.success && tasksRes.data) {
         setTasks(tasksRes.data.tasks || []);
+        hasDataRef.current = true;
       }
     } catch (err) {
       console.error('[GroupAssign] 加载数据失败:', err);
@@ -191,6 +197,19 @@ export default function GroupAssign() {
 
   return (
     <View className="min-h-screen bg-gray-50">
+      {/* 加载遮罩层 */}
+      {loading && hasDataRef.current && (
+        <View 
+          className="fixed inset-0 flex items-center justify-center z-40 pointer-events-none"
+          style={{ backgroundColor: 'rgba(0,0,0,0.1)' }}
+        >
+          <View className="bg-white rounded-xl px-6 py-4 flex items-center gap-2 shadow-lg">
+            <Loader size={20} color="#1377EB" className="animate-spin" />
+            <Text className="text-gray-600">加载中...</Text>
+          </View>
+        </View>
+      )}
+      
       {/* 筛选标签 */}
       <View className="bg-white px-3 py-2 flex items-center gap-2 border-b border-gray-100">
         <View 

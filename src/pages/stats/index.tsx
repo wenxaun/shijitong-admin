@@ -1,5 +1,5 @@
 import { View, Text, ScrollView } from '@tarojs/components';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Taro from '@tarojs/taro';
 import { useUserStore } from '@/stores/user';
 import { callFunction } from '@/utils/cloud';
@@ -7,7 +7,7 @@ import type { CloudResponse } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ClipboardList, CircleCheck, ChartBar, CircleAlert, Award, Clock } from 'lucide-react-taro';
+import { ClipboardList, CircleCheck, ChartBar, CircleAlert, Award, Clock, Loader } from 'lucide-react-taro';
 
 type RangeType = 'week' | 'month' | 'all';
 
@@ -89,6 +89,9 @@ export default function Stats() {
   const [scoreDistribution, setScoreDistribution] = useState<ScoreDistribution[]>([]);
   const [priorityDistribution, setPriorityDistribution] = useState<PriorityDistribution[]>([]);
 
+  // 是否有数据的标记
+  const hasDataRef = useRef(false);
+
   // 加载统计并缓存
   const loadStats = useCallback(async (forceRefresh = false) => {
     if (!openid) return;
@@ -105,6 +108,7 @@ export default function Stats() {
             setMetrics(cacheData.metrics);
             setScoreDistribution(cacheData.scoreDistribution);
             setPriorityDistribution(cacheData.priorityDistribution);
+            hasDataRef.current = true;
             return;
           }
         } catch (e) {
@@ -139,6 +143,7 @@ export default function Stats() {
         setMetrics(mockMetrics);
         setScoreDistribution(mockScoreDistribution);
         setPriorityDistribution(mockPriorityDistribution);
+        hasDataRef.current = true;
         
         // 缓存数据
         Taro.setStorageSync('stats_cache_month', JSON.stringify({
@@ -165,6 +170,7 @@ export default function Stats() {
         setMetrics(res.data.metrics);
         setScoreDistribution(res.data.scoreDistribution);
         setPriorityDistribution(res.data.priorityDistribution);
+        hasDataRef.current = true;
         
         // 缓存数据
         if (rangeType === 'month') {
@@ -200,6 +206,19 @@ export default function Stats() {
 
   return (
     <View className="min-h-screen bg-gray-50">
+      {/* 加载遮罩层 */}
+      {loading && hasDataRef.current && (
+        <View 
+          className="fixed inset-0 flex items-center justify-center z-50"
+          style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}
+        >
+          <View className="bg-white rounded-xl px-6 py-4 flex items-center gap-2 shadow-lg">
+            <Loader size={20} color="#1377EB" className="animate-spin" />
+            <Text className="text-gray-600">加载中...</Text>
+          </View>
+        </View>
+      )}
+      
       {/* 时间范围选择 */}
       <View className="bg-white px-4 py-3 border-b border-gray-100">
         <View className="flex gap-2">

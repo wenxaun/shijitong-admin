@@ -6,7 +6,7 @@ import { callFunction } from '@/utils/cloud';
 import type { Team, CloudResponse } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
-import { Plus, ChevronRight, Users, Search, UserPlus, Building, X } from 'lucide-react-taro';
+import { Plus, ChevronRight, Users, Search, UserPlus, Building, X, Loader } from 'lucide-react-taro';
 
 type TabType = 'team' | 'enterprise';
 
@@ -363,6 +363,19 @@ export default function TeamPage() {
 
   return (
     <View className="min-h-screen bg-gray-100">
+      {/* 加载遮罩层 */}
+      {loading && teams.length > 0 && (
+        <View 
+          className="fixed inset-0 flex items-center justify-center z-40 pointer-events-none"
+          style={{ backgroundColor: 'rgba(0,0,0,0.1)' }}
+        >
+          <View className="bg-white rounded-xl px-6 py-4 flex items-center gap-2 shadow-lg">
+            <Loader size={20} color="#1377EB" className="animate-spin" />
+            <Text className="text-gray-600">加载中...</Text>
+          </View>
+        </View>
+      )}
+      
       {/* 搜索栏 */}
       <View className="bg-gray-100 px-3 py-2">
         <View className="bg-white rounded-lg px-3 py-2 flex items-center">
