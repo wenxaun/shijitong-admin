@@ -88,6 +88,12 @@ export const useUserStore = create<UserState>()(
       },
 
       logout: () => {
+        // 清除本地存储的用户信息
+        Taro.removeStorageSync('userInfo');
+        Taro.removeStorageSync('token');
+        Taro.removeStorageSync('userSettings');
+        Taro.removeStorageSync('mock_manager');
+        // 重置状态
         set({ openid: null, userInfo: null, isLoggedIn: false });
       }
     }),
