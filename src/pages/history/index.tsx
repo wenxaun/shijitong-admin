@@ -1,5 +1,5 @@
 import { View, Text, ScrollView } from '@tarojs/components';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Taro from '@tarojs/taro';
 import { useUserStore } from '@/stores/user';
 import { callFunction } from '@/utils/cloud';
@@ -78,8 +78,11 @@ export default function History() {
   const [groups, setGroups] = useState<TaskGroup[]>([]);
   const [showFilterDialog, setShowFilterDialog] = useState(false);
   
-  // 刷新状态（用于遮罩层显示，避免筛选切换时黑屏）
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  // 用于记录"开始加载时是否有数据"（决定显示遮罩层还是骨架屏）
+  const hadDataWhenLoadingRef = useRef(false);
+  // 存储最新的 tasks 值，避免 useCallback 依赖问题
+  const tasksRef = useRef<Task[]>(tasks);
+  tasksRef.current = tasks;
   
   // 加载分组列表
   const loadGroups = async () => {
@@ -107,10 +110,8 @@ export default function History() {
   const loadTasks = useCallback(async (refresh = false) => {
     if (!openid) return;
 
-    // 标记是否为刷新操作（用于遮罩层显示）
-    if (refresh) {
-      setIsRefreshing(true);
-    }
+    // 记录开始加载时是否有数据（决定显示遮罩层还是骨架屏）
+    hadDataWhenLoadingRef.current = tasksRef.current.length > 0;
     
     setLoading(true);
     try {
@@ -202,7 +203,6 @@ export default function History() {
         }
         setHasMore(false);
         setLoading(false);
-        setIsRefreshing(false);
         return;
       }
 
@@ -233,7 +233,7 @@ export default function History() {
 
       if (res.success && res.data) {
         const newTasks = res.data.tasks || [];
-        const updatedTasks = refresh ? newTasks : [...tasks, ...newTasks];
+        const updatedTasks = refresh ? newTasks : [...tasksRef.current, ...newTasks];
         setTasks(updatedTasks);
         setHasMore(res.data.hasMore);
         setPage(currentPage);
@@ -243,9 +243,8 @@ export default function History() {
       Taro.showToast({ title: '加载失败', icon: 'none' });
     } finally {
       setLoading(false);
-      setIsRefreshing(false);
     }
-  }, [openid, currentTab, page, tasks, timeFilter, selectedDateRange, statusFilter, priorityFilter, groupFilter]);
+  }, [openid, currentTab, page, timeFilter, selectedDateRange, statusFilter, priorityFilter, groupFilter]);
 
   useEffect(() => {
     loadTasks(true);
@@ -476,8 +475,8 @@ export default function History() {
 
   return (
     <View className="min-h-screen bg-gray-50">
-      {/* 加载遮罩层 - 切换筛选条件时显示 */}
-      {loading && isRefreshing && (
+      {/* 加载遮罩层 - 切换筛选条件时显示（有数据的情况下） */}
+      {loading && hadDataWhenLoadingRef.current && (
         <View 
           className="fixed inset-0 flex items-center justify-center z-50"
           style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}
