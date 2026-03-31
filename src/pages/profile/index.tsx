@@ -15,7 +15,7 @@ import { Camera, ChevronRight, LogOut, Trash2, Pencil, Check, X } from 'lucide-r
 const MENU_ITEMS = [
   { icon: '📈', label: '数据统计', path: '/pages/stats/index' },
   { icon: '📜', label: '历史任务', path: '/pages/history/index' },
-  { icon: '⚙️', label: '提醒设置', path: '/pages/settings/index' },
+  { icon: '⚙️', label: '设置', path: '/pages/settings/index' },
   { icon: '📊', label: '周报', path: '/pages/weekly/index' }
 ];
 

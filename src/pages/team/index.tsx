@@ -5,12 +5,29 @@ import { useUserStore } from '@/stores/user';
 import { callFunction } from '@/utils/cloud';
 import type { Team, CloudResponse } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, ChevronRight, Users, Search, UserPlus } from 'lucide-react-taro';
+import { Input } from '@/components/ui/input';
+import { Plus, ChevronRight, Users, Search, UserPlus, Building, X } from 'lucide-react-taro';
+
+type TabType = 'team' | 'enterprise';
+
+interface SearchResult {
+  type: 'team' | 'member';
+  team: Team;
+  member?: {
+    openid: string;
+    nickname: string;
+    role: string;
+  };
+}
 
 export default function TeamPage() {
   const { openid } = useUserStore();
   const [loading, setLoading] = useState(true);
   const [teams, setTeams] = useState<Team[]>([]);
+  const [currentTab, setCurrentTab] = useState<TabType>('team');
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const isFirstLoad = useRef(true);
   const isLoadingRef = useRef(false);
 
@@ -24,7 +41,7 @@ export default function TeamPage() {
     }
 
     isLoadingRef.current = true;
-    setLoading(teams.length === 0);
+    setLoading(true);
     
     try {
       // H5 端模拟数据
@@ -58,6 +75,19 @@ export default function TeamPage() {
                 { openid: currentOpenid, nickname: '我', role: 'member', joined_at: new Date().toISOString() }
               ],
               created_at: new Date().toISOString() 
+            },
+            { 
+              _id: '3', 
+              name: '市场营销部', 
+              leader_id: 'user4', 
+              leader_name: '赵六',
+              members: [currentOpenid, 'user4', 'user5'], 
+              member_details: [
+                { openid: 'user4', nickname: '赵六', role: 'owner', joined_at: new Date().toISOString() },
+                { openid: 'user5', nickname: '孙七', role: 'admin', joined_at: new Date().toISOString() },
+                { openid: currentOpenid, nickname: '我', role: 'member', joined_at: new Date().toISOString() }
+              ],
+              created_at: new Date().toISOString() 
             }
           ];
           Taro.setStorageSync('mock_teams', JSON.stringify(teamList));
@@ -78,7 +108,7 @@ export default function TeamPage() {
       isLoadingRef.current = false;
       setLoading(false);
     }
-  }, [openid, teams.length]);
+  }, [openid]);
 
   useEffect(() => {
     if (openid) {
@@ -104,6 +134,83 @@ export default function TeamPage() {
     }
   });
 
+  // 搜索功能
+  const handleSearch = (keyword: string) => {
+    setSearchKeyword(keyword);
+    
+    if (!keyword.trim()) {
+      setIsSearching(false);
+      setSearchResults([]);
+      return;
+    }
+    
+    setIsSearching(true);
+    const results: SearchResult[] = [];
+    const lowerKeyword = keyword.toLowerCase().trim();
+    
+    teams.forEach(team => {
+      // 搜索团队名称
+      if (team.name.toLowerCase().includes(lowerKeyword)) {
+        results.push({
+          type: 'team',
+          team: team
+        });
+      }
+      
+      // 搜索团队成员
+      if (team.member_details) {
+        team.member_details.forEach(member => {
+          // 搜索用户昵称
+          if (member.nickname.toLowerCase().includes(lowerKeyword)) {
+            // 检查是否已经添加过这个结果
+            const exists = results.some(
+              r => r.type === 'member' && r.team._id === team._id && r.member?.openid === member.openid
+            );
+            if (!exists) {
+              results.push({
+                type: 'member',
+                team: team,
+                member: {
+                  openid: member.openid,
+                  nickname: member.nickname,
+                  role: member.role
+                }
+              });
+            }
+          }
+          
+          // 搜索用户ID（openid后8位）
+          const shortId = member.openid.slice(-8).toLowerCase();
+          if (shortId.includes(lowerKeyword)) {
+            const exists = results.some(
+              r => r.type === 'member' && r.team._id === team._id && r.member?.openid === member.openid
+            );
+            if (!exists) {
+              results.push({
+                type: 'member',
+                team: team,
+                member: {
+                  openid: member.openid,
+                  nickname: member.nickname,
+                  role: member.role
+                }
+              });
+            }
+          }
+        });
+      }
+    });
+    
+    setSearchResults(results);
+  };
+
+  // 清除搜索
+  const clearSearch = () => {
+    setSearchKeyword('');
+    setIsSearching(false);
+    setSearchResults([]);
+  };
+
   // 创建团队
   const createTeam = () => {
     Taro.navigateTo({ url: '/pages/team-edit/index' });
@@ -118,9 +225,6 @@ export default function TeamPage() {
   const goTeamDetail = (teamId: string) => {
     Taro.navigateTo({ url: `/pages/team-edit/index?id=${teamId}` });
   };
-
-  // 过滤团队
-  const filteredTeams = teams;
 
   // 分享配置
   Taro.useShareAppMessage(() => ({
@@ -172,93 +276,237 @@ export default function TeamPage() {
     );
   };
 
+  // 渲染搜索结果项
+  const renderSearchResultItem = (result: SearchResult) => {
+    if (result.type === 'team') {
+      return renderTeamItem(result.team);
+    }
+    
+    // 成员搜索结果
+    const team = result.team;
+    const member = result.member!;
+    
+    return (
+      <View
+        key={`${team._id}_${member.openid}`}
+        className="flex items-center px-4 py-3 bg-white border-b border-gray-100 active:bg-gray-50"
+        onClick={() => goTeamDetail(team._id)}
+      >
+        {/* 成员头像 */}
+        <View className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+          <Text className="text-blue-500 text-lg font-semibold">{member.nickname[0]}</Text>
+        </View>
+        
+        {/* 成员信息 */}
+        <View className="flex-1 min-w-0">
+          <View className="flex items-center gap-2">
+            <Text className="text-base text-gray-900">{member.nickname}</Text>
+            <View className="px-2 py-1 bg-gray-100 rounded">
+              <Text className="text-xs text-gray-500">
+                {member.role === 'owner' ? '创建者' : member.role === 'admin' ? '管理员' : '成员'}
+              </Text>
+            </View>
+          </View>
+          <View className="flex items-center gap-1 mt-1">
+            <Users size={12} color="#9CA3AF" />
+            <Text className="text-sm text-gray-400">{team.name}</Text>
+          </View>
+        </View>
+        
+        <ChevronRight size={20} color="#D1D5DB" />
+      </View>
+    );
+  };
+
+  // 渲染企业页面（占位）
+  const renderEnterpriseContent = () => (
+    <View className="flex-1">
+      {/* 功能入口 */}
+      <View className="bg-white mb-2">
+        <View 
+          className="flex items-center px-4 py-3 border-b border-gray-100 active:bg-gray-50"
+        >
+          <View className="w-12 h-12 rounded-lg bg-purple-500 flex items-center justify-center mr-3">
+            <Building size={24} color="#ffffff" />
+          </View>
+          <View className="flex-1">
+            <Text className="text-base text-gray-900">企业组织架构</Text>
+            <Text className="text-xs text-gray-400 mt-1">接入企业微信后自动同步</Text>
+          </View>
+          <ChevronRight size={20} color="#D1D5DB" />
+        </View>
+      </View>
+
+      {/* 提示信息 */}
+      <View className="px-4 py-8">
+        <View className="bg-blue-50 rounded-lg p-4">
+          <Text className="text-sm text-blue-600 font-medium mb-2">企业微信接入说明</Text>
+          <Text className="text-xs text-blue-500 leading-relaxed">
+            1. 小程序需先提交审核并通过上线{'\n'}
+            2. 在企业微信管理后台关联小程序{'\n'}
+            3. 配置企业微信应用权限{'\n'}
+            4. 自动同步企业组织架构和成员
+          </Text>
+        </View>
+      </View>
+
+      {/* 空状态 */}
+      <View className="flex flex-col items-center justify-center py-16">
+        <View className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+          <Building size={32} color="#D1D5DB" />
+        </View>
+        <Text className="text-gray-500 mb-1">暂无企业信息</Text>
+        <Text className="text-gray-400 text-sm">接入企业微信后自动同步</Text>
+      </View>
+    </View>
+  );
+
   return (
     <View className="min-h-screen bg-gray-100">
       {/* 搜索栏 */}
       <View className="bg-gray-100 px-3 py-2">
         <View className="bg-white rounded-lg px-3 py-2 flex items-center">
           <Search size={18} color="#9CA3AF" />
-          <Text className="text-gray-400 text-sm ml-2">搜索团队</Text>
+          <View className="flex-1 ml-2">
+            <Input
+              type="text"
+              placeholder={currentTab === 'team' ? '搜索团队名称/成员昵称/用户ID' : '搜索企业/部门/成员'}
+              className="bg-transparent border-0 h-7 text-sm"
+              value={searchKeyword}
+              onInput={(e) => handleSearch(e.detail.value)}
+            />
+          </View>
+          {searchKeyword && (
+            <View onClick={clearSearch} className="px-1">
+              <X size={18} color="#9CA3AF" />
+            </View>
+          )}
+        </View>
+      </View>
+
+      {/* Tab 切换 */}
+      <View className="bg-white px-4 py-2 flex items-center gap-2 border-b border-gray-100">
+        <View 
+          className={`flex-1 py-2 rounded-lg text-center ${currentTab === 'team' ? 'bg-blue-500' : 'bg-gray-100'}`}
+          onClick={() => { setCurrentTab('team'); clearSearch(); }}
+        >
+          <Text className={currentTab === 'team' ? 'text-white font-medium' : 'text-gray-600'}>我的团队</Text>
+        </View>
+        <View 
+          className={`flex-1 py-2 rounded-lg text-center ${currentTab === 'enterprise' ? 'bg-blue-500' : 'bg-gray-100'}`}
+          onClick={() => { setCurrentTab('enterprise'); clearSearch(); }}
+        >
+          <Text className={currentTab === 'enterprise' ? 'text-white font-medium' : 'text-gray-600'}>我的企业</Text>
         </View>
       </View>
 
       <ScrollView 
         className="flex-1" 
         scrollY 
-        style={{ height: 'calc(100vh - 52px - 60px)' }}
+        style={{ height: 'calc(100vh - 104px - 60px)' }}
       >
-        {/* 功能入口 */}
-        <View className="bg-white mb-2">
-          {/* 创建团队 */}
-          <View 
-            className="flex items-center px-4 py-3 border-b border-gray-100 active:bg-gray-50"
-            onClick={createTeam}
-          >
-            <View className="w-12 h-12 rounded-lg bg-green-500 flex items-center justify-center mr-3">
-              <Plus size={24} color="#ffffff" />
-            </View>
-            <View className="flex-1">
-              <Text className="text-base text-gray-900">创建团队</Text>
-              <Text className="text-xs text-gray-400 mt-1">创建新团队开始协作</Text>
-            </View>
-            <ChevronRight size={20} color="#D1D5DB" />
-          </View>
-          
-          {/* 加入团队 */}
-          <View 
-            className="flex items-center px-4 py-3 active:bg-gray-50"
-            onClick={joinTeam}
-          >
-            <View className="w-12 h-12 rounded-lg bg-blue-500 flex items-center justify-center mr-3">
-              <UserPlus size={24} color="#ffffff" />
-            </View>
-            <View className="flex-1">
-              <Text className="text-base text-gray-900">加入团队</Text>
-              <Text className="text-xs text-gray-400 mt-1">通过邀请码加入团队</Text>
-            </View>
-            <ChevronRight size={20} color="#D1D5DB" />
-          </View>
-        </View>
-
-        {/* 团队列表标题 */}
-        {filteredTeams.length > 0 && (
-          <View className="px-4 py-2 bg-gray-100">
-            <Text className="text-sm text-gray-500">我的团队</Text>
-          </View>
-        )}
-
-        {/* 团队列表 */}
-        <View className="bg-white">
-          {loading ? (
-            <View className="px-4 py-3">
-              {[1, 2, 3].map((i) => (
-                <View key={i} className="flex items-center py-3 border-b border-gray-100">
-                  <Skeleton className="w-12 h-12 rounded-lg mr-3" />
-                  <View className="flex-1">
-                    <Skeleton className="h-4 w-24 mb-2" />
-                    <Skeleton className="h-3 w-16" />
+        {currentTab === 'enterprise' ? (
+          renderEnterpriseContent()
+        ) : (
+          <>
+            {/* 搜索结果 */}
+            {isSearching ? (
+              <View className="bg-white">
+                {searchResults.length === 0 ? (
+                  <View className="flex flex-col items-center justify-center py-16">
+                    <View className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                      <Search size={32} color="#D1D5DB" />
+                    </View>
+                    <Text className="text-gray-500 mb-1">未找到相关结果</Text>
+                    <Text className="text-gray-400 text-sm">尝试其他关键词</Text>
+                  </View>
+                ) : (
+                  <>
+                    <View className="px-4 py-2 bg-gray-50 border-b border-gray-100">
+                      <Text className="text-sm text-gray-500">找到 {searchResults.length} 个结果</Text>
+                    </View>
+                    {searchResults.map(renderSearchResultItem)}
+                  </>
+                )}
+              </View>
+            ) : (
+              <>
+                {/* 功能入口 */}
+                <View className="bg-white mb-2">
+                  {/* 创建团队 */}
+                  <View 
+                    className="flex items-center px-4 py-3 border-b border-gray-100 active:bg-gray-50"
+                    onClick={createTeam}
+                  >
+                    <View className="w-12 h-12 rounded-lg bg-green-500 flex items-center justify-center mr-3">
+                      <Plus size={24} color="#ffffff" />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-base text-gray-900">创建团队</Text>
+                      <Text className="text-xs text-gray-400 mt-1">创建新团队开始协作</Text>
+                    </View>
+                    <ChevronRight size={20} color="#D1D5DB" />
+                  </View>
+                  
+                  {/* 加入团队 */}
+                  <View 
+                    className="flex items-center px-4 py-3 active:bg-gray-50"
+                    onClick={joinTeam}
+                  >
+                    <View className="w-12 h-12 rounded-lg bg-blue-500 flex items-center justify-center mr-3">
+                      <UserPlus size={24} color="#ffffff" />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-base text-gray-900">加入团队</Text>
+                      <Text className="text-xs text-gray-400 mt-1">通过邀请码加入团队</Text>
+                    </View>
+                    <ChevronRight size={20} color="#D1D5DB" />
                   </View>
                 </View>
-              ))}
-            </View>
-          ) : filteredTeams.length === 0 ? (
-            <View className="flex flex-col items-center justify-center py-16">
-              <View className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                <Users size={32} color="#D1D5DB" />
-              </View>
-              <Text className="text-gray-500 mb-1">暂无团队</Text>
-              <Text className="text-gray-400 text-sm">创建或加入团队开始协作</Text>
-            </View>
-          ) : (
-            filteredTeams.map(renderTeamItem)
-          )}
-        </View>
 
-        {/* 底部提示 */}
-        {filteredTeams.length > 0 && (
-          <View className="py-4 text-center">
-            <Text className="text-sm text-gray-400">共 {filteredTeams.length} 个团队</Text>
-          </View>
+                {/* 团队列表标题 */}
+                {teams.length > 0 && (
+                  <View className="px-4 py-2 bg-gray-100">
+                    <Text className="text-sm text-gray-500">我的团队</Text>
+                  </View>
+                )}
+
+                {/* 团队列表 */}
+                <View className="bg-white">
+                  {loading ? (
+                    <View className="px-4 py-3">
+                      {[1, 2, 3].map((i) => (
+                        <View key={i} className="flex items-center py-3 border-b border-gray-100">
+                          <Skeleton className="w-12 h-12 rounded-lg mr-3" />
+                          <View className="flex-1">
+                            <Skeleton className="h-4 w-24 mb-2" />
+                            <Skeleton className="h-3 w-16" />
+                          </View>
+                        </View>
+                      ))}
+                    </View>
+                  ) : teams.length === 0 ? (
+                    <View className="flex flex-col items-center justify-center py-16">
+                      <View className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                        <Users size={32} color="#D1D5DB" />
+                      </View>
+                      <Text className="text-gray-500 mb-1">暂无团队</Text>
+                      <Text className="text-gray-400 text-sm">创建或加入团队开始协作</Text>
+                    </View>
+                  ) : (
+                    teams.map(renderTeamItem)
+                  )}
+                </View>
+
+                {/* 底部提示 */}
+                {teams.length > 0 && (
+                  <View className="py-4 text-center">
+                    <Text className="text-sm text-gray-400">共 {teams.length} 个团队</Text>
+                  </View>
+                )}
+              </>
+            )}
+          </>
         )}
 
         {/* 底部安全区 */}
