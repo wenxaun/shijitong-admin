@@ -282,6 +282,9 @@ export default function GroupAssign() {
                   itemList: groups.map(g => g.name),
                   success: (res) => {
                     setSelectedGroup(groups[res.tapIndex]._id);
+                  },
+                  fail: () => {
+                    // 用户取消选择，不做处理
                   }
                 });
               }}
