@@ -107,6 +107,8 @@ exports.main = async (event, context) => {
       status: task.status,
       priority: task.priority,
       category: task.category || '',
+      group_id: task.group_id || '',
+      group_name: task.group_name || '',
       publisher_id: task.publisher_id,
       executor_id: task.executor_id,
       executor_name: task.executor_name || '',

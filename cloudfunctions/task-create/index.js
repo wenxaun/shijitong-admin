@@ -25,6 +25,8 @@ exports.main = async (event, context) => {
       task_description,
       priority = 'P1',
       category,
+      group_id,
+      group_name,
       executor_id,
       executor_name,
       require_date
@@ -56,6 +58,8 @@ exports.main = async (event, context) => {
         status: 'pending',
         priority,
         category: category || '',
+        group_id: group_id || '',
+        group_name: group_name || '',
         publisher_id: OPENID,
         executor_id: finalExecutorId,
         executor_name: finalExecutorName,

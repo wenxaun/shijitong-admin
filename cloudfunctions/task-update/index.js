@@ -22,6 +22,8 @@ exports.main = async (event, context) => {
       status,
       priority,
       category,
+      group_id,
+      group_name,
       require_date,
       learnings,
       delay_reason,
@@ -99,6 +101,8 @@ exports.main = async (event, context) => {
     if (status !== undefined) updateData.status = status
     if (priority !== undefined) updateData.priority = priority
     if (category !== undefined) updateData.category = category
+    if (group_id !== undefined) updateData.group_id = group_id
+    if (group_name !== undefined) updateData.group_name = group_name
     // 统一使用字符串格式存储日期
     if (require_date !== undefined) updateData.require_date = require_date
     if (learnings !== undefined) updateData.learnings = learnings || ''

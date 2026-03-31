@@ -18,7 +18,10 @@ exports.main = async (event, context) => {
     page = 1,
     pageSize = 20,
     start_date,
-    end_date
+    end_date,
+    status,
+    priority,
+    group_id
   } = event
 
   try {
@@ -50,6 +53,21 @@ exports.main = async (event, context) => {
       const endDateTime = new Date(end_date + ' 23:59:59')
       query.created_at = _.and(_.gte(startDateTime), _.lte(endDateTime))
     }
+    
+    // 支持状态筛选
+    if (status) {
+      query.status = status
+    }
+    
+    // 支持优先级筛选
+    if (priority) {
+      query.priority = priority
+    }
+    
+    // 支持分组筛选
+    if (group_id) {
+      query.group_id = group_id
+    }
 
     // 查询数据库
     const result = await db.collection('tasks')
@@ -71,8 +89,11 @@ exports.main = async (event, context) => {
       status: task.status,
       priority: task.priority || 'P2',
       category: task.category || '',
+      group_id: task.group_id || '',
+      group_name: task.group_name || '',
       publisher_id: task.publisher_id,
       executor_id: task.executor_id,
+      executor_name: task.executor_name || '',
       require_date: formatDate(task.require_date),
       complete_date: task.complete_date ? formatDate(task.complete_date) : null,
       score: task.score,
