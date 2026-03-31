@@ -78,6 +78,9 @@ export default function History() {
   const [groups, setGroups] = useState<TaskGroup[]>([]);
   const [showFilterDialog, setShowFilterDialog] = useState(false);
   
+  // 刷新状态（独立于 tasks，用于遮罩层显示）
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
   // 加载分组列表
   const loadGroups = async () => {
     try {
@@ -103,6 +106,11 @@ export default function History() {
   // 加载历史任务
   const loadTasks = useCallback(async (refresh = false) => {
     if (!openid) return;
+    
+    // 如果是刷新操作，设置刷新状态（用于遮罩层显示）
+    if (refresh) {
+      setIsRefreshing(true);
+    }
     
     setLoading(true);
     try {
@@ -233,6 +241,7 @@ export default function History() {
       Taro.showToast({ title: '加载失败', icon: 'none' });
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   }, [openid, currentTab, page, tasks, timeFilter, selectedDateRange, statusFilter, priorityFilter, groupFilter]);
 
@@ -465,8 +474,8 @@ export default function History() {
 
   return (
     <View className="min-h-screen bg-gray-50">
-      {/* 加载遮罩层 - 有数据时显示 */}
-      {loading && tasks.length > 0 && (
+      {/* 加载遮罩层 - 刷新时显示（不依赖 tasks 状态） */}
+      {loading && isRefreshing && (
         <View 
           className="fixed inset-0 flex items-center justify-center z-50"
           style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}
