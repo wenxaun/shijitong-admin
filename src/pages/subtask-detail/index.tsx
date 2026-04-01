@@ -3,29 +3,13 @@ import { useState, useEffect, useCallback } from 'react';
 import Taro, { useRouter } from '@tarojs/taro';
 import { callFunction, CLOUD_FUNCTIONS } from '@/utils/cloud';
 import type { TaskStatus, ChecklistItem, CloudResponse } from '@/types';
+import { STATUS_MAP, PRIORITY_STYLE } from '@/constants';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Check, Pencil, Plus, Trash2, Play } from 'lucide-react-taro';
-
-// 状态映射
-const STATUS_MAP: Record<TaskStatus, { label: string; color: string }> = {
-  pending: { label: '待办', color: 'bg-gray-100 text-gray-600' },
-  in_progress: { label: '进行中', color: 'bg-blue-50 text-blue-600' },
-  completed: { label: '已完成', color: 'bg-green-50 text-green-600' },
-  cancelled: { label: '已取消', color: 'bg-red-50 text-red-500' },
-  exception: { label: '异常', color: 'bg-orange-50 text-orange-600' }
-};
-
-// 优先级颜色
-const PRIORITY_COLOR: Record<string, string> = {
-  P0: 'text-red-500',
-  P1: 'text-orange-500',
-  P2: 'text-blue-500',
-  P3: 'text-gray-400'
-};
 
 interface SubtaskDetail {
   _id: string;
@@ -293,13 +277,13 @@ export default function SubtaskDetail() {
               </View>
               <View className="flex flex-col">
                 <Text className="text-xs text-gray-400">优先级</Text>
-                <Text className={`text-sm font-semibold ${PRIORITY_COLOR[subtask.priority || 'P2']}`}>
+                <Text className={`text-sm font-semibold ${PRIORITY_STYLE[subtask.priority || 'P2'].text}`}>
                   {subtask.priority || 'P2'}
                 </Text>
               </View>
               <View className="flex flex-col">
                 <Text className="text-xs text-gray-400">状态</Text>
-                <Badge className={statusInfo.color}>{statusInfo.label}</Badge>
+                <Badge className={statusInfo.bgClass}>{statusInfo.label}</Badge>
               </View>
             </View>
 

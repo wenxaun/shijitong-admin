@@ -4,6 +4,7 @@ import Taro from '@tarojs/taro';
 import { useUserStore } from '@/stores/user';
 import { callFunction } from '@/utils/cloud';
 import { Task, CloudResponse, TaskListResponse, TaskGroup } from '@/types';
+import { STATUS_MAP, PRIORITY_STYLE, PRIORITY_OPTIONS, TIME_FILTERS } from '@/constants';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,47 +16,12 @@ import { format } from 'date-fns';
 
 type TabType = 'created' | 'executed' | 'deleted';
 
-// 状态映射
-const STATUS_MAP: Record<string, { label: string; color: string; bgClass: string }> = {
-  pending: { label: '待办', color: '#6B7280', bgClass: 'bg-gray-100 text-gray-600' },
-  in_progress: { label: '进行中', color: '#1377EB', bgClass: 'bg-blue-50 text-blue-600' },
-  completed: { label: '已完成', color: '#00B365', bgClass: 'bg-green-50 text-green-600' },
-  cancelled: { label: '已取消', color: '#EA4335', bgClass: 'bg-red-50 text-red-500' },
-  deleted: { label: '已删除', color: '#9CA3AF', bgClass: 'bg-gray-100 text-gray-400' }
-};
-
-// 优先级配置
-const PRIORITY_OPTIONS = [
-  { value: '', label: '全部优先级' },
-  { value: 'P0', label: 'P0 紧急重要' },
-  { value: 'P1', label: 'P1 重要' },
-  { value: 'P2', label: 'P2 普通' },
-  { value: 'P3', label: 'P3 次要' }
-];
-
-// 优先级颜色
-const PRIORITY_STYLE: Record<string, { bg: string; text: string }> = {
-  P0: { bg: 'bg-red-50', text: 'text-red-500' },
-  P1: { bg: 'bg-orange-50', text: 'text-orange-500' },
-  P2: { bg: 'bg-blue-50', text: 'text-blue-500' },
-  P3: { bg: 'bg-gray-100', text: 'text-gray-400' }
-};
-
 // Tab 配置
 const TAB_CONFIG: { value: TabType; label: string; icon: typeof Archive }[] = [
   { value: 'created', label: '我创建的', icon: Send },
   { value: 'executed', label: '我执行的', icon: User },
   { value: 'deleted', label: '已删除', icon: Trash2 }
 ];
-
-// 时间筛选选项
-const TIME_FILTERS = [
-  { value: 'all', label: '全部' },
-  { value: 'today', label: '今日' },
-  { value: 'week', label: '本周' },
-  { value: 'month', label: '本月' },
-  { value: 'custom', label: '自定义' }
-] as const;
 
 export default function History() {
   const { openid } = useUserStore();

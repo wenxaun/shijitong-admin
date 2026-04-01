@@ -3,7 +3,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import Taro from '@tarojs/taro';
 import { useUserStore } from '@/stores/user';
 import { callFunction, CLOUD_FUNCTIONS } from '@/utils/cloud';
-import { Task, TaskStatus, TaskPriority, CloudResponse, TaskListResponse } from '@/types';
+import { Task, CloudResponse, TaskListResponse } from '@/types';
+import { STATUS_MAP, STATUS_FILTERS, TIME_FILTERS, PRIORITY_STYLE } from '@/constants';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,49 +17,6 @@ import { format } from 'date-fns';
 
 // 缓存时间（毫秒）
 const CACHE_DURATION = 2 * 60 * 1000; // 2分钟
-
-// 状态筛选选项
-const STATUS_FILTERS = [
-  { value: 'all', label: '全部' },
-  { value: 'pending', label: '待办' },
-  { value: 'in_progress', label: '进行中' },
-  { value: 'completed', label: '已完成' }
-] as const;
-
-// 时间筛选选项
-const TIME_FILTERS = [
-  { value: 'all', label: '全部' },
-  { value: 'today', label: '今日' },
-  { value: 'week', label: '本周' },
-  { value: 'month', label: '本月' },
-  { value: 'custom', label: '自定义' }
-] as const;
-
-// 状态显示映射
-const STATUS_MAP: Record<TaskStatus, string> = {
-  pending: '待办',
-  in_progress: '进行中',
-  completed: '已完成',
-  cancelled: '已取消',
-  exception: '异常'
-};
-
-// 状态颜色映射
-const STATUS_COLOR: Record<TaskStatus, string> = {
-  pending: 'bg-gray-100 text-gray-600',
-  in_progress: 'bg-green-50 text-green-600',
-  completed: 'bg-green-50 text-green-600',
-  cancelled: 'bg-red-50 text-red-500',
-  exception: 'bg-orange-50 text-orange-600'
-};
-
-// 优先级颜色映射
-const PRIORITY_COLOR: Record<TaskPriority, string> = {
-  P0: 'bg-red-50 text-red-500',
-  P1: 'bg-orange-50 text-orange-500',
-  P2: 'bg-blue-50 text-blue-500',
-  P3: 'bg-gray-100 text-gray-400'
-};
 
 // 获取缓存键
 const getCacheKey = (statusFilter: string, timeFilter: string, customDateRange?: { from?: Date; to?: Date }) => {
@@ -323,11 +281,11 @@ export default function Index() {
                     {task.task_name}
                   </Text>
                 </View>
-                <Badge className={PRIORITY_COLOR[task.priority]}>{task.priority}</Badge>
+                <Badge className={PRIORITY_STYLE[task.priority].bg + ' ' + PRIORITY_STYLE[task.priority].text}>{task.priority}</Badge>
               </View>
 
               <View className="flex items-center gap-2 mb-2 flex-wrap">
-                <Badge className={STATUS_COLOR[task.status]}>{STATUS_MAP[task.status]}</Badge>
+                <Badge className={STATUS_MAP[task.status].bgClass}>{STATUS_MAP[task.status].label}</Badge>
                 
                 {task.group_name && (
                   <View className="px-2 py-1 bg-purple-50 rounded">

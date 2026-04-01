@@ -3,21 +3,13 @@ import { useState, useEffect, useCallback } from 'react';
 import Taro, { useRouter } from '@tarojs/taro';
 import { callFunction, CLOUD_FUNCTIONS } from '@/utils/cloud';
 import type { TaskStatus, Subtask, CloudResponse } from '@/types';
+import { STATUS_MAP } from '@/constants';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Plus, ChevronRight, ClipboardList } from 'lucide-react-taro';
-
-// 状态映射
-const STATUS_MAP: Record<TaskStatus, { label: string; color: string }> = {
-  pending: { label: '待办', color: 'bg-gray-100 text-gray-600' },
-  in_progress: { label: '进行中', color: 'bg-blue-50 text-blue-600' },
-  completed: { label: '已完成', color: 'bg-green-50 text-green-600' },
-  cancelled: { label: '已取消', color: 'bg-red-50 text-red-500' },
-  exception: { label: '异常', color: 'bg-orange-50 text-orange-600' }
-};
 
 interface SubtaskWithMeta extends Subtask {
   executor_name?: string;
@@ -246,7 +238,7 @@ export default function SubtaskManage() {
                           </View>
                         </View>
                         <View className="flex items-center gap-2">
-                          <Badge className={statusInfo.color}>{statusInfo.label}</Badge>
+                          <Badge className={statusInfo.bgClass}>{statusInfo.label}</Badge>
                           <ChevronRight size={18} color="#9CA3AF" />
                         </View>
                       </View>
