@@ -8,12 +8,40 @@ cloud.init({
 const db = cloud.database()
 const _ = db.command
 
+// 获取时间范围的辅助函数（统一按截止日期筛选）
+function getTimeRange(timeFilter) {
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  
+  if (timeFilter === 'today') {
+    // 今日：今天 00:00:00 到 23:59:59
+    const start = today
+    const end = new Date(today.getTime() + 24 * 60 * 60 * 1000 - 1)
+    return { start, end }
+  } else if (timeFilter === 'week') {
+    // 本周：周一 00:00:00 到周日 23:59:59
+    const dayOfWeek = today.getDay()
+    const monday = new Date(today)
+    monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1))
+    const sunday = new Date(monday)
+    sunday.setDate(monday.getDate() + 6)
+    sunday.setHours(23, 59, 59, 999)
+    monday.setHours(0, 0, 0, 0)
+    return { start: monday, end: sunday }
+  } else if (timeFilter === 'month') {
+    // 本月：1号 00:00:00 到月末 23:59:59
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
+    return { start: firstDay, end: lastDay }
+  }
+  return null
+}
+
 // 云函数入口函数
 exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext()
   const { OPENID } = wxContext
   
-  // 第一行就打印日志
   console.log('===== task-list 开始执行 =====')
   console.log('[task-list] 时间:', new Date().toISOString())
   console.log('[task-list] OPENID:', OPENID)
@@ -24,6 +52,8 @@ exports.main = async (event, context) => {
       status,
       priority,
       time_filter,
+      start_date,
+      end_date,
       page = 1,
       pageSize = 20
     } = event
@@ -47,37 +77,17 @@ exports.main = async (event, context) => {
       conditions.push({ priority: priority })
     }
     
-    // 按时间筛选
-    const now = new Date()
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
-    
-    // 支持自定义日期范围（按创建日期筛选）
-    const { start_date, end_date } = event
-    
+    // 时间筛选：统一按截止日期（require_date）筛选
     if (start_date && end_date) {
-      // 自定义日期范围筛选（按创建日期）
+      // 自定义日期范围筛选
       const startDateTime = new Date(start_date + ' 00:00:00')
       const endDateTime = new Date(end_date + ' 23:59:59')
-      conditions.push({ created_at: _.and(_.gte(startDateTime), _.lte(endDateTime)) })
-    } else if (time_filter === 'today') {
-      // 今日创建的任务
-      const todayStart = new Date(todayStr + ' 00:00:00')
-      const todayEnd = new Date(todayStr + ' 23:59:59')
-      conditions.push({ created_at: _.and(_.gte(todayStart), _.lte(todayEnd)) })
-    } else if (time_filter === 'week') {
-      // 本周创建的任务
-      const monday = new Date(today)
-      monday.setDate(monday.getDate() - today.getDay() + 1)
-      const mondayStr = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`
-      const mondayStart = new Date(mondayStr + ' 00:00:00')
-      conditions.push({ created_at: _.gte(mondayStart) })
-    } else if (time_filter === 'month') {
-      // 本月创建的任务
-      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
-      const firstDayStr = `${firstDay.getFullYear()}-${String(firstDay.getMonth() + 1).padStart(2, '0')}-${String(firstDay.getDate()).padStart(2, '0')}`
-      const firstDayStart = new Date(firstDayStr + ' 00:00:00')
-      conditions.push({ created_at: _.gte(firstDayStart) })
+      conditions.push({ require_date: _.and(_.gte(startDateTime), _.lte(endDateTime)) })
+    } else if (time_filter) {
+      const timeRange = getTimeRange(time_filter)
+      if (timeRange) {
+        conditions.push({ require_date: _.and(_.gte(timeRange.start), _.lte(timeRange.end)) })
+      }
     }
     
     // 构建最终查询条件
@@ -88,7 +98,7 @@ exports.main = async (event, context) => {
     // 查询数据库
     const result = await db.collection('tasks')
       .where(query)
-      .orderBy('created_at', 'desc')
+      .orderBy('require_date', 'asc') // 按截止日期升序，越紧急的越靠前
       .skip((page - 1) * pageSize)
       .limit(pageSize)
       .get()
@@ -105,7 +115,7 @@ exports.main = async (event, context) => {
       task_name: task.task_name,
       task_description: task.task_description || '',
       status: task.status,
-      priority: task.priority,
+      priority: task.priority || 'P2',
       category: task.category || '',
       group_id: task.group_id || '',
       group_name: task.group_name || '',
@@ -116,10 +126,8 @@ exports.main = async (event, context) => {
       complete_date: task.complete_date ? formatDate(task.complete_date) : null,
       score: task.score,
       score_note: task.score_note || '',
-      learnings: task.learnings || '',
-      delay_reason: task.delay_reason || '',
-      improvements: task.improvements || '',
-      attribution_tags: task.attribution_tags || [],
+      subtask_count: task.subtask_count || 0,
+      progress: task.progress || 0,
       created_at: formatDate(task.created_at),
       updated_at: formatDate(task.updated_at)
     }))

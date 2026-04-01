@@ -8,7 +8,7 @@ cloud.init({
 const db = cloud.database()
 const _ = db.command
 
-// 获取时间范围的辅助函数
+// 获取时间范围的辅助函数（统一按截止日期筛选）
 function getTimeRange(timeFilter) {
   const now = new Date()
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -46,66 +46,48 @@ exports.main = async (event, context) => {
     type = 'created', // created: 我创建的, executed: 我执行的, deleted: 已删除
     page = 1,
     pageSize = 20,
-    time_filter, // today, week, month
+    time_filter, // today, week, month - 统一按截止日期筛选
     start_date,
-    end_date,
-    status,
-    priority,
-    group_id
+    end_date
   } = event
 
   try {
     let query = {}
     
+    // 历史任务默认只查询已完成的任务
     if (type === 'created') {
-      // 我创建的任务
+      // 我创建的任务（已完成/已取消）
       query = {
         publisher_id: OPENID,
         status: _.in(['completed', 'cancelled'])
       }
     } else if (type === 'executed') {
-      // 我执行的任务
+      // 我执行的任务（已完成/已取消）
       query = {
         executor_id: OPENID,
         status: _.in(['completed', 'cancelled'])
       }
     } else if (type === 'deleted') {
-      // 已删除的任务（如果有软删除字段）
+      // 已删除的任务
       query = {
-        _openid: OPENID,
+        publisher_id: OPENID,
         is_deleted: true
       }
     }
     
-    // 处理时间筛选（今日/本周/本月，按完成日期筛选）
+    // 时间筛选：统一按截止日期（require_date）筛选
     if (time_filter) {
       const timeRange = getTimeRange(time_filter)
       if (timeRange) {
-        // 历史任务按完成日期筛选
-        query.complete_date = _.and(_.gte(timeRange.start), _.lte(timeRange.end))
+        query.require_date = _.and(_.gte(timeRange.start), _.lte(timeRange.end))
       }
     }
     
-    // 支持自定义日期范围筛选（按完成日期）
+    // 自定义日期范围筛选（按截止日期）
     if (start_date && end_date) {
       const startDateTime = new Date(start_date + ' 00:00:00')
       const endDateTime = new Date(end_date + ' 23:59:59')
-      query.complete_date = _.and(_.gte(startDateTime), _.lte(endDateTime))
-    }
-    
-    // 支持状态筛选
-    if (status) {
-      query.status = status
-    }
-    
-    // 支持优先级筛选
-    if (priority) {
-      query.priority = priority
-    }
-    
-    // 支持分组筛选
-    if (group_id) {
-      query.group_id = group_id
+      query.require_date = _.and(_.gte(startDateTime), _.lte(endDateTime))
     }
 
     // 查询数据库
