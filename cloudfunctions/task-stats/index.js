@@ -8,6 +8,30 @@ cloud.init({
 const db = cloud.database()
 const _ = db.command
 
+// 获取时间范围的辅助函数（统一按截止日期筛选）
+function getTimeRange(rangeType) {
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  
+  if (rangeType === 'week') {
+    // 本周：周一 00:00:00 到周日 23:59:59
+    const dayOfWeek = today.getDay()
+    const monday = new Date(today)
+    monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1))
+    monday.setHours(0, 0, 0, 0)
+    const sunday = new Date(monday)
+    sunday.setDate(monday.getDate() + 6)
+    sunday.setHours(23, 59, 59, 999)
+    return { start: monday, end: sunday }
+  } else if (rangeType === 'month') {
+    // 本月：自然月，1号 00:00:00 到月末 23:59:59
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
+    return { start: firstDay, end: lastDay }
+  }
+  return null
+}
+
 exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext()
   const { range_type = 'all' } = event
@@ -16,16 +40,12 @@ exports.main = async (event, context) => {
     // 构建查询条件
     let query = {}
     
-    const now = new Date()
-    const nowTime = now.getTime()
-    
-    // 时间范围过滤
-    if (range_type === 'week') {
-      const weekAgo = new Date(nowTime - 7 * 24 * 60 * 60 * 1000)
-      query.created_at = _.gte(weekAgo)
-    } else if (range_type === 'month') {
-      const monthAgo = new Date(nowTime - 30 * 24 * 60 * 60 * 1000)
-      query.created_at = _.gte(monthAgo)
+    // 时间范围过滤：统一按截止日期（require_date）筛选
+    if (range_type === 'week' || range_type === 'month') {
+      const timeRange = getTimeRange(range_type)
+      if (timeRange) {
+        query.require_date = _.and(_.gte(timeRange.start), _.lte(timeRange.end))
+      }
     }
 
     // 查询当前用户的任务（作为执行人或发布人）
