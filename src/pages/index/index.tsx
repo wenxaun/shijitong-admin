@@ -769,17 +769,17 @@ export default function Index() {
 
       {/* 筛选栏 */}
       <View className="bg-white px-3 py-2 mb-2 relative">
-        <View className="flex flex-row items-center gap-2">
+        <View className="flex flex-row items-center">
           {/* 时间筛选 */}
-          <View className="relative">
+          <View className="flex-1 relative">
             <View 
-              className="flex flex-row items-center h-7 px-3 bg-gray-50 rounded-full"
+              className="flex flex-row items-center justify-center h-7 mx-1 bg-gray-50 rounded-full overflow-hidden"
               onClick={() => setActiveDropdown(activeDropdown === 'time' ? null : 'time')}
             >
-              <Text className="text-sm text-gray-700">
+              <Text className="text-sm text-gray-700 truncate max-w-16" numberOfLines={1}>
                 {timeFilter === 'custom' && selectedDateRange.from ? getDisplayDateRange() : TIME_FILTERS.find(f => f.value === timeFilter)?.label || '全部'}
               </Text>
-              <ChevronDown size={16} color="#9ca3af" className="ml-1" />
+              <ChevronDown size={16} color="#9ca3af" className="ml-1 flex-shrink-0" />
             </View>
             {activeDropdown === 'time' && (
               <View className="absolute top-full left-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50 min-w-28">
@@ -802,15 +802,15 @@ export default function Index() {
           </View>
 
           {/* 视图筛选 */}
-          <View className="relative">
+          <View className="flex-1 relative">
             <View 
-              className="flex flex-row items-center h-7 px-3 bg-gray-50 rounded-full"
+              className="flex flex-row items-center justify-center h-7 mx-1 bg-gray-50 rounded-full overflow-hidden"
               onClick={() => setActiveDropdown(activeDropdown === 'view' ? null : 'view')}
             >
-              <Text className="text-sm text-gray-700">
+              <Text className="text-sm text-gray-700 truncate max-w-16" numberOfLines={1}>
                 {VIEW_FILTERS.find(f => f.value === viewFilter)?.label || '全部'}
               </Text>
-              <ChevronDown size={16} color="#9ca3af" className="ml-1" />
+              <ChevronDown size={16} color="#9ca3af" className="ml-1 flex-shrink-0" />
             </View>
             {activeDropdown === 'view' && (
               <View className="absolute top-full left-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50 min-w-28">
@@ -833,15 +833,15 @@ export default function Index() {
           </View>
 
           {/* 状态筛选 */}
-          <View className="relative">
+          <View className="flex-1 relative">
             <View 
-              className="flex flex-row items-center h-7 px-3 bg-gray-50 rounded-full"
+              className="flex flex-row items-center justify-center h-7 mx-1 bg-gray-50 rounded-full overflow-hidden"
               onClick={() => setActiveDropdown(activeDropdown === 'status' ? null : 'status')}
             >
-              <Text className="text-sm text-gray-700">
+              <Text className="text-sm text-gray-700 truncate max-w-16" numberOfLines={1}>
                 {STATUS_FILTERS.find(f => f.value === statusFilter)?.label || '全部'}
               </Text>
-              <ChevronDown size={16} color="#9ca3af" className="ml-1" />
+              <ChevronDown size={16} color="#9ca3af" className="ml-1 flex-shrink-0" />
             </View>
             {activeDropdown === 'status' && (
               <View className="absolute top-full left-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50 min-w-28">
@@ -864,15 +864,15 @@ export default function Index() {
           </View>
 
           {/* 分组筛选 */}
-          <View className="relative">
+          <View className="flex-1 relative">
             <View 
-              className="flex flex-row items-center h-7 px-3 bg-gray-50 rounded-full"
+              className="flex flex-row items-center justify-center h-7 mx-1 bg-gray-50 rounded-full overflow-hidden"
               onClick={() => setActiveDropdown(activeDropdown === 'group' ? null : 'group')}
             >
-              <Text className="text-sm text-gray-700">
+              <Text className="text-sm text-gray-700 truncate max-w-16" numberOfLines={1}>
                 {GROUP_TYPES.find(f => f.value === groupType)?.label || '列表'}
               </Text>
-              <ChevronDown size={16} color="#9ca3af" className="ml-1" />
+              <ChevronDown size={16} color="#9ca3af" className="ml-1 flex-shrink-0" />
             </View>
             {activeDropdown === 'group' && (
               <View className="absolute top-full left-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50 min-w-28">
