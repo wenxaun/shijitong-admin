@@ -547,27 +547,21 @@ export default function Index() {
   };
 
   // 看板视图组件
-  const KanbanView = ({ tasks: taskList, onTaskPress, onStatusChange, filterStatus }: { 
+  const KanbanView = ({ tasks: taskList, onTaskPress, onStatusChange }: { 
     tasks: Task[]; 
     onTaskPress: (task: Task) => void;
     onStatusChange: (taskId: string, newStatus: TaskStatus) => void;
-    filterStatus?: string; // 状态筛选值
   }) => {
     const [confirmTask, setConfirmTask] = useState<Task | null>(null);
     const [confirmStatus, setConfirmStatus] = useState<TaskStatus | null>(null);
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
-    // 按状态分组
+    // 按状态分组 - 看板视图始终显示所有状态列
     const columns: Record<string, Task[]> = {
       pending: taskList.filter(t => t.status === 'pending'),
       in_progress: taskList.filter(t => t.status === 'in_progress'),
       completed: taskList.filter(t => t.status === 'completed')
     };
-
-    // 根据状态筛选决定显示哪些列
-    const visibleColumns = filterStatus && filterStatus !== 'all'
-      ? KANBAN_COLUMNS.filter(col => col.key === filterStatus)
-      : KANBAN_COLUMNS;
 
     // 获取下一个状态
     const getNextStatus = (currentStatus: TaskStatus): TaskStatus | null => {
@@ -672,7 +666,7 @@ export default function Index() {
     return (
       <>
         <View className="py-2">
-          {visibleColumns.map(column => (
+          {KANBAN_COLUMNS.map(column => (
             <View key={column.key} className="mb-4">
               {/* 列标题 */}
               <View 
@@ -947,6 +941,11 @@ export default function Index() {
                     key={item.value}
                     className={`px-4 py-2 ${groupType === item.value ? 'bg-blue-50' : ''}`}
                     onClick={() => {
+                      // 切换到看板视图时，自动重置状态筛选为"全部"
+                      // 因为看板视图本身就是按状态分组的，需要显示所有状态的任务
+                      if (item.value === 'kanban' && statusFilter !== 'all') {
+                        setStatusFilter('all');
+                      }
                       setGroupType(item.value);
                       setActiveDropdown(null);
                     }}
@@ -982,7 +981,6 @@ export default function Index() {
             tasks={tasks}
             onTaskPress={handleTaskPress}
             onStatusChange={handleTaskStatusChange}
-            filterStatus={statusFilter}
           />
         ) : groupType !== 'none' && groupedTasks ? (
           // 分组视图
