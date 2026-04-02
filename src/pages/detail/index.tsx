@@ -25,7 +25,9 @@ import {
   MessageCircle,
   ListTodo,
   FileText,
-  Share2
+  Share2,
+  History,
+  Star
 } from 'lucide-react-taro';
 
 interface Comment {
@@ -35,6 +37,32 @@ interface Comment {
   content: string;
   created_at: string;
 }
+
+interface TaskLog {
+  _id: string;
+  task_id: string;
+  action_type: string;
+  action_detail: string;
+  operator_id: string;
+  operator_name: string;
+  created_at: string;
+}
+
+// 操作类型映射
+const ACTION_TYPE_MAP: Record<string, { label: string; color: string }> = {
+  create: { label: '创建任务', color: '#1890ff' },
+  update: { label: '更新任务', color: '#52c41a' },
+  delete: { label: '删除任务', color: '#ff4d4f' },
+  complete: { label: '完成任务', color: '#52c41a' },
+  cancel: { label: '取消任务', color: '#ff4d4f' },
+  assign: { label: '分配任务', color: '#1890ff' },
+  priority: { label: '修改优先级', color: '#faad14' },
+  status: { label: '修改状态', color: '#1890ff' },
+  score: { label: '评分', color: '#722ed1' },
+  exception: { label: '异常上报', color: '#faad14' },
+  follow: { label: '关注任务', color: '#1890ff' },
+  unfollow: { label: '取消关注', color: '#8c8c8c' }
+};
 
 export default function Detail() {
   const router = useRouter();
@@ -55,6 +83,10 @@ export default function Detail() {
   // 评论
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentInput, setCommentInput] = useState('');
+
+  // 日志
+  const [logs, setLogs] = useState<TaskLog[]>([]);
+  const [isFollowed, setIsFollowed] = useState(false);
 
   // 权限
   const [isPublisher, setIsPublisher] = useState(false);
@@ -136,18 +168,82 @@ export default function Detail() {
     }
   }, [taskId]);
 
+  // 加载任务日志
+  const loadLogs = useCallback(async () => {
+    if (!taskId) return;
+
+    try {
+      const res = await callFunction<CloudResponse<{ logs: TaskLog[] }>>(
+        'task-logs',
+        { action: 'list', task_id: taskId }
+      );
+
+      if (res.success && res.data) {
+        setLogs(res.data.logs || []);
+      }
+    } catch (err) {
+      console.error('加载日志失败:', err);
+    }
+  }, [taskId]);
+
+  // 检查是否已关注
+  const checkFollowStatus = useCallback(async () => {
+    if (!taskId) return;
+
+    try {
+      const res = await callFunction<CloudResponse<{ is_followed: boolean }>>(
+        'task-follow',
+        { action: 'check', task_id: taskId }
+      );
+
+      if (res.success && res.data) {
+        setIsFollowed(res.data.is_followed);
+      }
+    } catch (err) {
+      console.error('检查关注状态失败:', err);
+    }
+  }, [taskId]);
+
+  // 关注/取消关注任务
+  const toggleFollow = async () => {
+    if (!taskId) return;
+
+    try {
+      const action = isFollowed ? 'unfollow' : 'follow';
+      const res = await callFunction<CloudResponse>(
+        'task-follow',
+        { action, task_id: taskId }
+      );
+
+      if (res.success) {
+        setIsFollowed(!isFollowed);
+        Taro.showToast({ 
+          title: isFollowed ? '已取消关注' : '关注成功', 
+          icon: 'success' 
+        });
+      } else {
+        Taro.showToast({ title: res.message || '操作失败', icon: 'none' });
+      }
+    } catch (err) {
+      console.error('关注操作失败:', err);
+      Taro.showToast({ title: '操作失败', icon: 'none' });
+    }
+  };
+
   useEffect(() => {
     if (taskId && openid) {
       loadTask();
       loadSubtasks();
+      checkFollowStatus();
     }
-  }, [taskId, openid, loadTask, loadSubtasks]);
+  }, [taskId, openid, loadTask, loadSubtasks, checkFollowStatus]);
 
   // 页面显示时刷新数据
   Taro.useDidShow(() => {
     if (taskId && openid) {
       loadTask();
       loadSubtasks();
+      checkFollowStatus();
     }
   });
 
@@ -155,7 +251,10 @@ export default function Detail() {
     if (currentTab === 'comment') {
       loadComments();
     }
-  }, [currentTab, loadComments]);
+    if (currentTab === 'log') {
+      loadLogs();
+    }
+  }, [currentTab, loadComments, loadLogs]);
 
   // 开始任务
   const startTask = async () => {
@@ -354,6 +453,14 @@ export default function Detail() {
             className="absolute right-3 top-16 bg-white rounded-lg shadow-lg overflow-hidden min-w-32"
             onClick={(e) => e.stopPropagation()}
           >
+            {/* 关注/取消关注 */}
+            <View
+              className="flex items-center px-4 py-3 border-b border-gray-100 active:bg-gray-50"
+              onClick={toggleFollow}
+            >
+              <Star size={18} color={isFollowed ? '#F59E0B' : '#4B5563'} />
+              <Text className="ml-2 text-base text-gray-800">{isFollowed ? '取消关注' : '关注任务'}</Text>
+            </View>
             {/* 分享 */}
             <Button 
               className="flex items-center justify-start w-full px-4 py-3 bg-white border-0 text-left"
@@ -527,6 +634,10 @@ export default function Detail() {
                   </Badge>
                 )}
               </TabsTrigger>
+              <TabsTrigger value="log" className="flex-1">
+                <History size={14} color="#6B7280" />
+                <Text className="ml-1">日志</Text>
+              </TabsTrigger>
               <TabsTrigger value="comment" className="flex-1">
                 <MessageCircle size={14} color="#6B7280" />
                 <Text className="ml-1">评论</Text>
@@ -611,6 +722,60 @@ export default function Detail() {
                   ) : (
                     <View className="flex justify-center py-8">
                       <Text className="text-sm text-gray-400">暂无子任务</Text>
+                    </View>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* 日志 Tab */}
+            <TabsContent value="log">
+              <Card>
+                <CardContent className="p-4">
+                  {logs.length > 0 ? (
+                    logs.map((log, index) => {
+                      const actionInfo = ACTION_TYPE_MAP[log.action_type] || { label: log.action_type, color: '#8c8c8c' };
+                      let detailText = '';
+                      
+                      try {
+                        const detail = JSON.parse(log.action_detail || '{}');
+                        if (log.action_type === 'priority') {
+                          detailText = `${detail.from || '-'} → ${detail.to || '-'}`;
+                        } else if (log.action_type === 'status') {
+                          detailText = `${STATUS_MAP[detail.from as keyof typeof STATUS_MAP]?.label || detail.from} → ${STATUS_MAP[detail.to as keyof typeof STATUS_MAP]?.label || detail.to}`;
+                        } else if (log.action_type === 'assign') {
+                          detailText = `${detail.from || '未分配'} → ${detail.to || '未分配'}`;
+                        } else if (log.action_type === 'create') {
+                          detailText = `优先级：${detail.priority || 'P2'}`;
+                        } else if (log.action_type === 'complete') {
+                          detailText = `完成于 ${detail.to || '未知'}`;
+                        }
+                      } catch {
+                        detailText = log.action_detail || '';
+                      }
+                      
+                      return (
+                        <View key={log._id} className={`flex items-start py-3 ${index < logs.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                          <View className="w-2 h-2 rounded-full mt-2 mr-3 flex-shrink-0" style={{ backgroundColor: actionInfo.color }} />
+                          <View className="flex-1">
+                            <View className="flex items-center justify-between mb-1">
+                              <Text className="text-sm font-medium text-gray-800">{actionInfo.label}</Text>
+                              <Text className="text-xs text-gray-400">{log.created_at}</Text>
+                            </View>
+                            {detailText && (
+                              <Text className="text-sm text-gray-500">{detailText}</Text>
+                            )}
+                            {log.operator_name && (
+                              <Text className="text-xs text-gray-400 mt-1">操作人：{log.operator_name}</Text>
+                            )}
+                          </View>
+                        </View>
+                      );
+                    })
+                  ) : (
+                    <View className="flex flex-col items-center justify-center py-8">
+                      <History size={48} color="#d1d5db" />
+                      <Text className="text-sm text-gray-400 mt-3">暂无操作日志</Text>
                     </View>
                   )}
                 </CardContent>

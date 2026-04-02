@@ -49,6 +49,142 @@
 
 ---
 
+## 🔥 统一交互规范（CRITICAL）
+
+### 一、加载状态
+
+所有页面必须使用统一的加载状态组件：
+
+```tsx
+// 1. 骨架屏加载（首屏）
+import { Skeleton } from '@/components/ui/skeleton';
+
+<Card>
+  <CardContent className="p-3">
+    <Skeleton className="h-6 w-3/4 mb-3" />
+    <Skeleton className="h-4 w-full mb-2" />
+    <Skeleton className="h-4 w-1/2" />
+  </CardContent>
+</Card>
+
+// 2. 局部加载遮罩（刷新时）
+{loading && hasData && (
+  <View className="fixed inset-0 flex items-center justify-center z-50 bg-black/20">
+    <View className="bg-white rounded-xl px-6 py-4 flex items-center gap-2 shadow-lg">
+      <Loader size={20} color="#1377EB" className="animate-spin" />
+      <Text className="text-gray-600">加载中...</Text>
+    </View>
+  </View>
+)}
+
+// 3. 下拉刷新（列表页）
+<ScrollView refresherEnabled refresherTriggered={refreshing} onRefresherRefresh={onRefresh}>
+  {/* 内容 */}
+</ScrollView>
+```
+
+### 二、空状态
+
+所有列表页面必须使用统一的空状态组件：
+
+```tsx
+import { EmptyState } from '@/components/empty-state';
+import { ClipboardList } from 'lucide-react-taro';
+
+// 无数据时
+<EmptyState 
+  icon={ClipboardList}
+  title="暂无任务"
+  description="点击右下角按钮创建新任务"
+  actionText="创建任务"
+  onAction={() => Taro.navigateTo({ url: '/pages/create/index' })}
+/>
+```
+
+### 三、筛选组件
+
+所有筛选必须使用统一的 Tabs 组件：
+
+```tsx
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+<Tabs value={filter} onValueChange={setFilter}>
+  <TabsList>
+    <TabsTrigger value="all">全部</TabsTrigger>
+    <TabsTrigger value="pending">待办</TabsTrigger>
+    <TabsTrigger value="in_progress">进行中</TabsTrigger>
+    <TabsTrigger value="completed">已完成</TabsTrigger>
+  </TabsList>
+</Tabs>
+```
+
+### 四、页面过渡动画
+
+所有页面切换必须使用统一的过渡效果：
+
+```tsx
+// 1. 卡片进入动画（CSS）
+.task-card {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// 2. 列表项交错进入
+{tasks.map((task, index) => (
+  <View 
+    key={task._id} 
+    className="task-card"
+    style={{ animationDelay: `${index * 50}ms` }}
+  >
+    {/* 任务卡片 */}
+  </View>
+))}
+```
+
+### 五、Toast 提示
+
+统一使用 Taro.showToast：
+
+```tsx
+// 成功提示
+Taro.showToast({ title: '操作成功', icon: 'success' });
+
+// 错误提示
+Taro.showToast({ title: '操作失败', icon: 'error' });
+
+// 普通提示
+Taro.showToast({ title: '请稍后重试', icon: 'none' });
+```
+
+### 六、确认弹窗
+
+统一使用 Taro.showModal：
+
+```tsx
+Taro.showModal({
+  title: '确认删除',
+  content: '删除后无法恢复，确定删除吗？',
+  confirmColor: '#EA4335',
+  success: (res) => {
+    if (res.confirm) {
+      // 确认操作
+    }
+  }
+});
+```
+
+---
+
 ## 组件使用原则
 
 ### 通用 UI 组件

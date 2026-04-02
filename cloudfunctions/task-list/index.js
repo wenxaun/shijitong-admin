@@ -55,17 +55,47 @@ exports.main = async (event, context) => {
       start_date,
       end_date,
       page = 1,
-      pageSize = 20
+      pageSize = 20,
+      view_type // 新增：视图类型（all/assigned/followed）
     } = event
     
     // 构建查询条件数组
     const conditions = []
     
-    // 查询我是执行人或发布人的任务
-    conditions.push(_.or([
-      { executor_id: OPENID },
-      { publisher_id: OPENID }
-    ]))
+    // 根据视图类型筛选
+    if (view_type === 'assigned') {
+      // 我分配的任务（我是发布人）
+      conditions.push({ publisher_id: OPENID })
+    } else if (view_type === 'followed') {
+      // 我关注的任务（查询 task_follows 表）
+      const followsResult = await db.collection('task_follows')
+        .where({ user_id: OPENID })
+        .field({ task_id: true })
+        .limit(100)
+        .get()
+      
+      const followedTaskIds = followsResult.data.map(f => f.task_id)
+      if (followedTaskIds.length === 0) {
+        // 没有关注的任务，返回空列表
+        return {
+          success: true,
+          data: {
+            tasks: [],
+            total: 0,
+            page,
+            pageSize,
+            hasMore: false
+          }
+        }
+      }
+      conditions.push({ _id: _.in(followedTaskIds) })
+    } else {
+      // 默认：查询我是执行人或发布人的任务
+      conditions.push(_.or([
+        { executor_id: OPENID },
+        { publisher_id: OPENID }
+      ]))
+    }
     
     // 按状态筛选
     if (status) {

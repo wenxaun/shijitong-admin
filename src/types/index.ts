@@ -270,3 +270,27 @@ export interface TaskListResponse {
   hasMore: boolean;
   total: number;
 }
+
+/**
+ * 任务操作日志
+ */
+export interface TaskLog {
+  _id: string;
+  task_id: string;
+  action_type: 'create' | 'update' | 'delete' | 'complete' | 'cancel' | 'assign' | 'priority' | 'status' | 'score' | 'exception' | 'follow' | 'unfollow';
+  action_detail: string;
+  operator_id: string;
+  operator_name: string;
+  created_at: string;
+}
+
+/**
+ * 任务关注
+ */
+export interface TaskFollow {
+  _id: string;
+  task_id: string;
+  user_id: string;
+  user_name: string;
+  created_at: string;
+}

@@ -161,6 +161,66 @@ exports.main = async (event, context) => {
     
     console.log('[task-update] 更新结果:', updateResult)
     
+    // 创建任务日志
+    const logEntries = []
+    
+    if (status && status !== task.status) {
+      logEntries.push({
+        task_id,
+        action_type: status === 'completed' ? 'complete' : 'status',
+        action_detail: JSON.stringify({
+          from: task.status,
+          to: status
+        }),
+        operator_id: OPENID,
+        operator_name: '',
+        created_at: new Date(),
+        created_by: OPENID
+      })
+    }
+    
+    if (priority && priority !== task.priority) {
+      logEntries.push({
+        task_id,
+        action_type: 'priority',
+        action_detail: JSON.stringify({
+          from: task.priority,
+          to: priority
+        }),
+        operator_id: OPENID,
+        operator_name: '',
+        created_at: new Date(),
+        created_by: OPENID
+      })
+    }
+    
+    if (executor_id && executor_id !== task.executor_id) {
+      logEntries.push({
+        task_id,
+        action_type: 'assign',
+        action_detail: JSON.stringify({
+          from: task.executor_name,
+          to: executor_name || executor_id
+        }),
+        operator_id: OPENID,
+        operator_name: '',
+        created_at: new Date(),
+        created_by: OPENID
+      })
+    }
+    
+    // 批量写入日志
+    if (logEntries.length > 0) {
+      try {
+        await db.collection('task_logs').add({
+          data: logEntries
+        })
+        console.log('[task-update] 日志记录成功')
+      } catch (logErr) {
+        console.error('[task-update] 日志记录失败:', logErr)
+      }
+    }
+    
     // 重新读取任务，确认数据已保存
     const updatedTask = await db.collection('tasks').doc(task_id).get()
     console.log('[task-update] 更新后的任务:', updatedTask.data)

@@ -12,15 +12,22 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Calendar } from '@/components/ui/calendar';
 import { DeadlineReminder } from '@/components/deadline-reminder';
-import { CalendarDays, Loader } from 'lucide-react-taro';
+import { CalendarDays, Loader, ListChecks, Send, Star } from 'lucide-react-taro';
 import { format } from 'date-fns';
 
 // 缓存时间（毫秒）
 const CACHE_DURATION = 2 * 60 * 1000; // 2分钟
 
+// 视图筛选选项
+const VIEW_FILTERS = [
+  { value: 'all', label: '全部', icon: 'ListChecks' },
+  { value: 'assigned', label: '我分配的', icon: 'Send' },
+  { value: 'followed', label: '我关注的', icon: 'Star' }
+];
+
 // 获取缓存键
-const getCacheKey = (statusFilter: string, timeFilter: string, customDateRange?: { from?: Date; to?: Date }) => {
-  let key = `tasks_cache_${statusFilter}_${timeFilter}`;
+const getCacheKey = (statusFilter: string, timeFilter: string, viewFilter: string, customDateRange?: { from?: Date; to?: Date }) => {
+  let key = `tasks_cache_${viewFilter}_${statusFilter}_${timeFilter}`;
   if (timeFilter === 'custom' && customDateRange?.from && customDateRange?.to) {
     key += `_${format(customDateRange.from, 'yyyyMMdd')}_${format(customDateRange.to, 'yyyyMMdd')}`;
   }
@@ -33,6 +40,7 @@ export default function Index() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [timeFilter, setTimeFilter] = useState<string>('all');
+  const [viewFilter, setViewFilter] = useState<string>('all');
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   
@@ -48,9 +56,9 @@ export default function Index() {
   const lastLoadTimeRef = useRef(0);
 
   // 从缓存加载数据
-  const loadFromCache = useCallback((status: string, time: string, customDateRange?: { from?: Date; to?: Date }) => {
+  const loadFromCache = useCallback((status: string, time: string, view: string, customDateRange?: { from?: Date; to?: Date }) => {
     try {
-      const cacheKey = getCacheKey(status, time, customDateRange);
+      const cacheKey = getCacheKey(status, time, view, customDateRange);
       const cached = Taro.getStorageSync(cacheKey);
       if (cached) {
         const cacheData = JSON.parse(cached);
@@ -68,9 +76,9 @@ export default function Index() {
   }, []);
 
   // 保存到缓存
-  const saveToCache = useCallback((status: string, time: string, data: Task[], customDateRange?: { from?: Date; to?: Date }) => {
+  const saveToCache = useCallback((status: string, time: string, view: string, data: Task[], customDateRange?: { from?: Date; to?: Date }) => {
     try {
-      const cacheKey = getCacheKey(status, time, customDateRange);
+      const cacheKey = getCacheKey(status, time, view, customDateRange);
       Taro.setStorageSync(cacheKey, JSON.stringify({
         tasks: data,
         timestamp: Date.now()
@@ -103,7 +111,7 @@ export default function Index() {
 
     // 非强制刷新时，先尝试从缓存加载
     if (!forceRefresh && refresh) {
-      const cachedData = loadFromCache(statusFilter, timeFilter, selectedDateRange);
+      const cachedData = loadFromCache(statusFilter, timeFilter, viewFilter, selectedDateRange);
       if (cachedData && cachedData.tasks) {
         setTasks(cachedData.tasks);
         tasksCountRef.current = cachedData.tasks.length;
@@ -124,7 +132,8 @@ export default function Index() {
       const params: Record<string, any> = {
         status: statusFilter === 'all' ? undefined : statusFilter,
         page: currentPage,
-        pageSize: 20
+        pageSize: 20,
+        view_type: viewFilter
       };
       
       if (timeFilter === 'custom' && selectedDateRange.from && selectedDateRange.to) {
@@ -146,7 +155,7 @@ export default function Index() {
           tasksCountRef.current = newTasks.length;
           setPage(1);
           // 保存到缓存
-          saveToCache(statusFilter, timeFilter, newTasks, selectedDateRange);
+          saveToCache(statusFilter, timeFilter, viewFilter, newTasks, selectedDateRange);
         } else {
           setTasks(prev => {
             const updated = [...prev, ...newTasks];
@@ -165,7 +174,7 @@ export default function Index() {
       isLoadingRef.current = false;
       setLoading(false);
     }
-  }, [openid, statusFilter, timeFilter, page, selectedDateRange, loadFromCache, saveToCache]);
+  }, [openid, statusFilter, timeFilter, viewFilter, page, selectedDateRange, loadFromCache, saveToCache]);
 
   // 初始化加载
   useEffect(() => {
@@ -203,7 +212,7 @@ export default function Index() {
       loadTasks(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, timeFilter, selectedDateRange]);
+  }, [statusFilter, timeFilter, viewFilter, selectedDateRange]);
 
   // 处理时间筛选点击
   const handleTimeFilterClick = (value: string) => {
@@ -412,6 +421,32 @@ export default function Index() {
 
       {/* 筛选栏 */}
       <View className="bg-white px-4 py-3 mb-2 border-b border-gray-100">
+        {/* 视图筛选 */}
+        <View className="flex items-center mb-2">
+          <Text className="text-sm text-gray-400 w-12">视图：</Text>
+          <ScrollView scrollX className="flex-1 whitespace-nowrap">
+            <View className="flex gap-2">
+              {VIEW_FILTERS.map((item) => {
+                const IconComponent = item.icon === 'ListChecks' ? ListChecks : item.icon === 'Send' ? Send : Star;
+                return (
+                  <View
+                    key={item.value}
+                    className={`px-3 py-2 rounded-full text-sm flex items-center gap-1 ${
+                      viewFilter === item.value
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-100 text-gray-600'
+                    }`}
+                    onClick={() => setViewFilter(item.value)}
+                  >
+                    <IconComponent size={14} color={viewFilter === item.value ? '#ffffff' : '#6B7280'} />
+                    <Text>{item.label}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          </ScrollView>
+        </View>
+
         {/* 时间筛选 */}
         <View className="flex items-center mb-2">
           <Text className="text-sm text-gray-400 w-12">时间：</Text>

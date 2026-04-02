@@ -93,6 +93,31 @@ exports.main = async (event, context) => {
     })
     
     console.log('[task-create] 任务创建成功, task_id:', result._id)
+    
+    // 创建任务日志
+    try {
+      await db.collection('task_logs').add({
+        data: {
+          task_id: result._id,
+          action_type: 'create',
+          action_detail: JSON.stringify({
+            task_name,
+            priority,
+            executor_name: finalExecutorName,
+            require_date
+          }),
+          operator_id: OPENID,
+          operator_name: '',
+          created_at: now,
+          created_by: OPENID
+        }
+      })
+      console.log('[task-create] 日志记录成功')
+    } catch (logErr) {
+      console.error('[task-create] 日志记录失败:', logErr)
+      // 日志记录失败不影响任务创建
+    }
+    
     console.log('===== task-create 执行结束 =====')
     
     return {
