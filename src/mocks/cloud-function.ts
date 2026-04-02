@@ -70,6 +70,8 @@ export const mockCloudFunction = async (name: string, data?: any): Promise<any> 
         publisher_id: 'mock_openid',
         executor_id: data?.executor_id || 'mock_openid',
         require_date: data?.require_date || new Date().toISOString().split('T')[0],
+        repeat_type: data?.repeat_type || 'none',
+        repeat_end_date: data?.repeat_end_date,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };

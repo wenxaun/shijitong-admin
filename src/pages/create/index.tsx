@@ -26,6 +26,16 @@ const PRIORITY_STYLE: Record<TaskPriority, string> = {
   P3: 'border-gray-300 bg-gray-50'
 };
 
+// 重复类型
+type RepeatType = 'none' | 'daily' | 'weekly' | 'monthly' | 'custom';
+
+const REPEAT_OPTIONS: { value: RepeatType; label: string; desc: string }[] = [
+  { value: 'none', label: '不重复', desc: '单次任务' },
+  { value: 'daily', label: '每天', desc: '每日重复' },
+  { value: 'weekly', label: '每周', desc: '每周重复' },
+  { value: 'monthly', label: '每月', desc: '每月重复' }
+];
+
 interface Executor {
   id: string;
   openid: string;
@@ -46,6 +56,8 @@ export default function Create() {
   const [showAddGroupDialog, setShowAddGroupDialog] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
   const [addingGroup, setAddingGroup] = useState(false);
+  const [repeatType, setRepeatType] = useState<RepeatType>('none');
+  const [repeatEndDate, setRepeatEndDate] = useState('');
 
   // 加载数据
   useEffect(() => {
@@ -187,7 +199,9 @@ export default function Create() {
         group_name: groupName || undefined,
         executor_id: executorId,
         executor_name: executorName,
-        require_date: requireDate
+        require_date: requireDate,
+        repeat_type: repeatType,
+        repeat_end_date: repeatEndDate || undefined
       });
       
       const res = await callFunction<CloudResponse>(
@@ -201,7 +215,9 @@ export default function Create() {
           group_name: groupName || undefined,
           executor_id: executorId,
           executor_name: executorName,
-          require_date: requireDate
+          require_date: requireDate,
+          repeat_type: repeatType,
+          repeat_end_date: repeatEndDate || undefined
         }
       );
 
@@ -364,6 +380,43 @@ export default function Create() {
                 <Text className="text-gray-400">📅</Text>
               </View>
             </Picker>
+          </CardContent>
+        </Card>
+
+        {/* 重复设置 */}
+        <Card>
+          <CardContent className="p-3">
+            <Label className="text-sm text-gray-500 mb-3">重复设置</Label>
+            <View className="grid grid-cols-4 gap-2 mb-3">
+              {REPEAT_OPTIONS.map((item) => (
+                <View
+                  key={item.value}
+                  className={`flex flex-col items-center justify-center p-2 rounded-lg border-2 transition-all ${
+                    repeatType === item.value
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 bg-white'
+                  }`}
+                  onClick={() => setRepeatType(item.value)}
+                >
+                  <Text className="text-sm font-medium">{item.label}</Text>
+                  <Text className="text-xs text-gray-500">{item.desc}</Text>
+                </View>
+              ))}
+            </View>
+            
+            {repeatType !== 'none' && (
+              <View className="mt-2 pt-2 border-t border-gray-100">
+                <Label className="text-xs text-gray-400 mb-1">重复截止日期（可选）</Label>
+                <Picker mode="date" value={repeatEndDate} onChange={(e) => setRepeatEndDate(e.detail.value)}>
+                  <View className="bg-gray-50 rounded-lg px-3 py-2 flex items-center justify-between border border-gray-200">
+                    <Text className={repeatEndDate ? 'text-gray-800' : 'text-gray-400'}>
+                      {repeatEndDate || '不设置截止日期'}
+                    </Text>
+                    <Text className="text-gray-400">📅</Text>
+                  </View>
+                </Picker>
+              </View>
+            )}
           </CardContent>
         </Card>
 

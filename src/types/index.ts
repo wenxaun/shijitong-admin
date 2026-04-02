@@ -62,6 +62,10 @@ export interface Task {
   hidden_at?: string; // 隐藏时间
   // 来源追溯字段
   source?: TaskSource;           // 任务来源信息
+  // 重复任务字段
+  repeat_type?: 'none' | 'daily' | 'weekly' | 'monthly' | 'custom'; // 重复类型
+  repeat_end_date?: string;      // 重复截止日期
+  repeat_parent_id?: string;     // 原始任务ID（用于追踪重复任务来源）
   created_at: string;
   updated_at: string;
 }

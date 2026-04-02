@@ -1,9 +1,10 @@
 import { View, Text, ScrollView } from '@tarojs/components';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Taro from '@tarojs/taro';
 import { useUserStore } from '@/stores/user';
 import { callFunction, CLOUD_FUNCTIONS } from '@/utils/cloud';
-import { Task, CloudResponse, TaskListResponse } from '@/types';
+import { Network } from '@/network';
+import { Task, CloudResponse, TaskListResponse, TaskStatus } from '@/types';
 import { STATUS_MAP, STATUS_FILTERS, TIME_FILTERS, PRIORITY_STYLE } from '@/constants';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +13,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Calendar } from '@/components/ui/calendar';
 import { DeadlineReminder } from '@/components/deadline-reminder';
-import { CalendarDays, Loader, ListChecks, Send, Star } from 'lucide-react-taro';
+import { toast } from '@/components/ui/toast';
+import { EmptyState } from '@/components/ui/empty-state';
+import { CalendarDays, Loader, ListChecks, Send, Star, ChevronDown, ChevronRight } from 'lucide-react-taro';
 import { format } from 'date-fns';
 
 // 缓存时间（毫秒）
@@ -23,6 +26,47 @@ const VIEW_FILTERS = [
   { value: 'all', label: '全部', icon: 'ListChecks' },
   { value: 'assigned', label: '我分配的', icon: 'Send' },
   { value: 'followed', label: '我关注的', icon: 'Star' }
+];
+
+// 分组类型
+const GROUP_TYPES = [
+  { value: 'none', label: '列表' },
+  { value: 'priority', label: '按优先级' },
+  { value: 'status', label: '按状态' },
+  { value: 'time', label: '按时间' },
+  { value: 'kanban', label: '看板' }
+];
+
+// 看板列配置
+const KANBAN_COLUMNS = [
+  { key: 'pending', label: '待办', color: 'bg-gray-100', borderColor: 'border-gray-300' },
+  { key: 'in_progress', label: '进行中', color: 'bg-blue-50', borderColor: 'border-blue-300' },
+  { key: 'completed', label: '已完成', color: 'bg-green-50', borderColor: 'border-green-300' }
+];
+
+// 优先级分组配置
+const PRIORITY_GROUPS = [
+  { key: 'P0', label: 'P0 紧急', color: 'text-red-500', bgColor: 'bg-red-50' },
+  { key: 'P1', label: 'P1 高', color: 'text-orange-500', bgColor: 'bg-orange-50' },
+  { key: 'P2', label: 'P2 中', color: 'text-blue-500', bgColor: 'bg-blue-50' },
+  { key: 'P3', label: 'P3 低', color: 'text-gray-400', bgColor: 'bg-gray-50' }
+];
+
+// 状态分组配置
+const STATUS_GROUPS = [
+  { key: 'pending', label: '待办', color: 'text-gray-600', bgColor: 'bg-gray-100' },
+  { key: 'in_progress', label: '进行中', color: 'text-blue-500', bgColor: 'bg-blue-50' },
+  { key: 'completed', label: '已完成', color: 'text-green-500', bgColor: 'bg-green-50' },
+  { key: 'cancelled', label: '已取消', color: 'text-red-500', bgColor: 'bg-red-50' }
+];
+
+// 时间分组配置
+const TIME_GROUPS = [
+  { key: 'overdue', label: '已逾期', color: 'text-red-500', bgColor: 'bg-red-50' },
+  { key: 'today', label: '今日截止', color: 'text-orange-500', bgColor: 'bg-orange-50' },
+  { key: 'week', label: '本周截止', color: 'text-blue-500', bgColor: 'bg-blue-50' },
+  { key: 'month', label: '本月截止', color: 'text-green-500', bgColor: 'bg-green-50' },
+  { key: 'later', label: '以后', color: 'text-gray-400', bgColor: 'bg-gray-50' }
 ];
 
 // 获取缓存键
@@ -41,6 +85,8 @@ export default function Index() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [timeFilter, setTimeFilter] = useState<string>('all');
   const [viewFilter, setViewFilter] = useState<string>('all');
+  const [groupType, setGroupType] = useState<string>('none');
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   
@@ -54,6 +100,77 @@ export default function Index() {
   const tasksCountRef = useRef(0);
   const hasInitializedRef = useRef(false);
   const lastLoadTimeRef = useRef(0);
+
+  // 分组任务数据
+  const groupedTasks = useMemo(() => {
+    if (groupType === 'none') return null;
+    
+    const groups: Record<string, Task[]> = {};
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const endOfWeek = new Date(today);
+    endOfWeek.setDate(endOfWeek.getDate() + (7 - today.getDay()));
+    endOfWeek.setHours(23, 59, 59, 999);
+    
+    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
+    
+    tasks.forEach(task => {
+      let groupKey = '';
+      
+      if (groupType === 'priority') {
+        groupKey = task.priority || 'P2';
+      } else if (groupType === 'status') {
+        groupKey = task.status;
+      } else if (groupType === 'time') {
+        const requireDate = new Date(task.require_date);
+        requireDate.setHours(0, 0, 0, 0);
+        
+        if (task.status === 'completed' || task.status === 'cancelled') {
+          return; // 不显示已完成/已取消的任务
+        }
+        
+        if (requireDate < today) {
+          groupKey = 'overdue';
+        } else if (requireDate.getTime() === today.getTime()) {
+          groupKey = 'today';
+        } else if (requireDate <= endOfWeek) {
+          groupKey = 'week';
+        } else if (requireDate <= endOfMonth) {
+          groupKey = 'month';
+        } else {
+          groupKey = 'later';
+        }
+      }
+      
+      if (!groups[groupKey]) {
+        groups[groupKey] = [];
+      }
+      groups[groupKey].push(task);
+    });
+    
+    return groups;
+  }, [tasks, groupType]);
+
+  // 切换分组展开状态
+  const toggleGroup = (groupKey: string) => {
+    setExpandedGroups(prev => ({
+      ...prev,
+      [groupKey]: !prev[groupKey]
+    }));
+  };
+
+  // 获取分组配置
+  const getGroupConfig = (groupKey: string) => {
+    if (groupType === 'priority') {
+      return PRIORITY_GROUPS.find(g => g.key === groupKey);
+    } else if (groupType === 'status') {
+      return STATUS_GROUPS.find(g => g.key === groupKey);
+    } else if (groupType === 'time') {
+      return TIME_GROUPS.find(g => g.key === groupKey);
+    }
+    return null;
+  };
 
   // 从缓存加载数据
   const loadFromCache = useCallback((status: string, time: string, view: string, customDateRange?: { from?: Date; to?: Date }) => {
@@ -253,6 +370,11 @@ export default function Index() {
     Taro.navigateTo({ url: `/pages/detail/index?id=${taskId}` });
   };
 
+  // 处理任务点击（看板视图用）
+  const handleTaskPress = (task: Task) => {
+    goDetail(task.task_id);
+  };
+
   // 渲染任务卡片
   const renderTaskCard = (task: Task) => {
     const requireDate = new Date(task.require_date);
@@ -381,13 +503,183 @@ export default function Index() {
     );
   };
 
+  // 处理任务状态变更（看板视图用）
+  const handleTaskStatusChange = async (taskId: string, newStatus: TaskStatus) => {
+    try {
+      const task = tasks.find(t => t.task_id === taskId);
+      if (!task) return;
+
+      // 更新本地状态
+      setTasks(prev => prev.map(t => 
+        t.task_id === taskId ? { ...t, status: newStatus } : t
+      ));
+
+      // 如果状态变为已完成，设置完成时间
+      const updateData: any = { 
+        status: newStatus,
+        task_status: newStatus
+      };
+      
+      if (newStatus === 'completed') {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        updateData.complete_date = `${year}-${month}-${day}`;
+        updateData.progress = 100;
+      }
+
+      // 调用后端更新
+      await Network.request({
+        url: `/api/tasks/${taskId}`,
+        method: 'PUT',
+        data: updateData
+      });
+
+      toast.success('状态已更新');
+    } catch (error) {
+      console.error('更新任务状态失败:', error);
+      toast.error('更新失败');
+      // 回滚
+      loadTasks();
+    }
+  };
+
+  // 看板视图组件
+  const KanbanView = ({ tasks: taskList, onTaskPress, onStatusChange }: { 
+    tasks: Task[]; 
+    onTaskPress: (task: Task) => void;
+    onStatusChange: (taskId: string, newStatus: TaskStatus) => void;
+  }) => {
+    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+    const [showStatusPicker, setShowStatusPicker] = useState(false);
+
+    // 按状态分组
+    const columns: Record<string, Task[]> = {
+      pending: taskList.filter(t => t.status === 'pending'),
+      in_progress: taskList.filter(t => t.status === 'in_progress'),
+      completed: taskList.filter(t => t.status === 'completed')
+    };
+
+    // 处理长按
+    const handleLongPress = (task: Task) => {
+      Taro.vibrateShort({ type: 'medium' });
+      setSelectedTask(task);
+      setShowStatusPicker(true);
+    };
+
+    // 切换状态
+    const handleStatusSelect = async (newStatus: TaskStatus) => {
+      if (selectedTask && newStatus !== selectedTask.status) {
+        await onStatusChange(selectedTask.task_id, newStatus);
+      }
+      setShowStatusPicker(false);
+      setSelectedTask(null);
+    };
+
+    // 渲染看板卡片
+    const renderKanbanCard = (task: Task) => (
+      <Card 
+        key={task._id} 
+        className="mb-2"
+        onClick={() => onTaskPress(task)}
+        onLongPress={() => handleLongPress(task)}
+      >
+        <CardContent className="p-3">
+          <Text className="text-sm font-medium text-gray-800 line-clamp-2 mb-2">
+            {task.task_name}
+          </Text>
+          <View className="flex items-center justify-between">
+            <Badge className={PRIORITY_STYLE[task.priority].bg + ' ' + PRIORITY_STYLE[task.priority].text}>
+              {task.priority}
+            </Badge>
+            {task.executor_name && (
+              <View className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center">
+                <Text className="text-xs text-blue-500">{task.executor_name[0]}</Text>
+              </View>
+            )}
+          </View>
+          {task.require_date && (
+            <Text className="text-xs text-gray-400 mt-2">
+              截止: {task.require_date}
+            </Text>
+          )}
+        </CardContent>
+      </Card>
+    );
+
+    return (
+      <>
+        <ScrollView scrollX className="whitespace-nowrap">
+          <View className="flex flex-row gap-3 py-2" style={{ minWidth: '100%' }}>
+            {KANBAN_COLUMNS.map(column => (
+              <View 
+                key={column.key} 
+                className={`flex-shrink-0 w-72 ${column.color} rounded-lg p-3 border ${column.borderColor}`}
+              >
+                {/* 列标题 */}
+                <View className="flex items-center justify-between mb-3">
+                  <Text className="text-sm font-semibold text-gray-700">{column.label}</Text>
+                  <View className="px-2 py-1 rounded-full bg-white">
+                    <Text className="text-xs text-gray-500">{columns[column.key]?.length || 0}</Text>
+                  </View>
+                </View>
+                
+                {/* 任务卡片 */}
+                <View>
+                  {columns[column.key]?.map(renderKanbanCard)}
+                  {(!columns[column.key] || columns[column.key].length === 0) && (
+                    <View className="py-8 flex items-center justify-center">
+                      <Text className="text-xs text-gray-400">暂无任务</Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+            ))}
+          </View>
+        </ScrollView>
+
+        {/* 状态选择弹窗 */}
+        <Dialog open={showStatusPicker} onOpenChange={setShowStatusPicker}>
+          <DialogContent className="max-w-xs">
+            <DialogHeader>
+              <DialogTitle>移动到</DialogTitle>
+            </DialogHeader>
+            <View className="py-2">
+              {KANBAN_COLUMNS.map(column => (
+                <View
+                  key={column.key}
+                  className={`flex items-center px-4 py-3 rounded-lg mb-2 ${column.color} ${
+                    selectedTask?.status === column.key ? 'opacity-50' : ''
+                  }`}
+                  onClick={() => handleStatusSelect(column.key as TaskStatus)}
+                >
+                  <Text className="text-sm font-medium text-gray-700">{column.label}</Text>
+                  {selectedTask?.status === column.key && (
+                    <Text className="text-xs text-gray-400 ml-2">当前状态</Text>
+                  )}
+                </View>
+              ))}
+            </View>
+          </DialogContent>
+        </Dialog>
+      </>
+    );
+  };
+
   // 渲染空状态
   const renderEmpty = () => (
-    <View className="flex flex-col items-center justify-center py-20">
-      <Text className="text-6xl mb-4 opacity-30">📋</Text>
-      <Text className="text-lg font-semibold text-gray-800 mb-2">暂无任务</Text>
-      <Text className="text-sm text-gray-500">点击下方「发布」创建新任务</Text>
-    </View>
+    <EmptyState 
+      type="tasks"
+      action={
+        <Button 
+          size="sm"
+          onClick={() => Taro.switchTab({ url: '/pages/publish/index' })}
+        >
+          创建任务
+        </Button>
+      }
+    />
   );
 
   // 渲染加载中
@@ -403,6 +695,61 @@ export default function Index() {
       ))}
     </View>
   );
+
+  // 渲染分组任务
+  const renderGroupedTasks = () => {
+    if (!groupedTasks) return null;
+    
+    // 确定分组顺序
+    const groupOrder = groupType === 'priority' 
+      ? PRIORITY_GROUPS.map(g => g.key)
+      : groupType === 'status'
+      ? STATUS_GROUPS.map(g => g.key)
+      : TIME_GROUPS.map(g => g.key);
+    
+    return (
+      <>
+        {groupOrder.map(groupKey => {
+          const groupTasks = groupedTasks[groupKey];
+          if (!groupTasks || groupTasks.length === 0) return null;
+          
+          const config = getGroupConfig(groupKey);
+          if (!config) return null;
+          
+          const isExpanded = expandedGroups[groupKey] !== false; // 默认展开
+          
+          return (
+            <View key={groupKey} className="mb-4">
+              {/* 分组标题 */}
+              <View 
+                className={`flex flex-row items-center py-2 px-3 rounded-lg ${config.bgColor} mb-2`}
+                onClick={() => toggleGroup(groupKey)}
+              >
+                {isExpanded ? (
+                  <ChevronDown size={18} color={config.color.replace('text-', '').replace('-500', '')} />
+                ) : (
+                  <ChevronRight size={18} color={config.color.replace('text-', '').replace('-500', '')} />
+                )}
+                <Text className={`text-sm font-medium ${config.color} ml-1`}>
+                  {config.label}
+                </Text>
+                <View className="px-2 py-1 rounded-full bg-white ml-2">
+                  <Text className="text-xs text-gray-500">{groupTasks.length}</Text>
+                </View>
+              </View>
+              
+              {/* 分组任务列表 */}
+              {isExpanded && (
+                <View>
+                  {groupTasks.map(renderTaskCard)}
+                </View>
+              )}
+            </View>
+          );
+        })}
+      </>
+    );
+  };
 
   return (
     <View className="min-h-screen bg-gray-50">
@@ -497,6 +844,28 @@ export default function Index() {
             </View>
           </ScrollView>
         </View>
+
+        {/* 分组模式 */}
+        <View className="flex items-center mt-2 pt-2 border-t border-gray-100">
+          <Text className="text-sm text-gray-400 w-12 flex-shrink-0">分组：</Text>
+          <ScrollView scrollX className="flex-1 whitespace-nowrap">
+            <View className="flex flex-row gap-2">
+              {GROUP_TYPES.map((item) => (
+                <View
+                  key={item.value}
+                  className={`h-8 px-3 rounded-full flex flex-row items-center justify-center ${
+                    groupType === item.value
+                      ? 'bg-blue-500'
+                      : 'bg-gray-100'
+                  }`}
+                  onClick={() => setGroupType(item.value)}
+                >
+                  <Text className={`text-sm ${groupType === item.value ? 'text-white' : 'text-gray-600'}`}>{item.label}</Text>
+                </View>
+              ))}
+            </View>
+          </ScrollView>
+        </View>
       </View>
 
       {/* 任务列表 */}
@@ -505,7 +874,18 @@ export default function Index() {
           renderLoading()
         ) : tasks.length === 0 ? (
           renderEmpty()
+        ) : groupType === 'kanban' ? (
+          // 看板视图
+          <KanbanView
+            tasks={tasks}
+            onTaskPress={handleTaskPress}
+            onStatusChange={handleTaskStatusChange}
+          />
+        ) : groupType !== 'none' && groupedTasks ? (
+          // 分组视图
+          renderGroupedTasks()
         ) : (
+          // 列表视图
           <>
             {tasks.map(renderTaskCard)}
             {hasMore && (
