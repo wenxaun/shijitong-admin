@@ -455,39 +455,61 @@ export default function Detail() {
           >
             {/* 关注/取消关注 */}
             <View
-              className="flex items-center px-4 py-3 border-b border-gray-100 active:bg-gray-50"
+              className="flex flex-row items-center h-11 px-4 active:bg-gray-50"
               onClick={toggleFollow}
             >
-              <Star size={18} color={isFollowed ? '#F59E0B' : '#4B5563'} />
+              <View className="w-5 flex items-center justify-center">
+                <Star size={18} color={isFollowed ? '#F59E0B' : '#4B5563'} />
+              </View>
               <Text className="ml-2 text-base text-gray-800">{isFollowed ? '取消关注' : '关注任务'}</Text>
             </View>
+            
+            {/* 分割线 */}
+            <View className="h-px bg-gray-100 ml-4 mr-4" />
+            
             {/* 分享 */}
             <Button 
-              className="flex items-center justify-start w-full px-4 py-3 bg-white border-0 text-left"
+              className="flex flex-row items-center h-11 w-full px-4 bg-white border-0 rounded-none text-left"
+              style={{ padding: '0 16px', lineHeight: 'normal' }}
               openType="share"
+              onClick={() => setShowMoreMenu(false)}
             >
-              <Share2 size={18} color="#4B5563" />
+              <View className="w-5 flex items-center justify-center">
+                <Share2 size={18} color="#4B5563" />
+              </View>
               <Text className="ml-2 text-base text-gray-800">分享任务</Text>
             </Button>
+            
             {/* 编辑 */}
             {canEdit && (
-              <View
-                className="flex items-center px-4 py-3 border-t border-gray-100 active:bg-gray-50"
-                onClick={editTask}
-              >
-                <Pencil size={18} color="#4B5563" />
-                <Text className="ml-2 text-base text-gray-800">编辑任务</Text>
-              </View>
+              <>
+                <View className="h-px bg-gray-100 ml-4 mr-4" />
+                <View
+                  className="flex flex-row items-center h-11 px-4 active:bg-gray-50"
+                  onClick={editTask}
+                >
+                  <View className="w-5 flex items-center justify-center">
+                    <Pencil size={18} color="#4B5563" />
+                  </View>
+                  <Text className="ml-2 text-base text-gray-800">编辑任务</Text>
+                </View>
+              </>
             )}
+            
             {/* 删除 */}
             {canDelete && (
-              <View
-                className="flex items-center px-4 py-3 border-t border-gray-100 active:bg-gray-50"
-                onClick={deleteTask}
-              >
-                <Trash2 size={18} color="#EF4444" />
-                <Text className="ml-2 text-base text-red-500">删除任务</Text>
-              </View>
+              <>
+                <View className="h-px bg-gray-100 ml-4 mr-4" />
+                <View
+                  className="flex flex-row items-center h-11 px-4 active:bg-gray-50"
+                  onClick={deleteTask}
+                >
+                  <View className="w-5 flex items-center justify-center">
+                    <Trash2 size={18} color="#EF4444" />
+                  </View>
+                  <Text className="ml-2 text-base text-red-500">删除任务</Text>
+                </View>
+              </>
             )}
           </View>
         </View>
