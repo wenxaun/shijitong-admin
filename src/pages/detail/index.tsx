@@ -98,6 +98,8 @@ export default function Detail() {
   const canDelete = isPublisher && task?.status === 'pending';
   // 操作权限：创建人或执行人可以操作（开始、完成、异常上报）
   const canOperate = isPublisher || isExecutor;
+  // 关注权限：非创建人且非执行人才能关注（创建人和执行人本身就与任务关联，无需关注）
+  const canFollow = !isPublisher && !isExecutor;
 
   // 加载任务详情
   const loadTask = useCallback(async () => {
@@ -114,8 +116,29 @@ export default function Detail() {
         setTask(res.data.task);
         setPublisherName(res.data.publisher_name);
         setExecutorName(res.data.executor_name);
-        setIsPublisher(res.data.task.publisher_id === openid);
-        setIsExecutor(res.data.task.executor_id === openid);
+        const isPublisherUser = res.data.task.publisher_id === openid;
+        const isExecutorUser = res.data.task.executor_id === openid;
+        setIsPublisher(isPublisherUser);
+        setIsExecutor(isExecutorUser);
+        
+        // 只有非创建人、非执行人才需要检查关注状态
+        if (!isPublisherUser && !isExecutorUser) {
+          // 内联检查关注状态
+          try {
+            const followRes = await callFunction<CloudResponse<{ is_followed: boolean }>>(
+              'task-follow',
+              { action: 'check', task_id: taskId }
+            );
+            if (followRes.success && followRes.data) {
+              setIsFollowed(followRes.data.is_followed);
+            }
+          } catch (err) {
+            console.error('检查关注状态失败:', err);
+          }
+        } else {
+          // 创建人或执行人，重置关注状态
+          setIsFollowed(false);
+        }
       }
     } catch (err) {
       console.error('加载任务失败:', err);
@@ -186,24 +209,6 @@ export default function Detail() {
     }
   }, [taskId]);
 
-  // 检查是否已关注
-  const checkFollowStatus = useCallback(async () => {
-    if (!taskId) return;
-
-    try {
-      const res = await callFunction<CloudResponse<{ is_followed: boolean }>>(
-        'task-follow',
-        { action: 'check', task_id: taskId }
-      );
-
-      if (res.success && res.data) {
-        setIsFollowed(res.data.is_followed);
-      }
-    } catch (err) {
-      console.error('检查关注状态失败:', err);
-    }
-  }, [taskId]);
-
   // 关注/取消关注任务
   const toggleFollow = async () => {
     if (!taskId) return;
@@ -234,16 +239,14 @@ export default function Detail() {
     if (taskId && openid) {
       loadTask();
       loadSubtasks();
-      checkFollowStatus();
     }
-  }, [taskId, openid, loadTask, loadSubtasks, checkFollowStatus]);
+  }, [taskId, openid, loadTask, loadSubtasks]);
 
   // 页面显示时刷新数据
   Taro.useDidShow(() => {
     if (taskId && openid) {
       loadTask();
       loadSubtasks();
-      checkFollowStatus();
     }
   });
 
@@ -453,21 +456,23 @@ export default function Detail() {
             className="absolute right-3 top-16 bg-white rounded-lg shadow-lg overflow-hidden min-w-32"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* 关注/取消关注 */}
-            <View
-              className="flex flex-row items-center h-11 px-4 active:bg-gray-50"
-              onClick={toggleFollow}
-            >
-              <View className="w-5 flex items-center justify-center">
-                <Star size={18} color={isFollowed ? '#F59E0B' : '#4B5563'} />
-              </View>
-              <Text className="ml-2 text-base text-gray-800">{isFollowed ? '取消关注' : '关注任务'}</Text>
-            </View>
+            {/* 关注/取消关注 - 只有非创建人、非执行人才显示 */}
+            {canFollow && (
+              <>
+                <View
+                  className="flex flex-row items-center h-11 px-4 active:bg-gray-50"
+                  onClick={toggleFollow}
+                >
+                  <View className="w-5 flex items-center justify-center">
+                    <Star size={18} color={isFollowed ? '#F59E0B' : '#4B5563'} />
+                  </View>
+                  <Text className="ml-2 text-base text-gray-800">{isFollowed ? '取消关注' : '关注任务'}</Text>
+                </View>
+                <View className="h-px bg-gray-100 ml-4 mr-4" />
+              </>
+            )}
             
-            {/* 分割线 */}
-            <View className="h-px bg-gray-100 ml-4 mr-4" />
-            
-            {/* 分享 */}
+            {/* 分享 - 始终显示 */}
             <Button 
               className="flex flex-row items-center h-11 w-full px-4 bg-white border-0 rounded-none text-left"
               style={{ padding: '0 16px', lineHeight: 'normal' }}
