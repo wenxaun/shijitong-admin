@@ -552,6 +552,10 @@ export default function Index() {
     onTaskPress: (task: Task) => void;
     onStatusChange: (taskId: string, newStatus: TaskStatus) => void;
   }) => {
+    const [confirmTask, setConfirmTask] = useState<Task | null>(null);
+    const [confirmStatus, setConfirmStatus] = useState<TaskStatus | null>(null);
+    const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+
     // 按状态分组
     const columns: Record<string, Task[]> = {
       pending: taskList.filter(t => t.status === 'pending'),
@@ -569,13 +573,44 @@ export default function Index() {
       return null;
     };
 
-    // 快速切换到下一状态
-    const handleQuickAction = async (task: Task, e: any) => {
+    // 获取状态显示名称
+    const getStatusLabel = (status: TaskStatus): string => {
+      const labels: Record<TaskStatus, string> = {
+        pending: '待办',
+        in_progress: '进行中',
+        completed: '已完成',
+        cancelled: '已取消',
+        exception: '异常'
+      };
+      return labels[status] || status;
+    };
+
+    // 点击快捷按钮 - 弹出确认对话框
+    const handleQuickAction = (task: Task, e: any) => {
       e.stopPropagation();
       const nextStatus = getNextStatus(task.status);
       if (nextStatus) {
-        await onStatusChange(task.task_id, nextStatus);
+        setConfirmTask(task);
+        setConfirmStatus(nextStatus);
+        setShowConfirmDialog(true);
       }
+    };
+
+    // 确认切换状态
+    const handleConfirmStatusChange = async () => {
+      if (confirmTask && confirmStatus) {
+        await onStatusChange(confirmTask.task_id, confirmStatus);
+      }
+      setShowConfirmDialog(false);
+      setConfirmTask(null);
+      setConfirmStatus(null);
+    };
+
+    // 取消切换
+    const handleCancelStatusChange = () => {
+      setShowConfirmDialog(false);
+      setConfirmTask(null);
+      setConfirmStatus(null);
     };
 
     // 渲染看板卡片
@@ -596,7 +631,7 @@ export default function Index() {
             </View>
             {nextStatus && (
               <View 
-                className="flex-shrink-0 w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center"
+                className="flex-shrink-0 w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center active:bg-blue-100"
                 onClick={(e) => handleQuickAction(task, e)}
               >
                 <Text className="text-blue-500 text-lg">→</Text>
@@ -629,36 +664,67 @@ export default function Index() {
     };
 
     return (
-      <View className="py-2">
-        {KANBAN_COLUMNS.map(column => (
-          <View key={column.key} className="mb-4">
-            {/* 列标题 */}
-            <View 
-              className={`flex items-center justify-between px-3 py-2 rounded-lg ${column.color} mb-2`}
-            >
-              <View className="flex items-center gap-2">
-                <Text className="text-sm font-semibold text-gray-700">{column.label}</Text>
-                <View className="px-2 py-1 rounded-full bg-white">
-                  <Text className="text-xs text-gray-600">{columns[column.key]?.length || 0}</Text>
+      <>
+        <View className="py-2">
+          {KANBAN_COLUMNS.map(column => (
+            <View key={column.key} className="mb-4">
+              {/* 列标题 */}
+              <View 
+                className={`flex items-center justify-between px-3 py-2 rounded-lg ${column.color} mb-2`}
+              >
+                <View className="flex items-center gap-2">
+                  <Text className="text-sm font-semibold text-gray-700">{column.label}</Text>
+                  <View className="px-2 py-1 rounded-full bg-white">
+                    <Text className="text-xs text-gray-600">{columns[column.key]?.length || 0}</Text>
+                  </View>
                 </View>
               </View>
-              {column.key === 'completed' && columns[column.key]?.length > 0 && (
-                <Text className="text-xs text-gray-500">点击查看详情</Text>
-              )}
+              
+              {/* 任务列表 */}
+              <View className="px-1">
+                {columns[column.key]?.map(renderKanbanCard)}
+                {(!columns[column.key] || columns[column.key].length === 0) && (
+                  <View className="py-6 flex items-center justify-center bg-gray-50 rounded-lg">
+                    <Text className="text-xs text-gray-400">暂无{column.label}任务</Text>
+                  </View>
+                )}
+              </View>
             </View>
-            
-            {/* 任务列表 */}
-            <View className="px-1">
-              {columns[column.key]?.map(renderKanbanCard)}
-              {(!columns[column.key] || columns[column.key].length === 0) && (
-                <View className="py-6 flex items-center justify-center bg-gray-50 rounded-lg">
-                  <Text className="text-xs text-gray-400">暂无{column.label}任务</Text>
-                </View>
-              )}
+          ))}
+        </View>
+
+        {/* 确认切换状态对话框 */}
+        <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+          <DialogContent className="max-w-xs">
+            <DialogHeader>
+              <DialogTitle>确认切换状态</DialogTitle>
+            </DialogHeader>
+            <View className="py-4">
+              <Text className="text-sm text-gray-600 mb-2">
+                将任务「{confirmTask?.task_name}」
+              </Text>
+              <Text className="text-sm font-medium text-gray-800">
+                从「{confirmTask ? getStatusLabel(confirmTask.status) : ''}」切换到「{confirmStatus ? getStatusLabel(confirmStatus) : ''}」？
+              </Text>
             </View>
-          </View>
-        ))}
-      </View>
+            <View className="flex gap-3">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={handleCancelStatusChange}
+              >
+                取消
+              </Button>
+              <Button 
+                className="flex-1"
+                onClick={handleConfirmStatusChange}
+              >
+                确认
+              </Button>
+            </View>
+          </DialogContent>
+        </Dialog>
+      </>
     );
   };
 
