@@ -29,7 +29,8 @@ exports.main = async (event, context) => {
       group_name,
       executor_id,
       executor_name,
-      require_date
+      require_date,
+      source // 新增：任务来源信息
     } = event
     
     // 验证必填字段
@@ -50,31 +51,45 @@ exports.main = async (event, context) => {
     
     console.log('[task-create] 创建任务:', { task_name, executor_id: finalExecutorId })
     
-    // 创建任务记录 - 统一使用字符串格式存储日期
-    const result = await db.collection('tasks').add({
-      data: {
-        task_name,
-        task_description: task_description || '',
-        status: 'pending',
-        priority,
-        category: category || '',
-        group_id: group_id || '',
-        group_name: group_name || '',
-        publisher_id: OPENID,
-        executor_id: finalExecutorId,
-        executor_name: finalExecutorName,
-        require_date: require_date, // 保持字符串格式 YYYY-MM-DD
-        complete_date: null,
-        score: null,
-        score_note: '',
-        learnings: '',
-        delay_reason: '',
-        improvements: '',
-        attribution_tags: [],
-        created_at: now,
-        updated_at: now,
-        _openid: OPENID
+    // 构建任务数据
+    const taskData = {
+      task_name,
+      task_description: task_description || '',
+      status: 'pending',
+      priority,
+      category: category || '',
+      group_id: group_id || '',
+      group_name: group_name || '',
+      publisher_id: OPENID,
+      executor_id: finalExecutorId,
+      executor_name: finalExecutorName,
+      require_date: require_date, // 保持字符串格式 YYYY-MM-DD
+      complete_date: null,
+      score: null,
+      score_note: '',
+      learnings: '',
+      delay_reason: '',
+      improvements: '',
+      attribution_tags: [],
+      created_at: now,
+      updated_at: now,
+      _openid: OPENID
+    }
+    
+    // 如果有来源信息，添加到任务数据
+    if (source) {
+      taskData.source = {
+        type: source.type || 'manual',
+        source_name: source.source_name || '',
+        source_type: source.source_type || undefined,
+        original_content: source.original_content || '',
+        shared_at: source.shared_at || now.toISOString()
       }
+    }
+    
+    // 创建任务记录
+    const result = await db.collection('tasks').add({
+      data: taskData
     })
     
     console.log('[task-create] 任务创建成功, task_id:', result._id)

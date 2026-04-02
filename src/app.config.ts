@@ -3,6 +3,7 @@ export default defineAppConfig({
     'pages/splash/index',
     'pages/index/index',
     'pages/create/index',
+    'pages/share-create/index',
     'pages/team/index',
     'pages/profile/index',
     'pages/review/index',

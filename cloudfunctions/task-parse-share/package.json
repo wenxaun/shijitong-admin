@@ -1,0 +1,9 @@
+{
+  "name": "task-parse-share",
+  "version": "1.0.0",
+  "description": "解析分享内容，提取任务信息",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

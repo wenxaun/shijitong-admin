@@ -9,6 +9,22 @@ export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled' |
 export type TaskPriority = 'P0' | 'P1' | 'P2' | 'P3';
 
 /**
+ * 任务来源类型
+ */
+export type TaskSourceType = 'manual' | 'chat_share';
+
+/**
+ * 任务来源信息
+ */
+export interface TaskSource {
+  type: TaskSourceType;           // 来源类型：手动创建/聊天分享
+  source_name?: string;           // 来源名称（群名/联系人名）
+  source_type?: 'group' | 'private'; // 聊天类型：群聊/私聊
+  original_content?: string;      // 原始分享内容
+  shared_at?: string;             // 分享时间
+}
+
+/**
  * 任务类型
  */
 export interface Task {
@@ -44,6 +60,8 @@ export interface Task {
   exception_approved?: boolean; // 异常申请是否已批准
   hidden_for_users?: string[]; // 对特定用户隐藏（软删除）
   hidden_at?: string; // 隐藏时间
+  // 来源追溯字段
+  source?: TaskSource;           // 任务来源信息
   created_at: string;
   updated_at: string;
 }
