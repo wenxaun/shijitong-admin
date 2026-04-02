@@ -83,15 +83,68 @@ export const mockCloudFunction = async (name: string, data?: any): Promise<any> 
       };
     }
     
-    case 'task-list':
+    case 'task-list': {
+      let tasks = getMockTasks();
+      
+      // 状态筛选
+      if (data?.status && data.status !== 'all') {
+        tasks = tasks.filter((t: any) => t.status === data.status);
+      }
+      
+      // 视图筛选
+      if (data?.view_type && data.view_type !== 'all') {
+        // 这里可以根据 view_type 进行筛选
+        // assigned: 我分配的, followed: 我关注的
+      }
+      
+      // 时间筛选
+      if (data?.time_filter && data.time_filter !== 'all') {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        tasks = tasks.filter((t: any) => {
+          if (t.status === 'completed' || t.status === 'cancelled') return false;
+          
+          const requireDate = new Date(t.require_date);
+          requireDate.setHours(0, 0, 0, 0);
+          
+          switch (data.time_filter) {
+            case 'today':
+              return requireDate.getTime() === today.getTime();
+            case 'week': {
+              const endOfWeek = new Date(today);
+              endOfWeek.setDate(endOfWeek.getDate() + (7 - today.getDay()));
+              return requireDate >= today && requireDate <= endOfWeek;
+            }
+            case 'month': {
+              const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+              return requireDate >= today && requireDate <= endOfMonth;
+            }
+            default:
+              return true;
+          }
+        });
+      }
+      
+      // 自定义时间范围
+      if (data?.start_date && data?.end_date) {
+        const startDate = new Date(data.start_date);
+        const endDate = new Date(data.end_date);
+        tasks = tasks.filter((t: any) => {
+          const requireDate = new Date(t.require_date);
+          return requireDate >= startDate && requireDate <= endDate;
+        });
+      }
+      
       return {
         success: true,
         message: '获取成功',
         data: {
-          tasks: getMockTasks(),
+          tasks,
           hasMore: false
         }
       };
+    }
     
     case 'task-detail': {
       const task = getMockTask(data?.task_id);

@@ -942,6 +942,10 @@ export default function Index() {
                     className={`px-4 py-2 ${groupType === item.value ? 'bg-blue-50' : ''}`}
                     onClick={() => {
                       setGroupType(item.value);
+                      // 切换到看板视图时，重置状态筛选为"全部"
+                      if (item.value === 'kanban' && statusFilter !== 'all') {
+                        setStatusFilter('all');
+                      }
                       setActiveDropdown(null);
                     }}
                   >
