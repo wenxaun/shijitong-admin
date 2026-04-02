@@ -768,32 +768,31 @@ export default function Index() {
       <DeadlineReminder />
 
       {/* 筛选栏 */}
-      <View className="bg-white px-3 py-2 mb-2 border-b border-gray-100 relative">
+      <View className="bg-white px-3 py-2 mb-2 relative">
         <View className="flex flex-row items-center gap-2">
           {/* 时间筛选 */}
           <View className="relative">
             <View 
-              className={`flex flex-row items-center h-8 px-3 rounded-lg ${activeDropdown === 'time' ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50 border border-gray-100'}`}
+              className="flex flex-row items-center h-7 px-3 bg-gray-50 rounded-full"
               onClick={() => setActiveDropdown(activeDropdown === 'time' ? null : 'time')}
             >
-              <Text className="text-xs text-gray-500 mr-1">时间</Text>
-              <Text className="text-sm text-gray-800 font-medium mr-1">
+              <Text className="text-sm text-gray-700">
                 {timeFilter === 'custom' && selectedDateRange.from ? getDisplayDateRange() : TIME_FILTERS.find(f => f.value === timeFilter)?.label || '全部'}
               </Text>
-              <ChevronDown size={14} color={activeDropdown === 'time' ? '#3b82f6' : '#9ca3af'} />
+              <ChevronDown size={16} color="#9ca3af" className="ml-1" />
             </View>
             {activeDropdown === 'time' && (
-              <View className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50 min-w-32">
+              <View className="absolute top-full left-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50 min-w-28">
                 {TIME_FILTERS.map((item) => (
                   <View
                     key={item.value}
-                    className={`px-4 py-2 ${timeFilter === item.value ? 'bg-blue-50' : 'active:bg-gray-50'}`}
+                    className={`px-4 py-2 ${timeFilter === item.value ? 'bg-blue-50' : ''}`}
                     onClick={() => {
                       handleTimeFilterClick(item.value);
                       setActiveDropdown(null);
                     }}
                   >
-                    <Text className={`text-sm ${timeFilter === item.value ? 'text-blue-500 font-medium' : 'text-gray-700'}`}>
+                    <Text className={`text-sm ${timeFilter === item.value ? 'text-blue-500 font-medium' : 'text-gray-600'}`}>
                       {item.label}
                     </Text>
                   </View>
@@ -805,27 +804,26 @@ export default function Index() {
           {/* 视图筛选 */}
           <View className="relative">
             <View 
-              className={`flex flex-row items-center h-8 px-3 rounded-lg ${activeDropdown === 'view' ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50 border border-gray-100'}`}
+              className="flex flex-row items-center h-7 px-3 bg-gray-50 rounded-full"
               onClick={() => setActiveDropdown(activeDropdown === 'view' ? null : 'view')}
             >
-              <Text className="text-xs text-gray-500 mr-1">视图</Text>
-              <Text className="text-sm text-gray-800 font-medium mr-1">
+              <Text className="text-sm text-gray-700">
                 {VIEW_FILTERS.find(f => f.value === viewFilter)?.label || '全部'}
               </Text>
-              <ChevronDown size={14} color={activeDropdown === 'view' ? '#3b82f6' : '#9ca3af'} />
+              <ChevronDown size={16} color="#9ca3af" className="ml-1" />
             </View>
             {activeDropdown === 'view' && (
-              <View className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50 min-w-32">
+              <View className="absolute top-full left-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50 min-w-28">
                 {VIEW_FILTERS.map((item) => (
                   <View
                     key={item.value}
-                    className={`px-4 py-2 ${viewFilter === item.value ? 'bg-blue-50' : 'active:bg-gray-50'}`}
+                    className={`px-4 py-2 ${viewFilter === item.value ? 'bg-blue-50' : ''}`}
                     onClick={() => {
                       setViewFilter(item.value);
                       setActiveDropdown(null);
                     }}
                   >
-                    <Text className={`text-sm ${viewFilter === item.value ? 'text-blue-500 font-medium' : 'text-gray-700'}`}>
+                    <Text className={`text-sm ${viewFilter === item.value ? 'text-blue-500 font-medium' : 'text-gray-600'}`}>
                       {item.label}
                     </Text>
                   </View>
@@ -837,27 +835,26 @@ export default function Index() {
           {/* 状态筛选 */}
           <View className="relative">
             <View 
-              className={`flex flex-row items-center h-8 px-3 rounded-lg ${activeDropdown === 'status' ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50 border border-gray-100'}`}
+              className="flex flex-row items-center h-7 px-3 bg-gray-50 rounded-full"
               onClick={() => setActiveDropdown(activeDropdown === 'status' ? null : 'status')}
             >
-              <Text className="text-xs text-gray-500 mr-1">状态</Text>
-              <Text className="text-sm text-gray-800 font-medium mr-1">
+              <Text className="text-sm text-gray-700">
                 {STATUS_FILTERS.find(f => f.value === statusFilter)?.label || '全部'}
               </Text>
-              <ChevronDown size={14} color={activeDropdown === 'status' ? '#3b82f6' : '#9ca3af'} />
+              <ChevronDown size={16} color="#9ca3af" className="ml-1" />
             </View>
             {activeDropdown === 'status' && (
-              <View className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50 min-w-32">
+              <View className="absolute top-full left-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50 min-w-28">
                 {STATUS_FILTERS.map((item) => (
                   <View
                     key={item.value}
-                    className={`px-4 py-2 ${statusFilter === item.value ? 'bg-blue-50' : 'active:bg-gray-50'}`}
+                    className={`px-4 py-2 ${statusFilter === item.value ? 'bg-blue-50' : ''}`}
                     onClick={() => {
                       setStatusFilter(item.value);
                       setActiveDropdown(null);
                     }}
                   >
-                    <Text className={`text-sm ${statusFilter === item.value ? 'text-blue-500 font-medium' : 'text-gray-700'}`}>
+                    <Text className={`text-sm ${statusFilter === item.value ? 'text-blue-500 font-medium' : 'text-gray-600'}`}>
                       {item.label}
                     </Text>
                   </View>
@@ -869,27 +866,26 @@ export default function Index() {
           {/* 分组筛选 */}
           <View className="relative">
             <View 
-              className={`flex flex-row items-center h-8 px-3 rounded-lg ${activeDropdown === 'group' ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50 border border-gray-100'}`}
+              className="flex flex-row items-center h-7 px-3 bg-gray-50 rounded-full"
               onClick={() => setActiveDropdown(activeDropdown === 'group' ? null : 'group')}
             >
-              <Text className="text-xs text-gray-500 mr-1">分组</Text>
-              <Text className="text-sm text-gray-800 font-medium mr-1">
+              <Text className="text-sm text-gray-700">
                 {GROUP_TYPES.find(f => f.value === groupType)?.label || '列表'}
               </Text>
-              <ChevronDown size={14} color={activeDropdown === 'group' ? '#3b82f6' : '#9ca3af'} />
+              <ChevronDown size={16} color="#9ca3af" className="ml-1" />
             </View>
             {activeDropdown === 'group' && (
-              <View className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50 min-w-32">
+              <View className="absolute top-full left-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50 min-w-28">
                 {GROUP_TYPES.map((item) => (
                   <View
                     key={item.value}
-                    className={`px-4 py-2 ${groupType === item.value ? 'bg-blue-50' : 'active:bg-gray-50'}`}
+                    className={`px-4 py-2 ${groupType === item.value ? 'bg-blue-50' : ''}`}
                     onClick={() => {
                       setGroupType(item.value);
                       setActiveDropdown(null);
                     }}
                   >
-                    <Text className={`text-sm ${groupType === item.value ? 'text-blue-500 font-medium' : 'text-gray-700'}`}>
+                    <Text className={`text-sm ${groupType === item.value ? 'text-blue-500 font-medium' : 'text-gray-600'}`}>
                       {item.label}
                     </Text>
                   </View>
