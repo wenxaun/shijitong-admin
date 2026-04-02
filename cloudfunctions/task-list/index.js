@@ -98,7 +98,7 @@ exports.main = async (event, context) => {
     }
     
     // 按状态筛选
-    if (status) {
+    if (status && status !== 'all') {
       conditions.push({ status: status })
     }
     

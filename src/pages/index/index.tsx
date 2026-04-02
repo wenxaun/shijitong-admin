@@ -547,10 +547,11 @@ export default function Index() {
   };
 
   // 看板视图组件
-  const KanbanView = ({ tasks: taskList, onTaskPress, onStatusChange }: { 
+  const KanbanView = ({ tasks: taskList, onTaskPress, onStatusChange, filterStatus }: { 
     tasks: Task[]; 
     onTaskPress: (task: Task) => void;
     onStatusChange: (taskId: string, newStatus: TaskStatus) => void;
+    filterStatus?: string; // 状态筛选值
   }) => {
     const [confirmTask, setConfirmTask] = useState<Task | null>(null);
     const [confirmStatus, setConfirmStatus] = useState<TaskStatus | null>(null);
@@ -562,6 +563,11 @@ export default function Index() {
       in_progress: taskList.filter(t => t.status === 'in_progress'),
       completed: taskList.filter(t => t.status === 'completed')
     };
+
+    // 根据状态筛选决定显示哪些列
+    const visibleColumns = filterStatus && filterStatus !== 'all'
+      ? KANBAN_COLUMNS.filter(col => col.key === filterStatus)
+      : KANBAN_COLUMNS;
 
     // 获取下一个状态
     const getNextStatus = (currentStatus: TaskStatus): TaskStatus | null => {
@@ -666,7 +672,7 @@ export default function Index() {
     return (
       <>
         <View className="py-2">
-          {KANBAN_COLUMNS.map(column => (
+          {visibleColumns.map(column => (
             <View key={column.key} className="mb-4">
               {/* 列标题 */}
               <View 
@@ -942,10 +948,6 @@ export default function Index() {
                     className={`px-4 py-2 ${groupType === item.value ? 'bg-blue-50' : ''}`}
                     onClick={() => {
                       setGroupType(item.value);
-                      // 切换到看板视图时，重置状态筛选为"全部"
-                      if (item.value === 'kanban' && statusFilter !== 'all') {
-                        setStatusFilter('all');
-                      }
                       setActiveDropdown(null);
                     }}
                   >
@@ -980,6 +982,7 @@ export default function Index() {
             tasks={tasks}
             onTaskPress={handleTaskPress}
             onStatusChange={handleTaskStatusChange}
+            filterStatus={statusFilter}
           />
         ) : groupType !== 'none' && groupedTasks ? (
           // 分组视图
