@@ -1,4 +1,4 @@
-import { View, Text, ScrollView } from '@tarojs/components';
+import { View, Text } from '@tarojs/components';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Taro from '@tarojs/taro';
 import { useUserStore } from '@/stores/user';
@@ -552,9 +552,6 @@ export default function Index() {
     onTaskPress: (task: Task) => void;
     onStatusChange: (taskId: string, newStatus: TaskStatus) => void;
   }) => {
-    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-    const [showStatusPicker, setShowStatusPicker] = useState(false);
-
     // 按状态分组
     const columns: Record<string, Task[]> = {
       pending: taskList.filter(t => t.status === 'pending'),
@@ -562,109 +559,106 @@ export default function Index() {
       completed: taskList.filter(t => t.status === 'completed')
     };
 
-    // 处理长按
-    const handleLongPress = (task: Task) => {
-      Taro.vibrateShort({ type: 'medium' });
-      setSelectedTask(task);
-      setShowStatusPicker(true);
+    // 获取下一个状态
+    const getNextStatus = (currentStatus: TaskStatus): TaskStatus | null => {
+      const statusOrder: TaskStatus[] = ['pending', 'in_progress', 'completed'];
+      const currentIndex = statusOrder.indexOf(currentStatus);
+      if (currentIndex < statusOrder.length - 1) {
+        return statusOrder[currentIndex + 1];
+      }
+      return null;
     };
 
-    // 切换状态
-    const handleStatusSelect = async (newStatus: TaskStatus) => {
-      if (selectedTask && newStatus !== selectedTask.status) {
-        await onStatusChange(selectedTask.task_id, newStatus);
+    // 快速切换到下一状态
+    const handleQuickAction = async (task: Task, e: any) => {
+      e.stopPropagation();
+      const nextStatus = getNextStatus(task.status);
+      if (nextStatus) {
+        await onStatusChange(task.task_id, nextStatus);
       }
-      setShowStatusPicker(false);
-      setSelectedTask(null);
     };
 
     // 渲染看板卡片
-    const renderKanbanCard = (task: Task) => (
-      <Card 
-        key={task._id} 
-        className="mb-2"
-        onClick={() => onTaskPress(task)}
-        onLongPress={() => handleLongPress(task)}
-      >
-        <CardContent className="p-3">
-          <Text className="text-sm font-medium text-gray-800 line-clamp-2 mb-2">
-            {task.task_name}
-          </Text>
-          <View className="flex items-center justify-between">
-            <Badge className={PRIORITY_STYLE[task.priority].bg + ' ' + PRIORITY_STYLE[task.priority].text}>
-              {task.priority}
-            </Badge>
-            {task.executor_name && (
-              <View className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center">
-                <Text className="text-xs text-blue-500">{task.executor_name[0]}</Text>
+    const renderKanbanCard = (task: Task) => {
+      const nextStatus = getNextStatus(task.status);
+      
+      return (
+        <View 
+          key={task._id} 
+          className="bg-white rounded-lg p-3 mb-2 shadow-sm border border-gray-100 active:bg-gray-50"
+          onClick={() => onTaskPress(task)}
+        >
+          <View className="flex items-start justify-between">
+            <View className="flex-1 mr-2">
+              <Text className="text-sm font-medium text-gray-800 line-clamp-2">
+                {task.task_name}
+              </Text>
+            </View>
+            {nextStatus && (
+              <View 
+                className="flex-shrink-0 w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center"
+                onClick={(e) => handleQuickAction(task, e)}
+              >
+                <Text className="text-blue-500 text-lg">→</Text>
               </View>
             )}
           </View>
+          
+          <View className="flex items-center gap-2 mt-2 flex-wrap">
+            <Badge className={PRIORITY_STYLE[task.priority].bg + ' ' + PRIORITY_STYLE[task.priority].text}>
+              {task.priority}
+            </Badge>
+            
+            {task.executor_name && (
+              <View className="flex items-center gap-1">
+                <View className="w-4 h-4 rounded-full bg-blue-100 flex items-center justify-center">
+                  <Text className="text-xs text-blue-500">{task.executor_name[0]}</Text>
+                </View>
+                <Text className="text-xs text-gray-500">{task.executor_name}</Text>
+              </View>
+            )}
+          </View>
+          
           {task.require_date && (
             <Text className="text-xs text-gray-400 mt-2">
               截止: {task.require_date}
             </Text>
           )}
-        </CardContent>
-      </Card>
-    );
+        </View>
+      );
+    };
 
     return (
-      <>
-        <ScrollView scrollX className="whitespace-nowrap">
-          <View className="flex flex-row gap-3 py-2" style={{ minWidth: '100%' }}>
-            {KANBAN_COLUMNS.map(column => (
-              <View 
-                key={column.key} 
-                className={`flex-shrink-0 w-72 ${column.color} rounded-lg p-3 border ${column.borderColor}`}
-              >
-                {/* 列标题 */}
-                <View className="flex items-center justify-between mb-3">
-                  <Text className="text-sm font-semibold text-gray-700">{column.label}</Text>
-                  <View className="px-2 py-1 rounded-full bg-white">
-                    <Text className="text-xs text-gray-500">{columns[column.key]?.length || 0}</Text>
-                  </View>
-                </View>
-                
-                {/* 任务卡片 */}
-                <View>
-                  {columns[column.key]?.map(renderKanbanCard)}
-                  {(!columns[column.key] || columns[column.key].length === 0) && (
-                    <View className="py-8 flex items-center justify-center">
-                      <Text className="text-xs text-gray-400">暂无任务</Text>
-                    </View>
-                  )}
+      <View className="py-2">
+        {KANBAN_COLUMNS.map(column => (
+          <View key={column.key} className="mb-4">
+            {/* 列标题 */}
+            <View 
+              className={`flex items-center justify-between px-3 py-2 rounded-lg ${column.color} mb-2`}
+            >
+              <View className="flex items-center gap-2">
+                <Text className="text-sm font-semibold text-gray-700">{column.label}</Text>
+                <View className="px-2 py-1 rounded-full bg-white">
+                  <Text className="text-xs text-gray-600">{columns[column.key]?.length || 0}</Text>
                 </View>
               </View>
-            ))}
-          </View>
-        </ScrollView>
-
-        {/* 状态选择弹窗 */}
-        <Dialog open={showStatusPicker} onOpenChange={setShowStatusPicker}>
-          <DialogContent className="max-w-xs">
-            <DialogHeader>
-              <DialogTitle>移动到</DialogTitle>
-            </DialogHeader>
-            <View className="py-2">
-              {KANBAN_COLUMNS.map(column => (
-                <View
-                  key={column.key}
-                  className={`flex items-center px-4 py-3 rounded-lg mb-2 ${column.color} ${
-                    selectedTask?.status === column.key ? 'opacity-50' : ''
-                  }`}
-                  onClick={() => handleStatusSelect(column.key as TaskStatus)}
-                >
-                  <Text className="text-sm font-medium text-gray-700">{column.label}</Text>
-                  {selectedTask?.status === column.key && (
-                    <Text className="text-xs text-gray-400 ml-2">当前状态</Text>
-                  )}
-                </View>
-              ))}
+              {column.key === 'completed' && columns[column.key]?.length > 0 && (
+                <Text className="text-xs text-gray-500">点击查看详情</Text>
+              )}
             </View>
-          </DialogContent>
-        </Dialog>
-      </>
+            
+            {/* 任务列表 */}
+            <View className="px-1">
+              {columns[column.key]?.map(renderKanbanCard)}
+              {(!columns[column.key] || columns[column.key].length === 0) && (
+                <View className="py-6 flex items-center justify-center bg-gray-50 rounded-lg">
+                  <Text className="text-xs text-gray-400">暂无{column.label}任务</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        ))}
+      </View>
     );
   };
 
