@@ -15,7 +15,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { DeadlineReminder } from '@/components/deadline-reminder';
 import { toast } from '@/components/ui/toast';
 import { EmptyState } from '@/components/ui/empty-state';
-import { CalendarDays, Loader, ListChecks, Send, Star, ChevronDown, ChevronRight, SlidersHorizontal } from 'lucide-react-taro';
+import { Loader, ChevronDown, ChevronRight } from 'lucide-react-taro';
 import { format } from 'date-fns';
 
 // 缓存时间（毫秒）
@@ -87,7 +87,7 @@ export default function Index() {
   const [viewFilter, setViewFilter] = useState<string>('all');
   const [groupType, setGroupType] = useState<string>('none');
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
-  const [showMoreFilters, setShowMoreFilters] = useState(false); // 更多筛选展开状态
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null); // 当前展开的下拉菜单
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   
@@ -768,122 +768,143 @@ export default function Index() {
       <DeadlineReminder />
 
       {/* 筛选栏 */}
-      <View className="bg-white px-4 py-3 mb-2 border-b border-gray-100">
-        {/* 时间筛选 - 默认显示 */}
-        <View className="flex items-center">
-          <Text className="text-sm text-gray-400 w-12 flex-shrink-0">时间：</Text>
-          <ScrollView scrollX className="flex-1 whitespace-nowrap">
-            <View className="flex flex-row gap-2">
-              {TIME_FILTERS.map((item) => (
-                <View
-                  key={item.value}
-                  className={`h-8 px-3 rounded-full flex flex-row items-center justify-center gap-1 ${
-                    timeFilter === item.value
-                      ? 'bg-blue-500'
-                      : 'bg-gray-100'
-                  }`}
-                  onClick={() => handleTimeFilterClick(item.value)}
-                >
-                  {item.value === 'custom' && timeFilter === 'custom' && selectedDateRange.from ? (
-                    <>
-                      <CalendarDays size={14} color={timeFilter === item.value ? '#ffffff' : '#6B7280'} />
-                      <Text className={`text-sm ${timeFilter === item.value ? 'text-white' : 'text-gray-600'}`}>{getDisplayDateRange()}</Text>
-                    </>
-                  ) : (
-                    <Text className={`text-sm ${timeFilter === item.value ? 'text-white' : 'text-gray-600'}`}>{item.label}</Text>
-                  )}
-                </View>
-              ))}
+      <View className="bg-white px-3 py-2 mb-2 border-b border-gray-100 relative">
+        <View className="flex flex-row items-center gap-2">
+          {/* 时间筛选 */}
+          <View className="relative">
+            <View 
+              className={`flex flex-row items-center h-8 px-3 rounded-lg ${activeDropdown === 'time' ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50 border border-gray-100'}`}
+              onClick={() => setActiveDropdown(activeDropdown === 'time' ? null : 'time')}
+            >
+              <Text className="text-xs text-gray-500 mr-1">时间</Text>
+              <Text className="text-sm text-gray-800 font-medium mr-1">
+                {timeFilter === 'custom' && selectedDateRange.from ? getDisplayDateRange() : TIME_FILTERS.find(f => f.value === timeFilter)?.label || '全部'}
+              </Text>
+              <ChevronDown size={14} color={activeDropdown === 'time' ? '#3b82f6' : '#9ca3af'} />
             </View>
-          </ScrollView>
-          {/* 更多筛选按钮 */}
-          <View 
-            className={`ml-2 h-8 px-3 rounded-full flex flex-row items-center justify-center gap-1 ${showMoreFilters ? 'bg-blue-100' : 'bg-gray-100'}`}
-            onClick={() => setShowMoreFilters(!showMoreFilters)}
-          >
-            <SlidersHorizontal size={14} color={showMoreFilters ? '#3b82f6' : '#6B7280'} />
-            <Text className={`text-sm ${showMoreFilters ? 'text-blue-500' : 'text-gray-600'}`}>筛选</Text>
-            <ChevronDown 
-              size={14} 
-              color={showMoreFilters ? '#3b82f6' : '#6B7280'} 
-              style={{ transform: showMoreFilters ? 'rotate(180deg)' : 'rotate(0deg)' }}
-            />
+            {activeDropdown === 'time' && (
+              <View className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50 min-w-32">
+                {TIME_FILTERS.map((item) => (
+                  <View
+                    key={item.value}
+                    className={`px-4 py-2 ${timeFilter === item.value ? 'bg-blue-50' : 'active:bg-gray-50'}`}
+                    onClick={() => {
+                      handleTimeFilterClick(item.value);
+                      setActiveDropdown(null);
+                    }}
+                  >
+                    <Text className={`text-sm ${timeFilter === item.value ? 'text-blue-500 font-medium' : 'text-gray-700'}`}>
+                      {item.label}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+
+          {/* 视图筛选 */}
+          <View className="relative">
+            <View 
+              className={`flex flex-row items-center h-8 px-3 rounded-lg ${activeDropdown === 'view' ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50 border border-gray-100'}`}
+              onClick={() => setActiveDropdown(activeDropdown === 'view' ? null : 'view')}
+            >
+              <Text className="text-xs text-gray-500 mr-1">视图</Text>
+              <Text className="text-sm text-gray-800 font-medium mr-1">
+                {VIEW_FILTERS.find(f => f.value === viewFilter)?.label || '全部'}
+              </Text>
+              <ChevronDown size={14} color={activeDropdown === 'view' ? '#3b82f6' : '#9ca3af'} />
+            </View>
+            {activeDropdown === 'view' && (
+              <View className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50 min-w-32">
+                {VIEW_FILTERS.map((item) => (
+                  <View
+                    key={item.value}
+                    className={`px-4 py-2 ${viewFilter === item.value ? 'bg-blue-50' : 'active:bg-gray-50'}`}
+                    onClick={() => {
+                      setViewFilter(item.value);
+                      setActiveDropdown(null);
+                    }}
+                  >
+                    <Text className={`text-sm ${viewFilter === item.value ? 'text-blue-500 font-medium' : 'text-gray-700'}`}>
+                      {item.label}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+
+          {/* 状态筛选 */}
+          <View className="relative">
+            <View 
+              className={`flex flex-row items-center h-8 px-3 rounded-lg ${activeDropdown === 'status' ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50 border border-gray-100'}`}
+              onClick={() => setActiveDropdown(activeDropdown === 'status' ? null : 'status')}
+            >
+              <Text className="text-xs text-gray-500 mr-1">状态</Text>
+              <Text className="text-sm text-gray-800 font-medium mr-1">
+                {STATUS_FILTERS.find(f => f.value === statusFilter)?.label || '全部'}
+              </Text>
+              <ChevronDown size={14} color={activeDropdown === 'status' ? '#3b82f6' : '#9ca3af'} />
+            </View>
+            {activeDropdown === 'status' && (
+              <View className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50 min-w-32">
+                {STATUS_FILTERS.map((item) => (
+                  <View
+                    key={item.value}
+                    className={`px-4 py-2 ${statusFilter === item.value ? 'bg-blue-50' : 'active:bg-gray-50'}`}
+                    onClick={() => {
+                      setStatusFilter(item.value);
+                      setActiveDropdown(null);
+                    }}
+                  >
+                    <Text className={`text-sm ${statusFilter === item.value ? 'text-blue-500 font-medium' : 'text-gray-700'}`}>
+                      {item.label}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+
+          {/* 分组筛选 */}
+          <View className="relative">
+            <View 
+              className={`flex flex-row items-center h-8 px-3 rounded-lg ${activeDropdown === 'group' ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50 border border-gray-100'}`}
+              onClick={() => setActiveDropdown(activeDropdown === 'group' ? null : 'group')}
+            >
+              <Text className="text-xs text-gray-500 mr-1">分组</Text>
+              <Text className="text-sm text-gray-800 font-medium mr-1">
+                {GROUP_TYPES.find(f => f.value === groupType)?.label || '列表'}
+              </Text>
+              <ChevronDown size={14} color={activeDropdown === 'group' ? '#3b82f6' : '#9ca3af'} />
+            </View>
+            {activeDropdown === 'group' && (
+              <View className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50 min-w-32">
+                {GROUP_TYPES.map((item) => (
+                  <View
+                    key={item.value}
+                    className={`px-4 py-2 ${groupType === item.value ? 'bg-blue-50' : 'active:bg-gray-50'}`}
+                    onClick={() => {
+                      setGroupType(item.value);
+                      setActiveDropdown(null);
+                    }}
+                  >
+                    <Text className={`text-sm ${groupType === item.value ? 'text-blue-500 font-medium' : 'text-gray-700'}`}>
+                      {item.label}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
         </View>
 
-        {/* 更多筛选 - 默认折叠 */}
-        {showMoreFilters && (
-          <View className="mt-3 pt-3 border-t border-gray-100">
-            {/* 视图筛选 */}
-            <View className="flex items-center mb-2">
-              <Text className="text-sm text-gray-400 w-12 flex-shrink-0">视图：</Text>
-              <ScrollView scrollX className="flex-1 whitespace-nowrap">
-                <View className="flex flex-row gap-2">
-                  {VIEW_FILTERS.map((item) => {
-                    const IconComponent = item.icon === 'ListChecks' ? ListChecks : item.icon === 'Send' ? Send : Star;
-                    return (
-                      <View
-                        key={item.value}
-                        className={`h-8 px-3 rounded-full flex flex-row items-center justify-center gap-1 ${
-                          viewFilter === item.value
-                            ? 'bg-blue-500'
-                            : 'bg-gray-100'
-                        }`}
-                        onClick={() => setViewFilter(item.value)}
-                      >
-                        <IconComponent size={14} color={viewFilter === item.value ? '#ffffff' : '#6B7280'} />
-                        <Text className={`text-sm ${viewFilter === item.value ? 'text-white' : 'text-gray-600'}`}>{item.label}</Text>
-                      </View>
-                    );
-                  })}
-                </View>
-              </ScrollView>
-            </View>
-
-            {/* 状态筛选 */}
-            <View className="flex items-center mb-2">
-              <Text className="text-sm text-gray-400 w-12 flex-shrink-0">状态：</Text>
-              <ScrollView scrollX className="flex-1 whitespace-nowrap">
-                <View className="flex flex-row gap-2">
-                  {STATUS_FILTERS.map((item) => (
-                    <View
-                      key={item.value}
-                      className={`h-8 px-3 rounded-full flex flex-row items-center justify-center ${
-                        statusFilter === item.value
-                          ? 'bg-blue-500'
-                          : 'bg-gray-100'
-                      }`}
-                      onClick={() => setStatusFilter(item.value)}
-                    >
-                      <Text className={`text-sm ${statusFilter === item.value ? 'text-white' : 'text-gray-600'}`}>{item.label}</Text>
-                    </View>
-                  ))}
-                </View>
-              </ScrollView>
-            </View>
-
-            {/* 分组模式 */}
-            <View className="flex items-center">
-              <Text className="text-sm text-gray-400 w-12 flex-shrink-0">分组：</Text>
-              <ScrollView scrollX className="flex-1 whitespace-nowrap">
-                <View className="flex flex-row gap-2">
-                  {GROUP_TYPES.map((item) => (
-                    <View
-                      key={item.value}
-                      className={`h-8 px-3 rounded-full flex flex-row items-center justify-center ${
-                        groupType === item.value
-                          ? 'bg-blue-500'
-                          : 'bg-gray-100'
-                      }`}
-                      onClick={() => setGroupType(item.value)}
-                    >
-                      <Text className={`text-sm ${groupType === item.value ? 'text-white' : 'text-gray-600'}`}>{item.label}</Text>
-                    </View>
-                  ))}
-                </View>
-              </ScrollView>
-            </View>
-          </View>
+        {/* 点击遮罩关闭下拉 */}
+        {activeDropdown && (
+          <View 
+            className="fixed inset-0 z-40"
+            onClick={() => setActiveDropdown(null)}
+          />
         )}
       </View>
 
