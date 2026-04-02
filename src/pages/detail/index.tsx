@@ -92,14 +92,8 @@ export default function Detail() {
   const [isPublisher, setIsPublisher] = useState(false);
   const [isExecutor, setIsExecutor] = useState(false);
   
-  // 编辑权限：只有创建人且任务状态为待办时可以编辑
-  const canEdit = isPublisher && task?.status === 'pending';
-  // 删除权限：只有创建人且任务状态为待办时可以删除
-  const canDelete = isPublisher && task?.status === 'pending';
   // 操作权限：创建人或执行人可以操作（开始、完成、异常上报）
   const canOperate = isPublisher || isExecutor;
-  // 关注权限：非创建人且非执行人才能关注（创建人和执行人本身就与任务关联，无需关注）
-  const canFollow = !isPublisher && !isExecutor;
 
   // 加载任务详情
   const loadTask = useCallback(async () => {
@@ -212,6 +206,16 @@ export default function Detail() {
   // 关注/取消关注任务
   const toggleFollow = async () => {
     if (!taskId) return;
+    
+    // 判断是否可以关注
+    if (isPublisher) {
+      Taro.showToast({ title: '您是任务创建者，无需关注', icon: 'none' });
+      return;
+    }
+    if (isExecutor) {
+      Taro.showToast({ title: '您是任务执行者，无需关注', icon: 'none' });
+      return;
+    }
 
     try {
       const action = isFollowed ? 'unfollow' : 'follow';
@@ -348,12 +352,35 @@ export default function Detail() {
   // 编辑任务
   const editTask = () => {
     setShowMoreMenu(false);
+    
+    // 判断是否可以编辑
+    if (!isPublisher) {
+      Taro.showToast({ title: '只有任务创建者才能编辑', icon: 'none' });
+      return;
+    }
+    if (task?.status !== 'pending') {
+      const statusText = STATUS_MAP[task?.status as keyof typeof STATUS_MAP]?.label || task?.status;
+      Taro.showToast({ title: `任务${statusText}中无法编辑`, icon: 'none' });
+      return;
+    }
+    
     Taro.navigateTo({ url: `/pages/edit/index?id=${taskId}` });
   };
 
   // 删除任务
   const deleteTask = () => {
     setShowMoreMenu(false);
+    
+    // 判断是否可以删除
+    if (!isPublisher) {
+      Taro.showToast({ title: '只有任务创建者才能删除', icon: 'none' });
+      return;
+    }
+    if (task?.status !== 'pending') {
+      const statusText = STATUS_MAP[task?.status as keyof typeof STATUS_MAP]?.label || task?.status;
+      Taro.showToast({ title: `任务${statusText}中无法删除`, icon: 'none' });
+      return;
+    }
 
     Taro.showModal({
       title: '确认删除',
@@ -456,23 +483,20 @@ export default function Detail() {
             className="absolute right-3 top-16 bg-white rounded-lg shadow-lg overflow-hidden min-w-32"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* 关注/取消关注 - 只有非创建人、非执行人才显示 */}
-            {canFollow && (
-              <>
-                <View
-                  className="flex flex-row items-center h-11 px-4 active:bg-gray-50"
-                  onClick={toggleFollow}
-                >
-                  <View className="w-5 flex items-center justify-center">
-                    <Star size={18} color={isFollowed ? '#F59E0B' : '#4B5563'} />
-                  </View>
-                  <Text className="ml-2 text-base text-gray-800">{isFollowed ? '取消关注' : '关注任务'}</Text>
-                </View>
-                <View className="h-px bg-gray-100 ml-4 mr-4" />
-              </>
-            )}
+            {/* 关注/取消关注 */}
+            <View
+              className="flex flex-row items-center h-11 px-4 active:bg-gray-50"
+              onClick={toggleFollow}
+            >
+              <View className="w-5 flex items-center justify-center">
+                <Star size={18} color={isFollowed ? '#F59E0B' : '#4B5563'} />
+              </View>
+              <Text className="ml-2 text-base text-gray-800">{isFollowed ? '取消关注' : '关注任务'}</Text>
+            </View>
             
-            {/* 分享 - 始终显示 */}
+            <View className="h-px bg-gray-100 ml-4 mr-4" />
+            
+            {/* 分享 */}
             <Button 
               className="flex flex-row items-center h-11 w-full px-4 bg-white border-0 rounded-none text-left"
               style={{ padding: '0 16px', lineHeight: 'normal' }}
@@ -485,37 +509,31 @@ export default function Detail() {
               <Text className="ml-2 text-base text-gray-800">分享任务</Text>
             </Button>
             
+            <View className="h-px bg-gray-100 ml-4 mr-4" />
+            
             {/* 编辑 */}
-            {canEdit && (
-              <>
-                <View className="h-px bg-gray-100 ml-4 mr-4" />
-                <View
-                  className="flex flex-row items-center h-11 px-4 active:bg-gray-50"
-                  onClick={editTask}
-                >
-                  <View className="w-5 flex items-center justify-center">
-                    <Pencil size={18} color="#4B5563" />
-                  </View>
-                  <Text className="ml-2 text-base text-gray-800">编辑任务</Text>
-                </View>
-              </>
-            )}
+            <View
+              className="flex flex-row items-center h-11 px-4 active:bg-gray-50"
+              onClick={editTask}
+            >
+              <View className="w-5 flex items-center justify-center">
+                <Pencil size={18} color="#4B5563" />
+              </View>
+              <Text className="ml-2 text-base text-gray-800">编辑任务</Text>
+            </View>
+            
+            <View className="h-px bg-gray-100 ml-4 mr-4" />
             
             {/* 删除 */}
-            {canDelete && (
-              <>
-                <View className="h-px bg-gray-100 ml-4 mr-4" />
-                <View
-                  className="flex flex-row items-center h-11 px-4 active:bg-gray-50"
-                  onClick={deleteTask}
-                >
-                  <View className="w-5 flex items-center justify-center">
-                    <Trash2 size={18} color="#EF4444" />
-                  </View>
-                  <Text className="ml-2 text-base text-red-500">删除任务</Text>
-                </View>
-              </>
-            )}
+            <View
+              className="flex flex-row items-center h-11 px-4 active:bg-gray-50"
+              onClick={deleteTask}
+            >
+              <View className="w-5 flex items-center justify-center">
+                <Trash2 size={18} color="#EF4444" />
+              </View>
+              <Text className="ml-2 text-base text-red-500">删除任务</Text>
+            </View>
           </View>
         </View>
       )}
