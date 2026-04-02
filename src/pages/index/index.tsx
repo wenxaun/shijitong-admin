@@ -423,23 +423,23 @@ export default function Index() {
       <View className="bg-white px-4 py-3 mb-2 border-b border-gray-100">
         {/* 视图筛选 */}
         <View className="flex items-center mb-2">
-          <Text className="text-sm text-gray-400 w-12">视图：</Text>
+          <Text className="text-sm text-gray-400 w-12 flex-shrink-0">视图：</Text>
           <ScrollView scrollX className="flex-1 whitespace-nowrap">
-            <View className="flex gap-2">
+            <View className="flex flex-row gap-2">
               {VIEW_FILTERS.map((item) => {
                 const IconComponent = item.icon === 'ListChecks' ? ListChecks : item.icon === 'Send' ? Send : Star;
                 return (
                   <View
                     key={item.value}
-                    className={`px-3 py-2 rounded-full text-sm flex items-center gap-1 ${
+                    className={`h-8 px-3 rounded-full flex flex-row items-center justify-center gap-1 ${
                       viewFilter === item.value
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-100 text-gray-600'
+                        ? 'bg-blue-500'
+                        : 'bg-gray-100'
                     }`}
                     onClick={() => setViewFilter(item.value)}
                   >
                     <IconComponent size={14} color={viewFilter === item.value ? '#ffffff' : '#6B7280'} />
-                    <Text>{item.label}</Text>
+                    <Text className={`text-sm ${viewFilter === item.value ? 'text-white' : 'text-gray-600'}`}>{item.label}</Text>
                   </View>
                 );
               })}
@@ -449,26 +449,26 @@ export default function Index() {
 
         {/* 时间筛选 */}
         <View className="flex items-center mb-2">
-          <Text className="text-sm text-gray-400 w-12">时间：</Text>
+          <Text className="text-sm text-gray-400 w-12 flex-shrink-0">时间：</Text>
           <ScrollView scrollX className="flex-1 whitespace-nowrap">
-            <View className="flex gap-2">
+            <View className="flex flex-row gap-2">
               {TIME_FILTERS.map((item) => (
                 <View
                   key={item.value}
-                  className={`px-3 py-2 rounded-full text-sm flex items-center gap-1 ${
+                  className={`h-8 px-3 rounded-full flex flex-row items-center justify-center gap-1 ${
                     timeFilter === item.value
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-100 text-gray-600'
+                      ? 'bg-blue-500'
+                      : 'bg-gray-100'
                   }`}
                   onClick={() => handleTimeFilterClick(item.value)}
                 >
                   {item.value === 'custom' && timeFilter === 'custom' && selectedDateRange.from ? (
                     <>
                       <CalendarDays size={14} color={timeFilter === item.value ? '#ffffff' : '#6B7280'} />
-                      <Text>{getDisplayDateRange()}</Text>
+                      <Text className={`text-sm ${timeFilter === item.value ? 'text-white' : 'text-gray-600'}`}>{getDisplayDateRange()}</Text>
                     </>
                   ) : (
-                    <Text>{item.label}</Text>
+                    <Text className={`text-sm ${timeFilter === item.value ? 'text-white' : 'text-gray-600'}`}>{item.label}</Text>
                   )}
                 </View>
               ))}
@@ -478,20 +478,20 @@ export default function Index() {
 
         {/* 状态筛选 */}
         <View className="flex items-center">
-          <Text className="text-sm text-gray-400 w-12">状态：</Text>
+          <Text className="text-sm text-gray-400 w-12 flex-shrink-0">状态：</Text>
           <ScrollView scrollX className="flex-1 whitespace-nowrap">
-            <View className="flex gap-2">
+            <View className="flex flex-row gap-2">
               {STATUS_FILTERS.map((item) => (
                 <View
                   key={item.value}
-                  className={`px-3 py-2 rounded-full text-sm ${
+                  className={`h-8 px-3 rounded-full flex flex-row items-center justify-center ${
                     statusFilter === item.value
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-100 text-gray-600'
+                      ? 'bg-blue-500'
+                      : 'bg-gray-100'
                   }`}
                   onClick={() => setStatusFilter(item.value)}
                 >
-                  <Text>{item.label}</Text>
+                  <Text className={`text-sm ${statusFilter === item.value ? 'text-white' : 'text-gray-600'}`}>{item.label}</Text>
                 </View>
               ))}
             </View>
