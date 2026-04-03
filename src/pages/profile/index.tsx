@@ -14,7 +14,7 @@ import { Camera, ChevronRight, LogOut, Trash2, Pencil, Check, X } from 'lucide-r
 // 默认菜单项配置（不包含功能排序，功能排序放在设置页面）
 const DEFAULT_MENU_ITEMS: MenuItem[] = [
   { icon: '📈', label: '数据统计', path: '/pages/stats/index', order: 1 },
-  { icon: '📜', label: '历史任务', path: '/pages/history/index', order: 2 },
+  { icon: '📜', label: '历史待办', path: '/pages/history/index', order: 2 },
   { icon: '⚙️', label: '设置', path: '/pages/settings/index', order: 3 },
   { icon: '📊', label: '周报', path: '/pages/weekly/index', order: 4 }
 ];

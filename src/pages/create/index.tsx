@@ -192,7 +192,7 @@ export default function Create() {
       const executorId = executor?.openid || null;
       const executorName = executor?.name || '';
       
-      console.log('[create] 创建任务参数:', {
+      console.log('[create] 创建待办参数:', {
         task_name: taskName.trim(),
         priority,
         group_id: groupId || undefined,
@@ -231,7 +231,7 @@ export default function Create() {
         Taro.showToast({ title: res.message || '创建失败', icon: 'none' });
       }
     } catch (err) {
-      console.error('创建任务失败:', err);
+      console.error('创建待办失败:', err);
       Taro.showToast({ title: '创建失败', icon: 'none' });
     } finally {
       setSubmitting(false);
@@ -426,7 +426,7 @@ export default function Create() {
           onClick={submitTask}
           disabled={submitting}
         >
-          {submitting ? '创建中...' : '创建任务'}
+          {submitting ? '创建中...' : '创建待办'}
         </Button>
       </View>
 
