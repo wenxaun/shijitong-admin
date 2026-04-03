@@ -1075,6 +1075,29 @@ export default function Index() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* 悬浮添加按钮 */}
+      <View 
+        className="flex items-center justify-center"
+        style={{
+          position: 'fixed',
+          left: '16px',
+          bottom: '70px',
+          width: '56px',
+          height: '56px',
+          backgroundColor: '#1377EB',
+          borderRadius: '50%',
+          boxShadow: '0 4px 12px rgba(19, 119, 235, 0.4)',
+          zIndex: 100
+        }}
+        onClick={() => {
+          Taro.navigateTo({
+            url: '/pages/create/index'
+          });
+        }}
+      >
+        <Text className="text-white text-3xl font-light">+</Text>
+      </View>
     </View>
   );
 }

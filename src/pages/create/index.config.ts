@@ -1,11 +1,11 @@
 export default typeof definePageConfig === 'function'
   ? definePageConfig({
-      navigationBarTitleText: '发布任务',
+      navigationBarTitleText: '添加待办',
       navigationBarBackgroundColor: '#1377EB',
       navigationBarTextStyle: 'white'
     })
   : {
-      navigationBarTitleText: '发布任务',
+      navigationBarTitleText: '添加待办',
       navigationBarBackgroundColor: '#1377EB',
       navigationBarTextStyle: 'white'
     };

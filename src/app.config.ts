@@ -50,15 +50,9 @@ export default defineAppConfig({
     list: [
       {
         pagePath: 'pages/index/index',
-        text: '任务',
+        text: '待办',
         iconPath: './assets/tabbar/clipboard-list.png',
         selectedIconPath: './assets/tabbar/clipboard-list-active.png'
-      },
-      {
-        pagePath: 'pages/create/index',
-        text: '发布',
-        iconPath: './assets/tabbar/plus-circle.png',
-        selectedIconPath: './assets/tabbar/plus-circle-active.png'
       },
       {
         pagePath: 'pages/team/index',

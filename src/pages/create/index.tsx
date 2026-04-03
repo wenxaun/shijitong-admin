@@ -91,7 +91,7 @@ export default function Create() {
     }
   };
 
-  // 加载任务分组
+  // 加载待办分组
   const loadGroups = async () => {
     try {
       // H5 端使用本地存储
@@ -178,11 +178,11 @@ export default function Create() {
   const submitTask = async () => {
     // 验证
     if (!taskName.trim()) {
-      Taro.showToast({ title: '请输入任务名称', icon: 'none' });
+      Taro.showToast({ title: '请输入待办名称', icon: 'none' });
       return;
     }
     if (!requireDate) {
-      Taro.showToast({ title: '请选择要求完成日期', icon: 'none' });
+      Taro.showToast({ title: '请选择截止日期', icon: 'none' });
       return;
     }
 
@@ -268,15 +268,15 @@ export default function Create() {
   return (
     <View className="min-h-screen bg-gray-50 pb-20">
       <View className="p-3 space-y-3">
-        {/* 任务名称 */}
+        {/* 待办名称 */}
         <Card>
           <CardContent className="p-3">
             <Label className="text-sm text-gray-500 mb-2 flex items-center">
               <Text className="text-red-500 mr-1">*</Text>
-              <Text>任务名称</Text>
+              <Text>待办名称</Text>
             </Label>
             <Input
-              placeholder="请输入任务名称"
+              placeholder="请输入待办名称"
               placeholderClass="text-gray-400"
               value={taskName}
               onInput={(e) => setTaskName(e.detail.value)}
@@ -286,12 +286,12 @@ export default function Create() {
           </CardContent>
         </Card>
 
-        {/* 任务描述 */}
+        {/* 待办描述 */}
         <Card>
           <CardContent className="p-3">
-            <Label className="text-sm text-gray-500 mb-2">任务描述</Label>
+            <Label className="text-sm text-gray-500 mb-2">待办描述</Label>
             <Textarea
-              placeholder="请输入任务描述（可选）"
+              placeholder="请输入待办描述（可选）"
               placeholderClass="text-gray-400"
               value={taskDescription}
               onInput={(e) => setTaskDescription(e.detail.value)}
@@ -324,10 +324,10 @@ export default function Create() {
           </CardContent>
         </Card>
 
-        {/* 任务分组 */}
+        {/* 待办分组 */}
         <Card>
           <CardContent className="p-3">
-            <Label className="text-sm text-gray-500 mb-2">任务分组</Label>
+            <Label className="text-sm text-gray-500 mb-2">待办分组</Label>
             <Picker
               mode="selector"
               range={getGroupPickerRange()}
@@ -365,12 +365,12 @@ export default function Create() {
           </CardContent>
         </Card>
 
-        {/* 要求完成日期 */}
+        {/* 截止日期 */}
         <Card>
           <CardContent className="p-3">
             <Label className="text-sm text-gray-500 mb-2 flex items-center">
               <Text className="text-red-500 mr-1">*</Text>
-              <Text>要求完成日期</Text>
+              <Text>截止日期</Text>
             </Label>
             <Picker mode="date" value={requireDate} onChange={onDateChange}>
               <View className="bg-gray-50 rounded-lg px-3 py-2 flex items-center justify-between border border-gray-200">
@@ -435,7 +435,7 @@ export default function Create() {
         <Dialog open={showAddGroupDialog} onOpenChange={setShowAddGroupDialog}>
           <DialogContent className="max-w-sm">
             <DialogHeader>
-              <DialogTitle>新增任务分组</DialogTitle>
+              <DialogTitle>新增待办分组</DialogTitle>
             </DialogHeader>
             
             <View className="mt-4">
