@@ -827,8 +827,15 @@ export default function Index() {
       {/* 截止日期提醒弹窗 */}
       <DeadlineReminder />
 
-      {/* 筛选栏 */}
-      <View className="bg-white px-3 py-2 mb-2 relative">
+      {/* 筛选栏 - 固定在顶部 */}
+      <View 
+        className="bg-white px-3 py-2 relative z-30"
+        style={{ 
+          position: 'sticky', 
+          top: 0,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+        }}
+      >
         <View className="flex flex-row items-center">
           {/* 时间筛选 */}
           <View className="flex-1 relative">
