@@ -156,8 +156,8 @@ exports.main = async (event, context) => {
       complete_date: task.complete_date ? formatDate(task.complete_date) : null,
       score: task.score,
       score_note: task.score_note || '',
-      subtask_count: task.subtask_count || 0,
-      progress: task.progress || 0,
+      ...(task.subtask_count ? { subtask_count: task.subtask_count } : {}),
+      ...(task.progress !== undefined && task.progress !== null ? { progress: task.progress } : {}),
       created_at: formatDate(task.created_at),
       updated_at: formatDate(task.updated_at)
     }))

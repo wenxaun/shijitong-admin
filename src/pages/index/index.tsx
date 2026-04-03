@@ -455,24 +455,24 @@ export default function Index() {
                     </View>
                   )}
                   
-                  {task.subtask_count && task.subtask_count > 0 && (
+                  {(task.subtask_count ?? 0) > 0 && (
                     <View className="flex items-center gap-1">
                       <Text className="text-xs text-gray-400">📋 {task.subtask_count} 项子任务</Text>
                     </View>
                   )}
                 </View>
                 
-                {task.subtask_count && task.subtask_count > 0 && (
+                {(task.subtask_count ?? 0) > 0 && (
                   <View className="flex items-center gap-2">
                     <View className="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
                       <View
                         className={`h-full rounded-full ${
                           task.progress === 100 ? 'bg-green-500' : 'bg-blue-500'
                         }`}
-                        style={{ width: `${task.progress || 0}%` }}
+                        style={{ width: `${task.progress ?? 0}%` }}
                       />
                     </View>
-                    <Text className="text-xs text-gray-400">{task.progress || 0}%</Text>
+                    <Text className="text-xs text-gray-400">{task.progress ?? 0}%</Text>
                   </View>
                 )}
               </View>
