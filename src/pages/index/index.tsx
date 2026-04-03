@@ -674,9 +674,11 @@ export default function Index() {
               >
                 <View className="flex items-center gap-2">
                   <Text className="text-sm font-semibold text-gray-700">{column.label}</Text>
-                  <View className="px-2 py-1 rounded-full bg-white">
-                    <Text className="text-xs text-gray-600">{columns[column.key]?.length || 0}</Text>
-                  </View>
+                  {columns[column.key] && columns[column.key].length > 0 && (
+                    <View className="px-2 py-1 rounded-full bg-white">
+                      <Text className="text-xs text-gray-600">{columns[column.key].length}</Text>
+                    </View>
+                  )}
                 </View>
               </View>
               
