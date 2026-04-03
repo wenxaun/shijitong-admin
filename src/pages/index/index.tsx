@@ -827,7 +827,7 @@ export default function Index() {
       {/* 截止日期提醒弹窗 */}
       <DeadlineReminder />
 
-      {/* 筛选栏 - 固定在顶部 */}
+      {/* 筛选栏 - 固定在顶部，紧贴导航栏 */}
       <View 
         className="bg-white px-3 py-2 relative z-30"
         style={{ 
@@ -977,7 +977,7 @@ export default function Index() {
       </View>
 
       {/* 任务列表 */}
-      <View className="px-3 pb-20">
+      <View className="px-3 pb-20 pt-3">
         {loading && tasks.length === 0 ? (
           renderLoading()
         ) : tasks.length === 0 ? (
