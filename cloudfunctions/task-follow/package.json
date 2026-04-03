@@ -1,7 +1,7 @@
 {
-  "name": "cloudfunction",
+  "name": "task-follow",
   "version": "1.0.0",
-  "description": "微信小程序云函数",
+  "description": "任务关注云函数",
   "main": "index.js",
   "dependencies": {
     "wx-server-sdk": "~2.6.3"
