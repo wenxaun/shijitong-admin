@@ -24,13 +24,18 @@ const ATTRIBUTION_TAGS = [
 /**
  * 计算自动评分
  * 
- * 评分规则：
+ * 评分规则（与云函数保持一致）：
  * 1. 满分100分
  * 2. 提前完成（completeDays < 0）：100分
  * 3. 按时完成（completeDays = 0）：80分（合格）
  * 4. 逾期完成（completeDays > 0）：
  *    - 有异常上报：80分（按原截止日期评分，视为特殊情况）
- *    - 无异常上报：每逾期1天扣5分，最低60分（保底）
+ *    - 无异常上报：
+ *      - 逾期1天：79分
+ *      - 逾期2天：69分
+ *      - 逾期3天：60分
+ *      - 逾期4-7天：60分递减到45分
+ *      - 逾期超过7天：30分
  * 
  * 额外扣分：
  * - 子任务未完成：按比例扣分（最多10分）
@@ -56,8 +61,16 @@ const calculateScore = (
       // 视为已提前沟通的特殊情况，不扣分
       score = 80;
     } else {
-      // 无异常上报：每逾期1天扣5分，最低60分（保底）
-      score = Math.max(60, 80 - completeDays * 5);
+      // 无异常上报：按照云函数的评分规则
+      if (completeDays === 1) {
+        score = 79;
+      } else if (completeDays <= 3) {
+        score = Math.max(60, 79 - (completeDays - 1) * 10);
+      } else if (completeDays <= 7) {
+        score = Math.max(45, 60 - (completeDays - 3) * 5);
+      } else {
+        score = 30;
+      }
     }
   }
 
@@ -98,6 +111,19 @@ export default function Review() {
   const [improvements, setImprovements] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+
+  // 页面返回拦截
+  useEffect(() => {
+    // 启用返回拦截
+    Taro.enableAlertBeforeUnload({
+      message: '您还未提交复盘，确定要离开吗？'
+    });
+
+    return () => {
+      // 页面卸载时禁用拦截
+      Taro.disableAlertBeforeUnload();
+    };
+  }, []);
 
   // 加载任务详情
   const loadTask = useCallback(async () => {
@@ -225,6 +251,7 @@ export default function Review() {
       );
 
       if (res.success) {
+        Taro.disableAlertBeforeUnload(); // 禁用返回拦截
         Taro.showToast({ title: '复盘提交成功', icon: 'success' });
         setTimeout(() => Taro.navigateBack(), 1500);
       } else {
