@@ -61,9 +61,9 @@ exports.main = async (event, context) => {
       success: true,
       message: '记录已隐藏',
       data: {
-        hidden_created: createdTasksResult.stats?.updated || 0,
-        hidden_executed: executedTasksResult.stats?.updated || 0,
-        hidden_subtasks: subtasksResult.stats?.updated || 0
+        hidden_created: (createdTasksResult.stats && createdTasksResult.stats.updated) || 0,
+        hidden_executed: (executedTasksResult.stats && executedTasksResult.stats.updated) || 0,
+        hidden_subtasks: (subtasksResult.stats && subtasksResult.stats.updated) || 0
       }
     }
   } catch (err) {

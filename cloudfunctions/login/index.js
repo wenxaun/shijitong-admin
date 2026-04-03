@@ -105,12 +105,12 @@ async function createUser(openid, userInfo) {
   
   const userData = {
     openid: openid,
-    nick_name: userInfo?.nickName || '微信用户',
-    avatar_url: userInfo?.avatarUrl || '',
-    gender: userInfo?.gender || 0,
-    city: userInfo?.city || '',
-    province: userInfo?.province || '',
-    country: userInfo?.country || '',
+    nick_name: (userInfo && userInfo.nickName) || '微信用户',
+    avatar_url: (userInfo && userInfo.avatarUrl) || '',
+    gender: (userInfo && userInfo.gender) || 0,
+    city: (userInfo && userInfo.city) || '',
+    province: (userInfo && userInfo.province) || '',
+    country: (userInfo && userInfo.country) || '',
     phone: null,
     org_id: null,
     dept_id: null,
@@ -136,10 +136,10 @@ async function updateUser(userId, userInfo) {
     login_count: _.inc(1)
   };
 
-  if (userInfo?.nickName) {
+  if (userInfo && userInfo.nickName) {
     updateData.nick_name = userInfo.nickName;
   }
-  if (userInfo?.avatarUrl) {
+  if (userInfo && userInfo.avatarUrl) {
     updateData.avatar_url = userInfo.avatarUrl;
   }
 

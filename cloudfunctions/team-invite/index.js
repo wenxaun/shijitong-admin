@@ -39,9 +39,11 @@ exports.main = async (event, context) => {
       const team = teamRes.data
       
       // 权限检查：只有创建者或管理员可以生成邀请码
-      const memberInfo = team.member_details?.find(m => m.openid === OPENID)
+      const memberInfo = team.member_details && team.member_details.find(m => m.openid === OPENID)
       const isLeader = team.leader_id === OPENID
-      const canInvite = isLeader || memberInfo?.permissions?.can_invite_member || memberInfo?.role === 'admin'
+      const canInvite = isLeader || 
+        (memberInfo && memberInfo.permissions && memberInfo.permissions.can_invite_member) || 
+        (memberInfo && memberInfo.role === 'admin')
       
       if (!canInvite) {
         return { success: false, message: '无权限生成邀请码' }
@@ -93,9 +95,9 @@ exports.main = async (event, context) => {
       }
       
       // 获取邀请人信息（团队创建者或第一个管理员）
-      const inviter = team.member_details?.find(m => m.role === 'owner') || 
-                      team.member_details?.find(m => m.role === 'admin') ||
-                      team.member_details?.[0]
+      const inviter = (team.member_details && team.member_details.find(m => m.role === 'owner')) || 
+                      (team.member_details && team.member_details.find(m => m.role === 'admin')) ||
+                      (team.member_details && team.member_details[0])
       
       return {
         success: true,
@@ -104,8 +106,8 @@ exports.main = async (event, context) => {
           team_id: team._id,
           team_name: team.name,
           team_description: team.description,
-          inviter_name: inviter?.nickname || team.leader_name || '团队管理员',
-          member_count: team.members?.length || team.member_details?.length || 0,
+          inviter_name: (inviter && inviter.nickname) || team.leader_name || '团队管理员',
+          member_count: (team.members && team.members.length) || (team.member_details && team.member_details.length) || 0,
           expires_at: team.invite_code_expires_at
         }
       }
@@ -134,8 +136,8 @@ exports.main = async (event, context) => {
       }
       
       // 检查是否已是成员
-      const isMember = team.members?.includes(user_id) || 
-                       team.member_details?.some(m => m.openid === user_id)
+      const isMember = (team.members && team.members.includes(user_id)) || 
+                       (team.member_details && team.member_details.some(m => m.openid === user_id))
       
       if (isMember) {
         return { success: false, message: '你已是该团队成员' }
@@ -146,8 +148,8 @@ exports.main = async (event, context) => {
         openid: user_id
       }).get()
       
-      const user = userRes.data?.[0]
-      const nickname = user?.nickname || user?.username || '新成员'
+      const user = userRes.data && userRes.data[0]
+      const nickname = (user && (user.nickname || user.username)) || '新成员'
       
       // 默认成员权限
       const defaultPermissions = {

@@ -88,7 +88,7 @@ exports.main = async (event, context) => {
 
     // 确定当前用户的角色
     const myMemberInfo = memberDetails.find(m => m.openid === OPENID)
-    const myRole = myMemberInfo?.role || (team.leader_id === OPENID ? 'owner' : 'member')
+    const myRole = (myMemberInfo && myMemberInfo.role) || (team.leader_id === OPENID ? 'owner' : 'member')
 
     console.log('[team-detail] 返回团队详情, 成员数:', memberDetails.length)
 

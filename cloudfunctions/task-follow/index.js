@@ -52,7 +52,7 @@ exports.main = async (event, context) => {
         .limit(1)
         .get()
       
-      const userName = userResult.data[0]?.nickname || ''
+      const userName = (userResult.data[0] && userResult.data[0].nickname) || ''
       
       // 创建关注记录
       await db.collection('task_follows').add({
@@ -107,7 +107,7 @@ exports.main = async (event, context) => {
         .limit(1)
         .get()
       
-      const userName = userResult.data[0]?.nickname || ''
+      const userName = (userResult.data[0] && userResult.data[0].nickname) || ''
       
       await db.collection('task_logs').add({
         data: {
