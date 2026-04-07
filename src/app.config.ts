@@ -27,7 +27,9 @@ export default defineAppConfig({
     'pages/subtask-edit/index',
     'pages/group-manage/index',
     'pages/group-assign/index',
-    'pages/menu-sort/index'
+    'pages/menu-sort/index',
+    'pages/privacy/index',
+    'pages/agreement/index'
   ],
   window: {
     backgroundTextStyle: 'dark',

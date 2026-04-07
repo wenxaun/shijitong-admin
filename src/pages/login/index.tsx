@@ -14,6 +14,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState('');
   const [nickname, setNickname] = useState('');
+  const [agreed, setAgreed] = useState(false);
 
   useEffect(() => {
     // 如果已登录，直接跳转
@@ -41,8 +42,29 @@ export default function Login() {
     setNickname(e.detail.value);
   };
 
+  // 勾选/取消勾选协议
+  const toggleAgreement = () => {
+    setAgreed(!agreed);
+  };
+
+  // 查看用户服务协议
+  const viewUserAgreement = () => {
+    Taro.navigateTo({ url: '/pages/agreement/index' });
+  };
+
+  // 查看隐私政策
+  const viewPrivacyPolicy = () => {
+    Taro.navigateTo({ url: '/pages/privacy/index' });
+  };
+
   // 微信登录
   const handleLogin = async () => {
+    // 检查是否同意协议
+    if (!agreed) {
+      Taro.showToast({ title: '请先阅读并同意用户协议和隐私政策', icon: 'none' });
+      return;
+    }
+
     setLoading(true);
     try {
       if (Taro.getEnv() === Taro.ENV_TYPE.WEAPP) {
@@ -187,7 +209,7 @@ export default function Login() {
       </View>
 
       {/* 功能特点 */}
-      <View className="px-8 mb-8">
+      <View className="px-8 mb-6">
         <View className="flex items-center py-3">
           <View className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center mr-4">
             <ListTodo size={20} color="#1377EB" />
@@ -197,7 +219,7 @@ export default function Login() {
             <Text className="text-xs text-gray-400">创建、分配、执行、复盘</Text>
           </View>
         </View>
-
+  
         <View className="flex items-center py-3">
           <View className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center mr-4">
             <TrendingUp size={20} color="#22C55E" />
@@ -219,23 +241,39 @@ export default function Login() {
         </View>
       </View>
 
-      {/* 登录按钮 */}
+      {/* 登录按钮和协议 */}
       <View className="px-8 pb-12">
+        {/* 协议勾选 */}
+        <View className="flex items-start mb-4 bg-gray-50 rounded-xl p-4">
+          <Button
+            className={`w-6 h-6 rounded flex-shrink-0 flex items-center justify-center p-0 mr-3 ${
+              agreed ? 'bg-blue-500 border-blue-500' : 'bg-white border-gray-300 border-2'
+            }`}
+            onClick={toggleAgreement}
+          >
+            {agreed && (
+              <Text className="text-white text-xs">✓</Text>
+            )}
+          </Button>
+          <View className="flex-1">
+            <Text className="text-sm text-gray-600 leading-relaxed">
+              我已阅读并同意
+              <Text className="text-blue-500" onClick={viewUserAgreement}>《用户服务协议》</Text>
+              和
+              <Text className="text-blue-500" onClick={viewPrivacyPolicy}>《隐私政策》</Text>
+            </Text>
+          </View>
+        </View>
+
         <UIButton
-          className="w-full bg-blue-500 text-white rounded-xl py-4 font-medium text-base"
+          className={`w-full rounded-xl py-4 font-medium text-base ${
+            agreed ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-400'
+          }`}
           onClick={handleLogin}
           disabled={loading}
         >
           {loading ? '登录中...' : '微信快捷登录'}
         </UIButton>
-
-        {/* 协议提示 */}
-        <Text className="text-gray-400 text-xs mt-4 text-center block">
-          登录即表示同意
-          <Text className="text-blue-500">《用户服务协议》</Text>
-          和
-          <Text className="text-blue-500">《隐私政策》</Text>
-        </Text>
       </View>
     </View>
   );
