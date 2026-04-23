@@ -38,8 +38,8 @@ export default function GroupManage() {
         
         if (groupList.length === 0) {
           groupList = [
-            { _id: 'default1', name: '工作', user_id: 'test', order: 1, task_count: 0, created_at: new Date().toISOString() },
-            { _id: 'default2', name: '个人', user_id: 'test', order: 2, task_count: 0, created_at: new Date().toISOString() }
+            { _id: 'default1', name: '工作', user_type: 'personal' as const, user_id: 'test', order: 1, task_count: 0, created_at: new Date().toISOString() },
+            { _id: 'default2', name: '个人', user_type: 'personal' as const, user_id: 'test', order: 2, task_count: 0, created_at: new Date().toISOString() }
           ];
           Taro.setStorageSync('mock_groups', JSON.stringify(groupList));
         }
@@ -76,6 +76,7 @@ export default function GroupManage() {
         const newGroup: TaskGroup = {
           _id: `group_${Date.now()}`,
           name: inputName.trim(),
+          user_type: 'personal' as const,
           user_id: openid || 'test',
           order: groups.length + 1,
           task_count: 0,

@@ -5,6 +5,7 @@ export default defineAppConfig({
     'pages/create/index',
     'pages/share-create/index',
     'pages/team/index',
+    'pages/enterprise/index',
     'pages/profile/index',
     'pages/review/index',
     'pages/detail/index',

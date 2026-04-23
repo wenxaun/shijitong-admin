@@ -153,6 +153,7 @@ export default function Create() {
         const newGroup: TaskGroup = {
           _id: `group_${Date.now()}`,
           name: newGroupName.trim(),
+          user_type: 'personal' as const,
           user_id: 'test',
           order: groups.length + 1,
           created_at: new Date().toISOString()

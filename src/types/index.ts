@@ -32,6 +32,11 @@ export interface GetDepartmentResult {
 }
 
 /**
+ * 用户类型
+ */
+export type UserType = 'personal' | 'enterprise';
+
+/**
  * 任务状态
  */
 export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled' | 'exception';
@@ -63,6 +68,7 @@ export interface TaskSource {
 export interface Task {
   _id: string;
   task_id: string;
+  user_type: UserType;          // 用户类型：个人用户/企业用户
   task_name: string;
   task_description?: string;
   status: TaskStatus;
@@ -110,6 +116,7 @@ export interface User {
   _id: string;
   openid: string;
   appid?: string;
+  user_type: UserType;         // 用户类型：个人用户/企业用户
   nickname: string;
   avatar_url?: string;
   role: 'executor' | 'publisher' | 'admin';
@@ -124,6 +131,7 @@ export interface User {
   receive_weekly?: boolean;      // 是否接收周报
   
   // 企业微信关联（预留，后续企业微信接入使用）
+  is_wework_user?: boolean;      // 是否企业微信用户
   wecom_userid?: string;         // 企业微信成员 UserID
   wecom_corpid?: string;         // 所属企业 ID
   department_id?: string;        // 主部门 ID
@@ -275,6 +283,7 @@ export interface TaskGroup {
   _id: string;
   name: string;
   user_id: string;
+  user_type: UserType;          // 用户类型：个人用户/企业用户
   order: number;
   task_count?: number;
   created_at: string;

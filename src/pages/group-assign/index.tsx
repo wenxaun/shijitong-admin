@@ -39,8 +39,8 @@ export default function GroupAssign() {
         
         if (groupList.length === 0) {
           groupList = [
-            { _id: 'default1', name: '工作', user_id: 'test', order: 1, task_count: 3, created_at: new Date().toISOString() },
-            { _id: 'default2', name: '个人', user_id: 'test', order: 2, task_count: 2, created_at: new Date().toISOString() }
+            { _id: 'default1', name: '工作', user_type: 'personal' as const, user_id: 'test', order: 1, task_count: 3, created_at: new Date().toISOString() },
+            { _id: 'default2', name: '个人', user_type: 'personal' as const, user_id: 'test', order: 2, task_count: 2, created_at: new Date().toISOString() }
           ];
           Taro.setStorageSync('mock_groups', JSON.stringify(groupList));
         }
@@ -53,12 +53,12 @@ export default function GroupAssign() {
         if (taskList.length === 0) {
           const currentOpenid = openid || 'test';
           taskList = [
-            { _id: 't1', task_id: 't1', task_name: '完成项目报告', status: 'pending', priority: 'P1', publisher_id: currentOpenid, require_date: new Date().toISOString().split('T')[0], created_at: new Date().toISOString(), updated_at: new Date().toISOString(), group_id: 'default1' },
-            { _id: 't2', task_id: 't2', task_name: '整理会议纪要', status: 'pending', priority: 'P2', publisher_id: currentOpenid, require_date: new Date().toISOString().split('T')[0], created_at: new Date().toISOString(), updated_at: new Date().toISOString(), group_id: 'default1' },
-            { _id: 't3', task_id: 't3', task_name: '学习新技术', status: 'pending', priority: 'P2', publisher_id: currentOpenid, require_date: new Date().toISOString().split('T')[0], created_at: new Date().toISOString(), updated_at: new Date().toISOString(), group_id: 'default2' },
-            { _id: 't4', task_id: 't4', task_name: '健身锻炼', status: 'pending', priority: 'P3', publisher_id: currentOpenid, require_date: new Date().toISOString().split('T')[0], created_at: new Date().toISOString(), updated_at: new Date().toISOString(), group_id: 'default2' },
-            { _id: 't5', task_id: 't5', task_name: '未分组任务1', status: 'pending', priority: 'P2', publisher_id: currentOpenid, require_date: new Date().toISOString().split('T')[0], created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
-            { _id: 't6', task_id: 't6', task_name: '未分组任务2', status: 'pending', priority: 'P3', publisher_id: currentOpenid, require_date: new Date().toISOString().split('T')[0], created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
+            { _id: 't1', task_id: 't1', user_type: 'personal' as const, task_name: '完成项目报告', status: 'pending', priority: 'P1', publisher_id: currentOpenid, require_date: new Date().toISOString().split('T')[0], created_at: new Date().toISOString(), updated_at: new Date().toISOString(), group_id: 'default1' },
+            { _id: 't2', task_id: 't2', user_type: 'personal' as const, task_name: '整理会议纪要', status: 'pending', priority: 'P2', publisher_id: currentOpenid, require_date: new Date().toISOString().split('T')[0], created_at: new Date().toISOString(), updated_at: new Date().toISOString(), group_id: 'default1' },
+            { _id: 't3', task_id: 't3', user_type: 'personal' as const, task_name: '学习新技术', status: 'pending', priority: 'P2', publisher_id: currentOpenid, require_date: new Date().toISOString().split('T')[0], created_at: new Date().toISOString(), updated_at: new Date().toISOString(), group_id: 'default2' },
+            { _id: 't4', task_id: 't4', user_type: 'personal' as const, task_name: '健身锻炼', status: 'pending', priority: 'P3', publisher_id: currentOpenid, require_date: new Date().toISOString().split('T')[0], created_at: new Date().toISOString(), updated_at: new Date().toISOString(), group_id: 'default2' },
+            { _id: 't5', task_id: 't5', user_type: 'personal' as const, task_name: '未分组任务1', status: 'pending', priority: 'P2', publisher_id: currentOpenid, require_date: new Date().toISOString().split('T')[0], created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+            { _id: 't6', task_id: 't6', user_type: 'personal' as const, task_name: '未分组任务2', status: 'pending', priority: 'P3', publisher_id: currentOpenid, require_date: new Date().toISOString().split('T')[0], created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
           ];
           Taro.setStorageSync('mock_tasks', JSON.stringify(taskList));
         }

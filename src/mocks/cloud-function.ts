@@ -64,6 +64,7 @@ export const mockCloudFunction = async (name: string, data?: any): Promise<any> 
         _id: 'mock_task_' + Date.now(),
         task_id: 'mock_task_' + Date.now(),
         task_name: data?.task_name || '新任务',
+        user_type: 'personal' as const,
         task_description: data?.task_description || '',
         status: 'pending' as const,
         priority: data?.priority || 'P2',

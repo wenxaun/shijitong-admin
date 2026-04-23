@@ -117,6 +117,7 @@ export default function Weekly() {
             {
               _id: '1',
               task_id: '1',
+              user_type: 'personal' as const,
               task_name: '完成项目文档编写',
               status: 'completed',
               priority: 'P1',
@@ -133,6 +134,7 @@ export default function Weekly() {
             {
               _id: '2',
               task_id: '2',
+              user_type: 'personal' as const,
               task_name: '接口开发任务',
               status: 'completed',
               priority: 'P0',

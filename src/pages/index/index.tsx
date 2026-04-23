@@ -79,7 +79,7 @@ const getCacheKey = (statusFilter: string, timeFilter: string, viewFilter: strin
 };
 
 export default function Index() {
-  const { openid } = useUserStore();
+  const { openid, userInfo } = useUserStore();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -251,7 +251,8 @@ export default function Index() {
         status: statusFilter === 'all' ? undefined : statusFilter,
         page: currentPage,
         pageSize: 20,
-        view_type: viewFilter
+        view_type: viewFilter,
+        user_type: userInfo?.user_type || 'personal'  // 传递用户类型
       };
       
       if (timeFilter === 'custom' && selectedDateRange.from && selectedDateRange.to) {

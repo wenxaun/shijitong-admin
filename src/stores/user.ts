@@ -7,6 +7,7 @@ import { getOpenId } from '@/utils/cloud';
 interface UserInfo {
   nickName: string;
   avatarUrl: string;
+  user_type?: 'personal' | 'enterprise';  // 用户类型
   // 汇报关系
   manager_id?: string;
   manager_name?: string;
@@ -73,7 +74,8 @@ export const useUserStore = create<UserState>()(
       setUserInfo: (user: User) => {
         const userInfo: UserInfo = {
           nickName: (user as any).nickName || (user as any).nickname || '',
-          avatarUrl: (user as any).avatarUrl || (user as any).avatar_url || ''
+          avatarUrl: (user as any).avatarUrl || (user as any).avatar_url || '',
+          user_type: (user as any).user_type || 'personal'
         };
         Taro.setStorageSync('userInfo', userInfo);
         set({ userInfo, isLoggedIn: true });

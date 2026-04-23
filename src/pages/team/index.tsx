@@ -21,7 +21,7 @@ interface SearchResult {
 }
 
 export default function TeamPage() {
-  const { openid } = useUserStore();
+  const { openid, userInfo } = useUserStore();
   const [loading, setLoading] = useState(true);
   const [teams, setTeams] = useState<Team[]>([]);
   const [currentTab, setCurrentTab] = useState<TabType>('team');
@@ -30,6 +30,10 @@ export default function TeamPage() {
   const [isSearching, setIsSearching] = useState(false);
   const isFirstLoad = useRef(true);
   const isLoadingRef = useRef(false);
+  
+  // 企业相关状态
+  const [enterpriseLoading, setEnterpriseLoading] = useState(false);
+  const [enterpriseInfo, setEnterpriseInfo] = useState<any>(null);
 
   const loadTeams = useCallback(async () => {
     if (isLoadingRef.current) return;
@@ -130,9 +134,56 @@ export default function TeamPage() {
     }
     const storeOpenid = useUserStore.getState().openid;
     if (storeOpenid && !isLoadingRef.current) {
-      loadTeams();
+      if (currentTab === 'team') {
+        loadTeams();
+      } else {
+        loadEnterpriseInfo();
+      }
     }
   });
+
+  // 加载企业信息
+  const loadEnterpriseInfo = async () => {
+    if (isLoadingRef.current) return;
+    isLoadingRef.current = true;
+    setEnterpriseLoading(true);
+
+    try {
+      // 如果不是企业用户，显示提示
+      if (userInfo?.user_type !== 'enterprise') {
+        setEnterpriseInfo(null);
+        return;
+      }
+
+      // 调用云函数获取企业信息
+      const result = await callFunction<CloudResponse<{
+        enterprise: any;
+        members: any[];
+        departments: any[];
+      }>>('enterprise-info', {
+        openid
+      });
+
+      if (result.success && result.data) {
+        setEnterpriseInfo(result.data.enterprise);
+      } else {
+        setEnterpriseInfo(null);
+      }
+    } catch (error) {
+      console.error('[Team] 加载企业信息失败:', error);
+      setEnterpriseInfo(null);
+    } finally {
+      setEnterpriseLoading(false);
+      isLoadingRef.current = false;
+    }
+  };
+
+  // 监听 tab 切换
+  useEffect(() => {
+    if (currentTab === 'enterprise' && !enterpriseInfo && !enterpriseLoading) {
+      loadEnterpriseInfo();
+    }
+  }, [currentTab]);
 
   // 搜索功能
   const handleSearch = (keyword: string) => {
@@ -318,20 +369,21 @@ export default function TeamPage() {
     );
   };
 
-  // 渲染企业页面（占位）
-  const renderEnterpriseContent = () => (
+  // 渲染企业页面
+  const renderEnterpriseContent = () => { return (
     <View className="flex-1">
       {/* 功能入口 */}
       <View className="bg-white mb-2">
-        <View 
+        <View
           className="flex items-center px-4 py-3 border-b border-gray-100 active:bg-gray-50"
+          onClick={() => Taro.navigateTo({ url: '/pages/enterprise/index' })}
         >
           <View className="w-12 h-12 rounded-lg bg-purple-500 flex items-center justify-center mr-3">
             <Building size={24} color="#ffffff" />
           </View>
           <View className="flex-1">
             <Text className="text-base text-gray-900">企业组织架构</Text>
-            <Text className="text-xs text-gray-400 mt-1">接入企业微信后自动同步</Text>
+            <Text className="text-xs text-gray-400 mt-1">查看企业信息、成员和部门</Text>
           </View>
           <ChevronRight size={20} color="#D1D5DB" />
         </View>
@@ -359,7 +411,8 @@ export default function TeamPage() {
         <Text className="text-gray-400 text-sm">接入企业微信后自动同步</Text>
       </View>
     </View>
-  );
+    );
+  };
 
   return (
     <View className="min-h-screen bg-gray-100">

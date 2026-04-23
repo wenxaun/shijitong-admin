@@ -12,6 +12,7 @@ export const createMockTasks = (): Task[] => [
     _id: 'mock_task_1',
     task_id: 'mock_task_1',
     task_name: '示例任务 1（已完成）',
+    user_type: 'personal' as const,
     task_description: '这是一个已完成的示例任务，评分80分。',
     status: 'completed',
     priority: 'P1',
@@ -27,6 +28,7 @@ export const createMockTasks = (): Task[] => [
   {
     _id: 'mock_task_2',
     task_id: 'mock_task_2',
+    user_type: 'personal' as const,
     task_name: '示例任务 2（逾期完成）',
     task_description: '这是一个逾期完成的示例任务，评分65分。',
     status: 'completed',
@@ -42,6 +44,7 @@ export const createMockTasks = (): Task[] => [
   },
   {
     _id: 'mock_task_3',
+    user_type: 'personal' as const,
     task_id: 'mock_task_3',
     task_name: '示例任务 3（进行中）',
     task_description: '这是一个进行中的示例任务。',
@@ -55,6 +58,7 @@ export const createMockTasks = (): Task[] => [
     updated_at: new Date().toISOString()
   },
   {
+    user_type: 'personal' as const,
     _id: 'mock_task_4',
     task_id: 'mock_task_4',
     task_name: '示例任务 4（待办）',

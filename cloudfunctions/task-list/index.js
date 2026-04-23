@@ -56,11 +56,17 @@ exports.main = async (event, context) => {
       end_date,
       page = 1,
       pageSize = 20,
-      view_type // 新增：视图类型（all/assigned/followed）
+      view_type, // 新增：视图类型（all/assigned/followed）
+      user_type // 新增：用户类型（personal/enterprise）
     } = event
     
     // 构建查询条件数组
     const conditions = []
+    
+    // 根据用户类型过滤（用户隔离）
+    if (user_type) {
+      conditions.push({ user_type: user_type })
+    }
     
     // 根据视图类型筛选
     if (view_type === 'assigned') {

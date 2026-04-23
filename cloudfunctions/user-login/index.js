@@ -55,10 +55,12 @@ exports.main = async (event, context) => {
 async function wechatLogin(userInfo, OPENID, APPID, db, isWework = false) {
   // 企业微信用户使用特殊的 openid 格式
   let openid = OPENID
+  let userType = 'personal'
   
   if (isWework) {
     // 企业微信用户：尝试从 wxContext 获取企业信息
     const wxContext = cloud.getWXContext()
+    userType = 'enterprise'
     
     // 如果有企业微信特有的标识，使用企业用户的唯一标识
     if (wxContext && wxContext.CORP_ID) {
@@ -88,6 +90,7 @@ async function wechatLogin(userInfo, OPENID, APPID, db, isWework = false) {
       data: {
         openid: openid,
         appid: APPID,
+        user_type: userType,             // 添加用户类型
         nickname: userInfo.nickName || (isWework ? '企业用户' : '微信用户'),
         avatar_url: userInfo.avatarUrl || '',
         role: 'executor',
@@ -104,6 +107,7 @@ async function wechatLogin(userInfo, OPENID, APPID, db, isWework = false) {
     user = {
       _id: result._id,
       openid: openid,
+      user_type: userType,
       nickname: userInfo.nickName || (isWework ? '企业用户' : '微信用户'),
       avatar_url: userInfo.avatarUrl || '',
       role: 'executor',
@@ -117,6 +121,7 @@ async function wechatLogin(userInfo, OPENID, APPID, db, isWework = false) {
     data: {
       user_id: user._id,
       openid: openid,
+      user_type: user.user_type,
       nickname: user.nickname,
       avatar_url: user.avatar_url,
       role: user.role,

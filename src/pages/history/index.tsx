@@ -75,6 +75,7 @@ export default function History() {
           {
             _id: '1',
             task_id: '1',
+            user_type: 'personal' as const,
             task_name: '示例任务1（提前完成）',
             task_description: '任务描述内容',
             status: 'completed',
@@ -93,6 +94,7 @@ export default function History() {
           {
             _id: '2',
             task_id: '2',
+            user_type: 'personal' as const,
             task_name: '示例任务2（按时完成）',
             status: 'completed',
             priority: 'P2',
@@ -110,6 +112,7 @@ export default function History() {
           {
             _id: '3',
             task_id: '3',
+            user_type: 'personal' as const,
             task_name: '示例任务3（逾期完成）',
             status: 'completed',
             priority: 'P1',
