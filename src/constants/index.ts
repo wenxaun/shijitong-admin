@@ -20,11 +20,11 @@ export const STATUS_MAP: Record<TaskStatus | 'deleted', { label: string; bgClass
 /**
  * 优先级样式映射
  */
-export const PRIORITY_STYLE: Record<TaskPriority, { bg: string; text: string; border: string }> = {
-  P0: { bg: 'bg-red-50', text: 'text-red-500', border: 'border-red-500' },
-  P1: { bg: 'bg-orange-50', text: 'text-orange-500', border: 'border-orange-500' },
-  P2: { bg: 'bg-blue-50', text: 'text-blue-500', border: 'border-blue-500' },
-  P3: { bg: 'bg-gray-100', text: 'text-gray-400', border: 'border-gray-300' }
+export const PRIORITY_STYLE: Record<TaskPriority, { bg: string; text: string; border: string; badge: string }> = {
+  P0: { bg: 'bg-red-50', text: 'text-red-500', border: 'border-red-500', badge: 'bg-red-100 text-red-600' },
+  P1: { bg: 'bg-orange-50', text: 'text-orange-500', border: 'border-orange-500', badge: 'bg-orange-100 text-orange-600' },
+  P2: { bg: 'bg-blue-50', text: 'text-blue-500', border: 'border-blue-500', badge: 'bg-blue-100 text-blue-600' },
+  P3: { bg: 'bg-gray-100', text: 'text-gray-400', border: 'border-gray-300', badge: 'bg-gray-100 text-gray-600' }
 };
 
 /**

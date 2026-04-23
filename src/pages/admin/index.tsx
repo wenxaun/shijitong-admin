@@ -1,5 +1,4 @@
 import { View, Text, ScrollView } from '@tarojs/components';
-import { useState } from 'react';
 import Taro from '@tarojs/taro';
 import { useUserStore } from '@/stores/user';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,7 +7,6 @@ import { Users, ClipboardList, FolderKanban, Settings } from 'lucide-react-taro'
 
 export default function AdminPage() {
   const { userInfo } = useUserStore();
-  const [loading, setLoading] = useState(false);
 
   // 检查是否是管理员
   const isAdmin = userInfo?.role === 'admin' || userInfo?.role === 'owner';

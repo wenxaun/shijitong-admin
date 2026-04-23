@@ -8,6 +8,7 @@ interface UserInfo {
   nickName: string;
   avatarUrl: string;
   user_type?: 'personal' | 'enterprise';  // 用户类型
+  role?: 'member' | 'admin' | 'owner';  // 用户角色
   // 汇报关系
   manager_id?: string;
   manager_name?: string;
