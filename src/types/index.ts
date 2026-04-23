@@ -1,4 +1,37 @@
 /**
+ * 企业微信类型声明
+ */
+
+// 企业微信选择企业联系人结果
+export interface EnterpriseContactResult {
+  errMsg: string;
+  result: {
+    userList?: Array<{
+      userid: string;
+      name: string;
+      avatar?: string;
+    }>;
+    departmentList?: Array<{
+      id: number;
+      name: string;
+    }>;
+  };
+}
+
+// 企业微信部门信息
+export interface WecomDepartment {
+  id: number;
+  name: string;
+  parentid: number;
+}
+
+// 企业微信获取部门结果
+export interface GetDepartmentResult {
+  errMsg: string;
+  department?: Department[];
+}
+
+/**
  * 任务状态
  */
 export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled' | 'exception';

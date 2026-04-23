@@ -19,11 +19,16 @@ exports.main = async (event, context) => {
   const { OPENID, APPID } = wxContext
   
   try {
-    const { username, password, userInfo } = event
+    const { username, password, userInfo, environment } = event
+    
+    // 企业微信登录模式
+    if (environment === 'wework') {
+      return await wechatLogin(userInfo, OPENID, APPID, db, true)
+    }
     
     // 微信登录模式
     if (userInfo && !username) {
-      return await wechatLogin(userInfo, OPENID, APPID, db)
+      return await wechatLogin(userInfo, OPENID, APPID, db, false)
     }
     
     // 用户名密码登录模式
@@ -46,10 +51,23 @@ exports.main = async (event, context) => {
   }
 }
 
-// 微信登录
-async function wechatLogin(userInfo, OPENID, APPID, db) {
+// 微信登录（支持企业微信）
+async function wechatLogin(userInfo, OPENID, APPID, db, isWework = false) {
+  // 企业微信用户使用特殊的 openid 格式
+  let openid = OPENID
+  
+  if (isWework) {
+    // 企业微信用户：尝试从 wxContext 获取企业信息
+    const wxContext = cloud.getWXContext()
+    
+    // 如果有企业微信特有的标识，使用企业用户的唯一标识
+    if (wxContext && wxContext.CORP_ID) {
+      openid = `wework_${OPENID}_${wxContext.CORP_ID}`
+    }
+  }
+  
   const userRes = await db.collection('users').where({
-    openid: OPENID
+    openid: openid
   }).get()
   
   let user
@@ -68,21 +86,28 @@ async function wechatLogin(userInfo, OPENID, APPID, db) {
     isNewUser = true
     const result = await db.collection('users').add({
       data: {
-        openid: OPENID,
+        openid: openid,
         appid: APPID,
-        nickname: userInfo.nickName || '微信用户',
+        nickname: userInfo.nickName || (isWework ? '企业用户' : '微信用户'),
         avatar_url: userInfo.avatarUrl || '',
         role: 'executor',
+        ...(isWework && {
+          is_wework_user: true,
+          // 企业微信特有字段（如果有企业API可以获取更多信息）
+          wecom_userid: userInfo.userid || null,
+          wecom_corpid: userInfo.corpId || null
+        }),
         created_at: new Date(),
         last_login: new Date()
       }
     })
     user = {
       _id: result._id,
-      openid: OPENID,
-      nickname: userInfo.nickName || '微信用户',
+      openid: openid,
+      nickname: userInfo.nickName || (isWework ? '企业用户' : '微信用户'),
       avatar_url: userInfo.avatarUrl || '',
-      role: 'executor'
+      role: 'executor',
+      is_wework_user: isWework
     }
   }
   
@@ -91,10 +116,11 @@ async function wechatLogin(userInfo, OPENID, APPID, db) {
     message: isNewUser ? '欢迎加入事绩通！' : '欢迎回来！',
     data: {
       user_id: user._id,
-      openid: OPENID,
+      openid: openid,
       nickname: user.nickname,
       avatar_url: user.avatar_url,
       role: user.role,
+      is_wework_user: user.is_wework_user || false,
       isNewUser
     }
   }

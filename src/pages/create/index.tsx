@@ -9,6 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ContactSelect } from '@/components/contact-select';
+import { DepartmentSelect } from '@/components/department-select';
+import { isWework } from '@/utils/env';
+import { Building2, Users } from 'lucide-react-taro';
 
 // 优先级配置
 const PRIORITY_OPTIONS: { value: TaskPriority; label: string; desc: string }[] = [
@@ -59,11 +63,24 @@ export default function Create() {
   const [repeatType, setRepeatType] = useState<RepeatType>('none');
   const [repeatEndDate, setRepeatEndDate] = useState('');
 
+  // 企业微信相关状态
+  const [isWeworkEnv, setIsWeworkEnv] = useState(false);
+  const [showContactSelect, setShowContactSelect] = useState(false);
+  const [showDepartmentSelect, setShowDepartmentSelect] = useState(false);
+  const [selectedDepartment, setSelectedDepartment] = useState<{ id: number; name: string } | null>(null);
+
   // 加载数据
   useEffect(() => {
     loadExecutors();
     loadGroups();
+    detectEnvironment();
   }, []);
+
+  // 检测环境
+  const detectEnvironment = async () => {
+    const env = await isWework();
+    setIsWeworkEnv(env);
+  };
 
   const loadExecutors = async () => {
     try {
@@ -248,6 +265,44 @@ export default function Create() {
     setExecutorIndex(parseInt(e.detail.value));
   };
 
+  // 企业联系人选择回调
+  const handleContactSelect = (selectedUsers: Array<{ userid: string; name: string }>) => {
+    if (selectedUsers.length === 0) return;
+
+    const selectedUser = selectedUsers[0];
+    
+    // 检查是否已存在，如果不存在则添加到执行人列表
+    const existingIndex = executorList.findIndex(ex => ex.openid === selectedUser.userid);
+    
+    if (existingIndex >= 0) {
+      setExecutorIndex(existingIndex);
+    } else {
+      const newExecutor: Executor = {
+        id: selectedUser.userid,
+        openid: selectedUser.userid,
+        name: selectedUser.name
+      };
+      setExecutorList([...executorList, newExecutor]);
+      setExecutorIndex(executorList.length);
+    }
+    
+    Taro.showToast({
+      title: `已选择：${selectedUser.name}`,
+      icon: 'success'
+    });
+  };
+
+  // 部门选择回调
+  const handleDepartmentSelect = (department: { id: number; name: string }) => {
+    setSelectedDepartment(department);
+    
+    // 根据部门筛选执行人（这里可以扩展为从后端获取部门成员）
+    Taro.showToast({
+      title: `已选择：${department.name}`,
+      icon: 'success'
+    });
+  };
+
   // 分组选择（picker 的 range 包含分组列表 + "新增分组"）
   const getGroupPickerRange = () => {
     const groupNames = groups.map(g => g.name);
@@ -348,6 +403,45 @@ export default function Create() {
         <Card>
           <CardContent className="p-3">
             <Label className="text-sm text-gray-500 mb-2">执行人</Label>
+            
+            {/* 企业微信环境：显示企业联系人选择按钮 */}
+            {isWeworkEnv && (
+              <View className="flex gap-2 mb-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => setShowContactSelect(true)}
+                >
+                  <Users size={16} className="mr-1" color="#1377EB" />
+                  <Text className="text-xs">选择企业联系人</Text>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => setShowDepartmentSelect(true)}
+                >
+                  <Building2 size={16} className="mr-1" color="#1377EB" />
+                  <Text className="text-xs">选择部门</Text>
+                </Button>
+              </View>
+            )}
+            
+            {/* 已选部门显示 */}
+            {selectedDepartment && (
+              <View className="flex items-center gap-2 mb-2 bg-blue-50 px-3 py-2 rounded-lg">
+                <Building2 size={14} color="#1377EB" />
+                <Text className="text-xs text-blue-700">{selectedDepartment.name}</Text>
+                <Text 
+                  className="text-xs text-blue-500 ml-auto cursor-pointer"
+                  onClick={() => setSelectedDepartment(null)}
+                >
+                  清除
+                </Text>
+              </View>
+            )}
+            
             <Picker
               mode="selector"
               range={executorList}
@@ -364,6 +458,22 @@ export default function Create() {
             </Picker>
           </CardContent>
         </Card>
+
+        {/* 企业联系人选择对话框 */}
+        <ContactSelect
+          open={showContactSelect}
+          onOpenChange={setShowContactSelect}
+          onSelect={handleContactSelect}
+          mode="single"
+          type={['user']}
+        />
+
+        {/* 部门选择对话框 */}
+        <DepartmentSelect
+          open={showDepartmentSelect}
+          onOpenChange={setShowDepartmentSelect}
+          onSelect={handleDepartmentSelect}
+        />
 
         {/* 截止日期 */}
         <Card>
