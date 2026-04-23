@@ -25,12 +25,35 @@ export default function AdminSettingsPage() {
       const res = await callFunction<CloudResponse<{ success: boolean }>>('admin-clear-all-data', {});
 
       if (res.success) {
-        Taro.showToast({ title: '清除成功', icon: 'success' });
+        Taro.showToast({
+          title: '清除成功',
+          icon: 'success',
+          duration: 2000
+        });
         setShowClearAllDialog(false);
-        // 延迟跳转到登录页
+
+        // 清除本地用户信息
+        const { logout } = useUserStore.getState();
+        logout();
+
+        // 清除所有本地存储
+        try {
+          Taro.clearStorageSync();
+        } catch (e) {
+          console.error('[AdminSettings] 清除存储失败:', e);
+        }
+
+        // 延迟后跳转到登录页
         setTimeout(() => {
-          Taro.reLaunch({ url: '/pages/login/index' });
-        }, 1500);
+          Taro.redirectTo({
+            url: '/pages/login/index',
+            fail: (err) => {
+              console.error('[AdminSettings] 跳转失败:', err);
+              // 如果redirectTo失败，尝试使用reLaunch
+              Taro.reLaunch({ url: '/pages/login/index' });
+            }
+          });
+        }, 2000);
       } else {
         Taro.showToast({ title: res.message || '清除失败', icon: 'none' });
       }
