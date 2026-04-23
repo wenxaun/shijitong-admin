@@ -4,20 +4,39 @@ import { useEffect, useState } from 'react';
 import Taro from '@tarojs/taro';
 import { useUserStore } from '@/stores/user';
 import { callFunction } from '@/utils/cloud';
+import { getEnvType } from '@/utils/env';
 import type { CloudResponse } from '@/types';
 import { Button as UIButton } from '@/components/ui/button';
-import { CircleCheck } from 'lucide-react-taro';
+import { CircleCheck, Building2 } from 'lucide-react-taro';
 
 export default function Login() {
   const { openid } = useUserStore();
   const [loading, setLoading] = useState(false);
   const [agreed, setAgreed] = useState(false);
+  const [envType, setEnvType] = useState<'weixin' | 'wework' | 'h5' | 'other'>('weixin');
 
   useEffect(() => {
     // 如果已登录，直接跳转
     if (openid) {
       Taro.switchTab({ url: '/pages/index/index' });
     }
+
+    // 检测运行环境
+    const detectEnv = async () => {
+      try {
+        const type = await getEnvType();
+        setEnvType(type);
+        
+        // 企业微信环境提示
+        if (type === 'wework') {
+          console.log('[Login] 当前运行环境：企业微信');
+        }
+      } catch (error) {
+        console.error('[Login] 环境检测失败:', error);
+      }
+    };
+    
+    detectEnv();
   }, [openid]);
 
   // 勾选/取消勾选协议
@@ -44,8 +63,8 @@ export default function Login() {
 
     setLoading(true);
     try {
-      if (Taro.getEnv() === Taro.ENV_TYPE.WEAPP) {
-        // 调用云函数进行登录/注册（微信会自动获取用户信息）
+      if (Taro.getEnv() === Taro.ENV_TYPE.WEAPP || Taro.getEnv() === Taro.ENV_TYPE.WEAPP) {
+        // 调用云函数进行登录/注册（云函数会根据环境自动处理）
         const loginRes = await callFunction<CloudResponse<{ 
           openid: string; 
           user_id: string;
@@ -53,7 +72,7 @@ export default function Login() {
           avatar_url: string;
         }>>(
           'user-login',
-          {}
+          { environment: envType }
         );
 
         console.log('[Login] 登录结果:', loginRes);
@@ -75,7 +94,15 @@ export default function Login() {
             isLoading: false
           });
           
-          Taro.switchTab({ url: '/pages/index/index' });
+          // 显示登录成功提示
+          Taro.showToast({ 
+            title: envType === 'wework' ? '企业微信登录成功' : '登录成功', 
+            icon: 'success' 
+          });
+          
+          setTimeout(() => {
+            Taro.switchTab({ url: '/pages/index/index' });
+          }, 500);
         } else {
           Taro.showToast({ title: loginRes.message || '登录失败', icon: 'none' });
         }
@@ -114,7 +141,15 @@ export default function Login() {
 
         {/* 标题 */}
         <Text className="text-2xl font-bold text-gray-800 mb-2">事绩通</Text>
-        <Text className="text-sm text-gray-400">高效任务管理</Text>
+        <Text className="text-sm text-gray-400 mb-3">高效任务管理</Text>
+        
+        {/* 环境标识 */}
+        {envType === 'wework' && (
+          <View className="flex items-center gap-1 bg-blue-50 px-3 py-1 rounded-full">
+            <Building2 size={14} color="#1377EB" />
+            <Text className="text-xs text-blue-600">企业微信环境</Text>
+          </View>
+        )}
       </View>
 
       {/* 底部区域 */}
@@ -149,7 +184,7 @@ export default function Login() {
           onClick={handleLogin}
           disabled={loading}
         >
-          {loading ? '登录中...' : '微信快捷登录'}
+          {loading ? '登录中...' : envType === 'wework' ? '企业微信登录' : '微信快捷登录'}
         </UIButton>
       </View>
     </View>

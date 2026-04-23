@@ -1,10 +1,17 @@
-import { PropsWithChildren } from 'react';
-import { LucideTaroProvider } from 'lucide-react-taro';
 import '@/app.css';
+import { initSystemInfo } from '@/utils/env';
+import { LucideTaroProvider } from 'lucide-react-taro';
 import { Toaster } from '@/components/ui/toast';
 import { Preset } from './presets';
 
-const App = ({ children }: PropsWithChildren) => {
+// 初始化系统信息（检测企业微信环境）
+try {
+  initSystemInfo();
+} catch (error) {
+  console.error('[App] 初始化系统信息失败:', error);
+}
+
+const App = ({ children }: { children: React.ReactNode }) => {
   return (
     <LucideTaroProvider defaultColor="#000" defaultSize={24}>
       <Preset>{children}</Preset>
