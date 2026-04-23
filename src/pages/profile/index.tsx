@@ -9,18 +9,18 @@ import type { CloudResponse, MenuItem } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button as UIButton } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Camera, ChevronRight, LogOut, Trash2, Pencil, Check, X } from 'lucide-react-taro';
+import { Camera, ChevronRight, LogOut, Trash2, Pencil, Check, X, Shield } from 'lucide-react-taro';
 
 // 默认菜单项配置（不包含功能排序，功能排序放在设置页面）
 const DEFAULT_MENU_ITEMS: MenuItem[] = [
   { icon: '📈', label: '数据统计', path: '/pages/stats/index', order: 1 },
   { icon: '📜', label: '历史待办', path: '/pages/history/index', order: 2 },
-  { icon: '⚙️', label: '设置', path: '/pages/settings/index', order: 3 },
-  { icon: '📊', label: '周报', path: '/pages/weekly/index', order: 4 }
+  { icon: '📊', label: '周报', path: '/pages/weekly/index', order: 3 },
+  { icon: '⚙️', label: '设置', path: '/pages/settings/index', order: 4 }
 ];
 
 export default function Profile() {
-  const { openid, logout } = useUserStore();
+  const { openid, logout, userInfo } = useUserStore();
   const [avatarUrl, setAvatarUrl] = useState('');
   const [nickname, setNickname] = useState('微信用户');
   const [isEditing, setIsEditing] = useState(false);
@@ -318,6 +318,24 @@ export default function Profile() {
             ))}
           </CardContent>
         </Card>
+
+        {/* 管理员控制台 - 仅管理员可见 */}
+        {userInfo?.role === 'admin' || userInfo?.role === 'owner' ? (
+          <Card className="mt-3">
+            <CardContent className="p-0">
+              <View
+                className="flex items-center justify-between px-4 py-3 active:bg-gray-50"
+                onClick={() => navigateTo('/pages/admin/index')}
+              >
+                <View className="flex items-center">
+                  <Shield size={20} color="#1377EB" />
+                  <Text className="text-base text-gray-800 ml-3">管理控制台</Text>
+                </View>
+                <ChevronRight size={20} color="#D1D5DB" />
+              </View>
+            </CardContent>
+          </Card>
+        ) : null}
       </View>
 
       {/* 退出登录 */}

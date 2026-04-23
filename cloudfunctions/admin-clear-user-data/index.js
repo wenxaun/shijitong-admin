@@ -17,7 +17,7 @@ exports.main = async (event) => {
 
   try {
     // 检查用户是否存在
-    const userResult = await db.collection('user').where({
+    const userResult = await db.collection('users').where({
       openid: target_openid
     }).get();
 

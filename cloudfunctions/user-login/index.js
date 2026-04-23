@@ -86,6 +86,11 @@ async function wechatLogin(userInfo, OPENID, APPID, db, isWework = false) {
     })
   } else {
     isNewUser = true
+
+    // 检查是否是第一个用户，如果是则自动设为超级管理员
+    const allUsers = await db.collection('users').count()
+    const isFirstUser = allUsers.total === 0
+
     const result = await db.collection('users').add({
       data: {
         openid: openid,
@@ -93,7 +98,7 @@ async function wechatLogin(userInfo, OPENID, APPID, db, isWework = false) {
         user_type: userType,             // 添加用户类型
         nickname: userInfo.nickName || (isWework ? '企业用户' : '微信用户'),
         avatar_url: userInfo.avatarUrl || '',
-        role: 'executor',
+        role: isFirstUser ? 'owner' : 'member',  // 第一个用户自动成为管理员
         ...(isWework && {
           is_wework_user: true,
           // 企业微信特有字段（如果有企业API可以获取更多信息）
@@ -110,7 +115,7 @@ async function wechatLogin(userInfo, OPENID, APPID, db, isWework = false) {
       user_type: userType,
       nickname: userInfo.nickName || (isWework ? '企业用户' : '微信用户'),
       avatar_url: userInfo.avatarUrl || '',
-      role: 'executor',
+      role: isFirstUser ? 'owner' : 'member',
       is_wework_user: isWework
     }
   }
