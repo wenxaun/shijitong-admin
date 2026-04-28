@@ -86,16 +86,25 @@ export default function Profile() {
             if (!currentUserInfo) {
               // 从本地存储读取
               currentUserInfo = Taro.getStorageSync('userInfo');
+            }
 
-              if (!currentUserInfo) {
-                // 创建默认用户信息
-                currentUserInfo = {
-                  openid: useUserStore.getState().openid || '',
-                  nickName: nickname,
-                  avatarUrl: avatarUrl,
-                  user_type: 'personal'
-                };
-              }
+            // 检查用户是否已登录
+            const currentOpenid = useUserStore.getState().openid || Taro.getStorageSync('openid');
+
+            if (!currentOpenid || !currentUserInfo) {
+              Taro.hideLoading();
+              Taro.showModal({
+                title: '未登录',
+                content: '请先登录后再切换模式',
+                showCancel: false,
+                confirmText: '去登录',
+                success: (modalRes) => {
+                  if (modalRes.confirm) {
+                    Taro.navigateTo({ url: '/pages/login/index' });
+                  }
+                }
+              });
+              return;
             }
 
             // 同时更新用户类型和视图模式
