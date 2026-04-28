@@ -5,6 +5,59 @@
  */
 
 const cloud = require('wx-server-sdk')
+
+// 尝试加载公共中间件，如果失败则使用简化版本
+let middleware
+try {
+  middleware = require('../common/middleware')
+} catch (err) {
+  console.warn('[wecom-sync-org] 无法加载 ../common/middleware，使用内置实现')
+  middleware = {
+    logRequest: (functionName, event) => {
+      console.log(`===== ${functionName} 开始执行 =====`)
+      console.log(`[${functionName}] 请求参数:`, JSON.stringify(event, null, 2))
+    },
+    logResponse: (functionName, result) => {
+      console.log(`[${functionName}] 响应结果:`, JSON.stringify(result, null, 2))
+      console.log(`===== ${functionName} 执行结束 =====`)
+    },
+    success: (message, data) => ({
+      success: true,
+      message,
+      data
+    }),
+    error: (message, errCode = null) => ({
+      success: false,
+      message,
+      errCode
+    }),
+    errorHandler: (err, prefix = '操作失败') => {
+      console.error(`[${prefix}]`, err)
+      return {
+        success: false,
+        message: `${prefix}：${err.message}`,
+        errCode: err.errCode
+      }
+    },
+    batchInsert: async (collectionName, documents) => {
+      if (!documents || documents.length === 0) return
+      const db = cloud.database()
+      await Promise.all(documents.map(doc =>
+        db.collection(collectionName).add({ data: doc })
+      ))
+    },
+    COLLECTIONS: {
+      USERS: 'users',
+      TASKS: 'tasks',
+      TASK_LOGS: 'task_logs',
+      TASK_GROUPS: 'task_groups',
+      ORGANIZATIONS: 'organizations',
+      DEPARTMENTS: 'departments',
+      NOTIFICATIONS: 'notifications'
+    }
+  }
+}
+
 const {
   logRequest,
   logResponse,
@@ -13,7 +66,7 @@ const {
   errorHandler,
   batchInsert,
   COLLECTIONS
-} = require('../common/middleware')
+} = middleware
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
