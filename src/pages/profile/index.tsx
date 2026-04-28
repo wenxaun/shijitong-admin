@@ -273,45 +273,38 @@ export default function Profile() {
           Taro.showLoading({ title: '切换中...' });
 
           try {
-            const cloudRes = await callFunction<CloudResponse<{ success: boolean }>>('switch-user-type', {
-              action: 'switch_to_enterprise'
-            });
+            // 临时方案：直接在前端切换，不调用云函数（因为云函数不可用）
+            const currentUserInfo = useUserStore.getState().userInfo;
+            if (!currentUserInfo) {
+              Taro.showToast({
+                title: '获取用户信息失败',
+                icon: 'none'
+              });
+              Taro.hideLoading();
+              return;
+            }
+
+            const newUserInfo = {
+              ...currentUserInfo,
+              user_type: 'enterprise' as const
+            };
+
+            // 更新本地存储和状态
+            Taro.setStorageSync('userInfo', newUserInfo);
+            useUserStore.setState({ userInfo: newUserInfo });
 
             Taro.hideLoading();
 
-            if (cloudRes.data?.success) {
-              // 更新用户信息
-              const currentUserInfo = useUserStore.getState().userInfo;
-              if (!currentUserInfo) {
-                Taro.showToast({
-                  title: '获取用户信息失败',
-                  icon: 'none'
-                });
-                return;
-              }
+            Taro.showToast({
+              title: '已切换到企业模式',
+              icon: 'success',
+              duration: 2000
+            });
 
-              const newUserInfo = {
-                ...currentUserInfo,
-                user_type: 'enterprise' as const
-              };
-
-              // 更新本地存储和状态
-              Taro.setStorageSync('userInfo', newUserInfo);
-              useUserStore.setState({ userInfo: newUserInfo });
-
-              Taro.showToast({
-                title: '已切换到企业模式',
-                icon: 'success',
-                duration: 2000
-              });
-
-              // 刷新页面
-              setTimeout(() => {
-                Taro.reLaunch({ url: '/pages/index/index' });
-              }, 1500);
-            } else {
-              throw new Error('切换失败');
-            }
+            // 刷新页面
+            setTimeout(() => {
+              Taro.reLaunch({ url: '/pages/index/index' });
+            }, 1500);
           } catch (error) {
             Taro.hideLoading();
             Taro.showToast({
@@ -444,13 +437,21 @@ export default function Profile() {
             <Text className="text-xs text-gray-600 block">
               应显示切换按钮: {(!userInfo?.user_type || userInfo?.user_type === 'personal') && isWeworkSync() ? 'true' : 'false'}
             </Text>
-            {/* 临时测试按钮 - 强制允许切换 */}
-            <View
-              className="mt-2 bg-green-100 px-3 py-2 rounded"
-              onClick={handleSwitchToEnterprise}
-            >
-              <Text className="text-xs text-green-700">测试：强制切换到企业模式</Text>
-            </View>
+            {/* 切换回个人模式 */}
+            {userInfo?.user_type === 'enterprise' && (
+              <View
+                className="mt-2 bg-orange-100 px-3 py-2 rounded"
+                onClick={() => {
+                  const newUserInfo = { ...userInfo, user_type: 'personal' as const };
+                  Taro.setStorageSync('userInfo', newUserInfo);
+                  useUserStore.setState({ userInfo: newUserInfo });
+                  Taro.showToast({ title: '已切换回个人模式', icon: 'success' });
+                  setTimeout(() => Taro.reLaunch({ url: '/pages/index/index' }), 1000);
+                }}
+              >
+                <Text className="text-xs text-orange-700">测试：切换回个人模式</Text>
+              </View>
+            )}
           </CardContent>
         </Card>
 
