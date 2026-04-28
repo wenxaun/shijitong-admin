@@ -94,26 +94,67 @@ export default function Profile() {
     }
   };
 
-  // 切换视图模式
+  // 切换企业模式（同时切换用户类型和视图模式）
   const handleViewModeChange = async (checked: boolean) => {
     const newMode = checked ? 'enterprise' : 'personal';
 
-    // 检查是否有企业权限
-    if (newMode === 'enterprise' && userInfo?.user_type !== 'enterprise') {
-      Taro.showToast({
-        title: '您不是企业用户',
-        icon: 'none'
-      });
-      return;
-    }
+    Taro.showModal({
+      title: checked ? '切换到企业模式' : '切换到个人模式',
+      content: checked
+        ? '确定要切换到企业模式吗？\n\n切换后可以体验企业微信专属功能：\n• 企业组织架构查看\n• 企业成员选择\n• 任务流转和审批'
+        : '确定要切换到个人模式吗？\n\n切换后将返回个人视图，企业功能将不可用。',
+      confirmText: '确定切换',
+      confirmColor: '#1377EB',
+      success: async (res) => {
+        if (res.confirm) {
+          Taro.showLoading({ title: '切换中...' });
 
-    setViewMode(newMode);
+          try {
+            const currentUserInfo = useUserStore.getState().userInfo;
+            if (!currentUserInfo) {
+              Taro.showToast({
+                title: '获取用户信息失败',
+                icon: 'none'
+              });
+              Taro.hideLoading();
+              return;
+            }
 
-    // 保存到本地存储
-    Taro.setStorageSync('view_mode', newMode);
+            // 同时更新用户类型和视图模式
+            const newUserInfo = {
+              ...currentUserInfo,
+              user_type: newMode as 'personal' | 'enterprise'
+            };
 
-    // 刷新页面以应用新的视图模式
-    Taro.reLaunch({ url: '/pages/index/index' });
+            // 更新本地存储和状态
+            Taro.setStorageSync('userInfo', newUserInfo);
+            useUserStore.setState({ userInfo: newUserInfo });
+            setViewMode(newMode);
+            Taro.setStorageSync('view_mode', newMode);
+
+            Taro.hideLoading();
+
+            Taro.showToast({
+              title: checked ? '已切换到企业模式' : '已切换到个人模式',
+              icon: 'success',
+              duration: 2000
+            });
+
+            // 刷新页面以应用新的模式
+            setTimeout(() => {
+              Taro.reLaunch({ url: '/pages/index/index' });
+            }, 1500);
+          } catch (error) {
+            Taro.hideLoading();
+            Taro.showToast({
+              title: '切换失败，请重试',
+              icon: 'none',
+              duration: 2000
+            });
+          }
+        }
+      }
+    });
   };
 
   // 选择头像
@@ -234,10 +275,10 @@ export default function Profile() {
           // 保留用户登录状态
           const currentOpenid = useUserStore.getState().openid;
           const token = Taro.getStorageSync('token');
-          
+
           // 清除所有本地缓存
           Taro.clearStorageSync();
-          
+
           // 恢复登录状态
           if (currentOpenid) {
             useUserStore.setState({ openid: currentOpenid });
@@ -245,74 +286,17 @@ export default function Profile() {
           if (token) {
             Taro.setStorageSync('token', token);
           }
-          
-          Taro.showToast({ 
-            title: '缓存已清除', 
+
+          Taro.showToast({
+            title: '缓存已清除',
             icon: 'success',
             duration: 2000
           });
-          
+
           // 2秒后刷新页面
           setTimeout(() => {
             Taro.reLaunch({ url: '/pages/index/index' });
           }, 2000);
-        }
-      }
-    });
-  };
-
-  // 切换到企业模式
-  const handleSwitchToEnterprise = () => {
-    Taro.showModal({
-      title: '切换到企业模式',
-      content: '确定要切换到企业模式吗？\n\n切换后可以体验企业微信专属功能：\n• 企业组织架构查看\n• 企业成员选择\n• 任务流转和审批',
-      confirmText: '确定切换',
-      confirmColor: '#1377EB',
-      success: async (res) => {
-        if (res.confirm) {
-          Taro.showLoading({ title: '切换中...' });
-
-          try {
-            // 临时方案：直接在前端切换，不调用云函数（因为云函数不可用）
-            const currentUserInfo = useUserStore.getState().userInfo;
-            if (!currentUserInfo) {
-              Taro.showToast({
-                title: '获取用户信息失败',
-                icon: 'none'
-              });
-              Taro.hideLoading();
-              return;
-            }
-
-            const newUserInfo = {
-              ...currentUserInfo,
-              user_type: 'enterprise' as const
-            };
-
-            // 更新本地存储和状态
-            Taro.setStorageSync('userInfo', newUserInfo);
-            useUserStore.setState({ userInfo: newUserInfo });
-
-            Taro.hideLoading();
-
-            Taro.showToast({
-              title: '已切换到企业模式',
-              icon: 'success',
-              duration: 2000
-            });
-
-            // 刷新页面
-            setTimeout(() => {
-              Taro.reLaunch({ url: '/pages/index/index' });
-            }, 1500);
-          } catch (error) {
-            Taro.hideLoading();
-            Taro.showToast({
-              title: '切换失败，请重试',
-              icon: 'none',
-              duration: 2000
-            });
-          }
         }
       }
     });
@@ -435,53 +419,16 @@ export default function Profile() {
               user_type: {userInfo?.user_type || 'undefined'}
             </Text>
             <Text className="text-xs text-gray-600 block">
-              应显示切换按钮: {(!userInfo?.user_type || userInfo?.user_type === 'personal') && isWeworkSync() ? 'true' : 'false'}
+              view_mode: {viewMode}
             </Text>
-            {/* 切换回个人模式 */}
-            {userInfo?.user_type === 'enterprise' && (
-              <View
-                className="mt-2 bg-orange-100 px-3 py-2 rounded"
-                onClick={() => {
-                  const newUserInfo = { ...userInfo, user_type: 'personal' as const };
-                  Taro.setStorageSync('userInfo', newUserInfo);
-                  useUserStore.setState({ userInfo: newUserInfo });
-                  Taro.showToast({ title: '已切换回个人模式', icon: 'success' });
-                  setTimeout(() => Taro.reLaunch({ url: '/pages/index/index' }), 1000);
-                }}
-              >
-                <Text className="text-xs text-orange-700">测试：切换回个人模式</Text>
-              </View>
-            )}
+            <Text className="text-xs text-gray-600 block">
+              应显示企业模式开关: {isWeworkSync() ? 'true' : 'false'}
+            </Text>
           </CardContent>
         </Card>
 
-        {/* 切换到企业模式 - 个人用户或未设置用户类型时可用 */}
-        {(!userInfo?.user_type || userInfo?.user_type === 'personal') && isWeworkSync() && (
-          <Card className="mt-3">
-            <CardContent className="p-0">
-              <View
-                className="flex items-center justify-between px-4 py-3 active:bg-gray-50"
-                onClick={handleSwitchToEnterprise}
-              >
-                <View className="flex items-center">
-                  <View className="w-10 h-10 rounded-lg bg-purple-500 flex items-center justify-center mr-3">
-                    <Building size={20} color="#ffffff" />
-                  </View>
-                  <View>
-                    <Text className="text-base text-gray-900 block">切换到企业模式</Text>
-                    <Text className="text-xs text-gray-400">
-                      使用企业微信功能
-                    </Text>
-                  </View>
-                </View>
-                <ChevronRight size={20} color="#D1D5DB" />
-              </View>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* 视图模式切换 - 企业微信用户可用 */}
-        {userInfo?.user_type === 'enterprise' && (
+        {/* 企业模式开关 - 企业微信环境中显示 */}
+        {isWeworkSync() && (
           <Card className="mt-3">
             <CardContent className="p-0">
               <View className="flex items-center justify-between px-4 py-3">
@@ -492,7 +439,7 @@ export default function Profile() {
                   <View>
                     <Text className="text-base text-gray-900 block">企业模式</Text>
                     <Text className="text-xs text-gray-400">
-                      {viewMode === 'enterprise' ? '当前为企业视图' : '切换查看企业任务'}
+                      {viewMode === 'enterprise' ? '已启用企业功能' : '启用企业微信功能'}
                     </Text>
                   </View>
                 </View>
