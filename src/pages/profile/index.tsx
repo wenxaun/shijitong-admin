@@ -455,7 +455,7 @@ export default function Profile() {
         </View>
 
         {/* 管理功能 - 管理员可见 */}
-        {(userInfo?.role === 'admin' || userInfo?.role === 'owner' || Taro.getSystemInfoSync().environment === 'wxwork') && (
+        {(userInfo?.role === 'admin' || userInfo?.role === 'owner' || isWeworkSync()) && (
           <View className="mb-4">
             <Text className="text-sm text-gray-500 mb-2 px-1">管理</Text>
             <Card>
@@ -478,7 +478,7 @@ export default function Profile() {
                 ) : null}
 
                 {/* 配置管理 - 管理员或企业微信环境可见 */}
-                {(userInfo?.role === 'admin' || userInfo?.role === 'owner' || Taro.getSystemInfoSync().environment === 'wxwork') && (
+                {(userInfo?.role === 'admin' || userInfo?.role === 'owner' || isWeworkSync()) && (
                   <View
                     className="flex items-center justify-between px-4 py-3 active:bg-gray-50"
                     onClick={() => navigateTo('/pages/config-admin/index')}

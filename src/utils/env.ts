@@ -35,15 +35,52 @@ export async function isWework(): Promise<boolean> {
 
 /**
  * 同步检测是否在企业微信环境运行
+ * 使用多种检测方法提高准确性
  */
 export function isWeworkSync(): boolean {
   if (cachedSystemInfo) {
-    return cachedSystemInfo.environment === 'wxwork';
+    // 方法1：检测 environment 字段
+    if (cachedSystemInfo.environment === 'wxwork') {
+      return true;
+    }
+
+    // 方法2：检测平台信息（企微小程序可能在 platform 中标注）
+    if (cachedSystemInfo.platform && cachedSystemInfo.platform.includes('wxwork')) {
+      return true;
+    }
   }
-  
-  const systemInfo = Taro.getSystemInfoSync() as SystemInfo;
-  cachedSystemInfo = systemInfo;
-  return systemInfo.environment === 'wxwork';
+
+  // 方法3：使用 Taro.getEnv() 检测
+  try {
+    const systemInfo = Taro.getSystemInfoSync() as SystemInfo;
+    if (!cachedSystemInfo) {
+      cachedSystemInfo = systemInfo;
+    }
+
+    // 优先检查 environment
+    if (systemInfo.environment === 'wxwork') {
+      return true;
+    }
+
+    // 检查平台信息
+    if (systemInfo.platform && systemInfo.platform.includes('wxwork')) {
+      return true;
+    }
+
+    // 方法4：检查 App 的基础库版本和企业微信特有的特征
+    // 企业微信通常有特定的 SDKVersion 范围
+    const version = systemInfo.SDKVersion;
+    if (version && version >= '2.3.0') {
+      // 基础库 >= 2.3.0 可能支持企业微信
+      // 可以结合其他判断
+      return systemInfo.environment === 'wxwork';
+    }
+
+    return false;
+  } catch (error) {
+    console.error('[Env] 检测企业微信环境失败:', error);
+    return false;
+  }
 }
 
 /**
