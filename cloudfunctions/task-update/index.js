@@ -212,10 +212,11 @@ exports.main = async (event, context) => {
     // 批量写入日志
     if (logEntries.length > 0) {
       try {
-        await db.collection('task_logs').add({
-          data: logEntries
-        })
-        console.log('[task-update] 日志记录成功')
+        // 使用 Promise.all 批量写入
+        await Promise.all(logEntries.map(log =>
+          db.collection('task_logs').add({ data: log })
+        ))
+        console.log('[task-update] 日志记录成功，共', logEntries.length, '条')
       } catch (logErr) {
         console.error('[task-update] 日志记录失败:', logErr)
       }

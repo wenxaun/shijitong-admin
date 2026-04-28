@@ -114,15 +114,17 @@ exports.main = async (event, context) => {
     }
     
     // 时间筛选：统一按截止日期（require_date）筛选
+    // require_date 存储格式为 'YYYY-MM-DD' 字符串
     if (start_date && end_date) {
-      // 自定义日期范围筛选
-      const startDateTime = new Date(start_date + ' 00:00:00')
-      const endDateTime = new Date(end_date + ' 23:59:59')
-      conditions.push({ require_date: _.and(_.gte(startDateTime), _.lte(endDateTime)) })
+      // 自定义日期范围筛选：使用字符串比较
+      conditions.push({ require_date: _.and(_.gte(start_date), _.lte(end_date)) })
     } else if (time_filter) {
       const timeRange = getTimeRange(time_filter)
       if (timeRange) {
-        conditions.push({ require_date: _.and(_.gte(timeRange.start), _.lte(timeRange.end)) })
+        // 将时间范围转为 'YYYY-MM-DD' 格式字符串
+        const startDateStr = timeRange.start.toISOString().split('T')[0]
+        const endDateStr = timeRange.end.toISOString().split('T')[0]
+        conditions.push({ require_date: _.and(_.gte(startDateStr), _.lte(endDateStr)) })
       }
     }
     

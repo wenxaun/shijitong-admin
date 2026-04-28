@@ -17,7 +17,7 @@ exports.main = async (event) => {
 
   try {
     // 1. 查询用户信息，确认是企业用户
-    const userResult = await db.collection('user').where({
+    const userResult = await db.collection('users').where({
       openid: openid
     }).get();
 
@@ -43,7 +43,7 @@ exports.main = async (event) => {
     }
 
     // 2. 查询企业信息
-    const enterpriseResult = await db.collection('enterprise').where({
+    const enterpriseResult = await db.collection('enterprises').where({
       corp_id: user.corp_id
     }).get();
 
@@ -59,7 +59,7 @@ exports.main = async (event) => {
         updated_at: new Date().toISOString()
       };
 
-      const createResult = await db.collection('enterprise').add({
+      const createResult = await db.collection('enterprises').add({
         data: enterpriseData
       });
 
@@ -70,7 +70,7 @@ exports.main = async (event) => {
     }
 
     // 3. 查询企业成员（user_type为enterprise且corp_id相同的用户）
-    const membersResult = await db.collection('user').where({
+    const membersResult = await db.collection('users').where({
       user_type: 'enterprise',
       corp_id: user.corp_id
     }).field({
@@ -83,7 +83,7 @@ exports.main = async (event) => {
     }).orderBy('created_at', 'desc').get();
 
     // 4. 查询部门信息
-    const departmentsResult = await db.collection('department').where({
+    const departmentsResult = await db.collection('departments').where({
       corp_id: user.corp_id
     }).field({
       _id: true,

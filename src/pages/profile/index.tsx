@@ -9,7 +9,8 @@ import type { CloudResponse, MenuItem } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button as UIButton } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Camera, ChevronRight, LogOut, Trash2, Pencil, Check, X, Shield } from 'lucide-react-taro';
+import { Camera, ChevronRight, LogOut, Trash2, Pencil, Check, X, Shield, Building } from 'lucide-react-taro';
+import { Switch } from '@/components/ui/switch';
 
 // 默认菜单项配置（不包含功能排序，功能排序放在设置页面）
 const DEFAULT_MENU_ITEMS: MenuItem[] = [
@@ -27,10 +28,16 @@ export default function Profile() {
   const [editNickname, setEditNickname] = useState('');
   const [saving, setSaving] = useState(false);
   const [menuItems, setMenuItems] = useState<MenuItem[]>(DEFAULT_MENU_ITEMS);
+  const [viewMode, setViewMode] = useState<'personal' | 'enterprise'>('personal');
 
   useEffect(() => {
     loadUserInfo();
     loadMenuOrder();
+    // 加载视图模式
+    const storedViewMode = Taro.getStorageSync('view_mode');
+    if (storedViewMode) {
+      setViewMode(storedViewMode);
+    }
   }, []);
 
   // 页面显示时重新加载菜单排序
@@ -61,14 +68,43 @@ export default function Profile() {
     if (storeUserInfo) {
       setAvatarUrl(storeUserInfo.avatarUrl || '');
       setNickname(storeUserInfo.nickName || '微信用户');
+      // 根据用户类型设置视图模式
+      if (storeUserInfo.user_type === 'enterprise') {
+        setViewMode('enterprise');
+      }
     } else {
       // 从本地存储获取
       const storedUserInfo = Taro.getStorageSync('userInfo');
       if (storedUserInfo) {
         setAvatarUrl(storedUserInfo.avatarUrl || '');
         setNickname(storedUserInfo.nickName || '微信用户');
+        if (storedUserInfo.user_type === 'enterprise') {
+          setViewMode('enterprise');
+        }
       }
     }
+  };
+
+  // 切换视图模式
+  const handleViewModeChange = async (checked: boolean) => {
+    const newMode = checked ? 'enterprise' : 'personal';
+
+    // 检查是否有企业权限
+    if (newMode === 'enterprise' && userInfo?.user_type !== 'enterprise') {
+      Taro.showToast({
+        title: '您不是企业用户',
+        icon: 'none'
+      });
+      return;
+    }
+
+    setViewMode(newMode);
+
+    // 保存到本地存储
+    Taro.setStorageSync('view_mode', newMode);
+
+    // 刷新页面以应用新的视图模式
+    Taro.reLaunch({ url: '/pages/index/index' });
   };
 
   // 选择头像
@@ -318,6 +354,31 @@ export default function Profile() {
             ))}
           </CardContent>
         </Card>
+
+        {/* 视图模式切换 - 企业微信用户可用 */}
+        {userInfo?.user_type === 'enterprise' && (
+          <Card className="mt-3">
+            <CardContent className="p-0">
+              <View className="flex items-center justify-between px-4 py-3">
+                <View className="flex items-center">
+                  <View className="w-10 h-10 rounded-lg bg-purple-500 flex items-center justify-center mr-3">
+                    <Building size={20} color="#ffffff" />
+                  </View>
+                  <View>
+                    <Text className="text-base text-gray-900 block">企业模式</Text>
+                    <Text className="text-xs text-gray-400">
+                      {viewMode === 'enterprise' ? '当前为企业视图' : '切换查看企业任务'}
+                    </Text>
+                  </View>
+                </View>
+                <Switch
+                  checked={viewMode === 'enterprise'}
+                  onCheckedChange={handleViewModeChange}
+                />
+              </View>
+            </CardContent>
+          </Card>
+        )}
 
         {/* 管理员控制台 - 仅管理员可见 */}
         {userInfo?.role === 'admin' || userInfo?.role === 'owner' ? (
