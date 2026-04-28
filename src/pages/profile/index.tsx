@@ -112,11 +112,11 @@ export default function Profile() {
           try {
             const currentUserInfo = useUserStore.getState().userInfo;
             if (!currentUserInfo) {
+              Taro.hideLoading();
               Taro.showToast({
                 title: '获取用户信息失败',
                 icon: 'none'
               });
-              Taro.hideLoading();
               return;
             }
 
@@ -384,125 +384,134 @@ export default function Profile() {
 
       {/* 功能菜单 */}
       <View className="px-3 py-4">
-        <Text className="text-sm text-gray-500 mb-2 px-1">功能</Text>
-        <Card>
-          <CardContent className="p-0">
-            {menuItems.map((item, index) => (
-              <View key={item.path}>
-                <View
-                  className="flex items-center justify-between px-4 py-3 active:bg-gray-50"
-                  onClick={() => navigateTo(item.path)}
-                >
-                  <View className="flex items-center">
-                    <Text className="text-xl mr-3">{item.icon}</Text>
-                    <Text className="text-base text-gray-800">{item.label}</Text>
-                  </View>
-                  <ChevronRight size={20} color="#D1D5DB" />
-                </View>
-                {index < menuItems.length - 1 && <Separator className="mx-4" />}
-              </View>
-            ))}
-          </CardContent>
-        </Card>
 
-        {/* 调试信息 */}
-        <Card className="mt-3 bg-yellow-50">
-          <CardContent className="p-4">
-            <Text className="text-xs text-gray-600 mb-2 block">环境调试：</Text>
-            <Text className="text-xs text-gray-600 block">
-              系统环境: {JSON.stringify(Taro.getSystemInfoSync().environment)}
-            </Text>
-            <Text className="text-xs text-gray-600 block">
-              isWeworkSync: {isWeworkSync() ? 'true' : 'false'}
-            </Text>
-            <Text className="text-xs text-gray-600 block">
-              user_type: {userInfo?.user_type || 'undefined'}
-            </Text>
-            <Text className="text-xs text-gray-600 block">
-              view_mode: {viewMode}
-            </Text>
-            <Text className="text-xs text-gray-600 block">
-              应显示企业模式开关: {isWeworkSync() ? 'true' : 'false'}
-            </Text>
-          </CardContent>
-        </Card>
-
-        {/* 企业模式开关 - 企业微信环境中显示 */}
+        {/* 企业功能 - 企业微信环境中显示 */}
         {isWeworkSync() && (
-          <Card className="mt-3">
-            <CardContent className="p-0">
-              <View className="flex items-center justify-between px-4 py-3">
-                <View className="flex items-center">
-                  <View className="w-10 h-10 rounded-lg bg-purple-500 flex items-center justify-center mr-3">
-                    <Building size={20} color="#ffffff" />
+          <View className="mb-4">
+            <Text className="text-sm text-gray-500 mb-2 px-1">企业功能</Text>
+            <Card>
+              <CardContent className="p-0">
+                {/* 企业模式开关 */}
+                <View className="flex items-center justify-between px-4 py-3">
+                  <View className="flex items-center">
+                    <View className="w-10 h-10 rounded-lg bg-purple-500 flex items-center justify-center mr-3">
+                      <Building size={20} color="#ffffff" />
+                    </View>
+                    <View>
+                      <Text className="text-base text-gray-900 block">企业模式</Text>
+                      <Text className="text-xs text-gray-400">
+                        {viewMode === 'enterprise' ? '已启用企业功能' : '启用企业微信功能'}
+                      </Text>
+                    </View>
                   </View>
-                  <View>
-                    <Text className="text-base text-gray-900 block">企业模式</Text>
-                    <Text className="text-xs text-gray-400">
-                      {viewMode === 'enterprise' ? '已启用企业功能' : '启用企业微信功能'}
-                    </Text>
-                  </View>
+                  <Switch
+                    checked={viewMode === 'enterprise'}
+                    onCheckedChange={handleViewModeChange}
+                  />
                 </View>
-                <Switch
-                  checked={viewMode === 'enterprise'}
-                  onCheckedChange={handleViewModeChange}
-                />
-              </View>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </View>
         )}
 
-        {/* 管理员控制台 - 仅管理员可见 */}
-        {userInfo?.role === 'admin' || userInfo?.role === 'owner' ? (
-          <Card className="mt-3">
+        {/* 报表统计 */}
+        <View className="mb-4">
+          <Text className="text-sm text-gray-500 mb-2 px-1">报表统计</Text>
+          <Card>
             <CardContent className="p-0">
               <View
                 className="flex items-center justify-between px-4 py-3 active:bg-gray-50"
-                onClick={() => navigateTo('/pages/admin/index')}
+                onClick={() => navigateTo('/pages/weekly/index')}
               >
                 <View className="flex items-center">
-                  <Shield size={20} color="#1377EB" />
-                  <Text className="text-base text-gray-800 ml-3">管理控制台</Text>
+                  <BarChart3 size={20} color="#1377EB" />
+                  <Text className="text-base text-gray-800 ml-3">周报统计</Text>
                 </View>
                 <ChevronRight size={20} color="#D1D5DB" />
               </View>
               <Separator className="mx-4" />
               <View
                 className="flex items-center justify-between px-4 py-3 active:bg-gray-50"
-                onClick={() => navigateTo('/pages/config-admin/index')}
+                onClick={() => navigateTo('/pages/stats/index')}
               >
                 <View className="flex items-center">
-                  <Settings size={20} color="#1377EB" />
-                  <Text className="text-base text-gray-800 ml-3">配置管理</Text>
+                  <LineChart size={20} color="#1377EB" />
+                  <Text className="text-base text-gray-800 ml-3">数据统计</Text>
                 </View>
                 <ChevronRight size={20} color="#D1D5DB" />
               </View>
             </CardContent>
           </Card>
-        ) : null}
+        </View>
 
-        {/* 配置管理 - 开发环境所有人可见 */}
-        {Taro.getSystemInfoSync().environment === 'wxwork' ? (
-          <Card className="mt-3">
+        {/* 功能快捷入口 */}
+        <View className="mb-4">
+          <Text className="text-sm text-gray-500 mb-2 px-1">功能</Text>
+          <Card>
             <CardContent className="p-0">
-              <View
-                className="flex items-center justify-between px-4 py-3 active:bg-gray-50"
-                onClick={() => navigateTo('/pages/config-admin/index')}
-              >
-                <View className="flex items-center">
-                  <Settings size={20} color="#1377EB" />
-                  <Text className="text-base text-gray-800 ml-3">配置管理</Text>
+              {menuItems.map((item, index) => (
+                <View key={item.path}>
+                  <View
+                    className="flex items-center justify-between px-4 py-3 active:bg-gray-50"
+                    onClick={() => navigateTo(item.path)}
+                  >
+                    <View className="flex items-center">
+                      <Text className="text-xl mr-3">{item.icon}</Text>
+                      <Text className="text-base text-gray-800">{item.label}</Text>
+                    </View>
+                    <ChevronRight size={20} color="#D1D5DB" />
+                  </View>
+                  {index < menuItems.length - 1 && <Separator className="mx-4" />}
                 </View>
-                <ChevronRight size={20} color="#D1D5DB" />
-              </View>
+              ))}
             </CardContent>
           </Card>
-        ) : null}
-      </View>
+        </View>
 
-      {/* 退出登录 */}
-      {openid && (
-        <View className="px-3 py-4">
+        {/* 管理功能 - 管理员可见 */}
+        {(userInfo?.role === 'admin' || userInfo?.role === 'owner' || Taro.getSystemInfoSync().environment === 'wxwork') && (
+          <View className="mb-4">
+            <Text className="text-sm text-gray-500 mb-2 px-1">管理</Text>
+            <Card>
+              <CardContent className="p-0">
+                {/* 管理控制台 - 仅管理员可见 */}
+                {userInfo?.role === 'admin' || userInfo?.role === 'owner' ? (
+                  <>
+                    <View
+                      className="flex items-center justify-between px-4 py-3 active:bg-gray-50"
+                      onClick={() => navigateTo('/pages/admin/index')}
+                    >
+                      <View className="flex items-center">
+                        <Shield size={20} color="#1377EB" />
+                        <Text className="text-base text-gray-800 ml-3">管理控制台</Text>
+                      </View>
+                      <ChevronRight size={20} color="#D1D5DB" />
+                    </View>
+                    <Separator className="mx-4" />
+                  </>
+                ) : null}
+
+                {/* 配置管理 - 管理员或企业微信环境可见 */}
+                {(userInfo?.role === 'admin' || userInfo?.role === 'owner' || Taro.getSystemInfoSync().environment === 'wxwork') && (
+                  <View
+                    className="flex items-center justify-between px-4 py-3 active:bg-gray-50"
+                    onClick={() => navigateTo('/pages/config-admin/index')}
+                  >
+                    <View className="flex items-center">
+                      <Settings size={20} color="#1377EB" />
+                      <Text className="text-base text-gray-800 ml-3">配置管理</Text>
+                    </View>
+                    <ChevronRight size={20} color="#D1D5DB" />
+                  </View>
+                )}
+              </CardContent>
+            </Card>
+          </View>
+        )}
+
+        {/* 系统设置 */}
+        <View className="mb-4">
+          <Text className="text-sm text-gray-500 mb-2 px-1">设置</Text>
           <Card>
             <CardContent className="p-0">
               <View
@@ -517,10 +526,15 @@ export default function Profile() {
               </View>
             </CardContent>
           </Card>
-          
+        </View>
+      </View>
+
+      {/* 退出登录 */}
+      {openid && (
+        <View className="px-3 py-4">
           <UIButton
             variant="outline"
-            className="w-full text-gray-600 mt-4"
+            className="w-full text-gray-600"
             onClick={handleLogout}
           >
             <LogOut size={16} color="#6B7280" />
