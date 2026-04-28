@@ -737,9 +737,9 @@ export default function Index() {
     <EmptyState 
       type="tasks"
       action={
-        <Button 
+        <Button
           size="sm"
-          onClick={() => Taro.switchTab({ url: '/pages/publish/index' })}
+          onClick={() => Taro.navigateTo({ url: '/pages/create/index' })}
         >
           创建任务
         </Button>
