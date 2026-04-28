@@ -466,6 +466,35 @@ export default function Profile() {
                 </View>
                 <ChevronRight size={20} color="#D1D5DB" />
               </View>
+              <Separator className="mx-4" />
+              <View
+                className="flex items-center justify-between px-4 py-3 active:bg-gray-50"
+                onClick={() => navigateTo('/pages/config-admin/index')}
+              >
+                <View className="flex items-center">
+                  <Settings size={20} color="#1377EB" />
+                  <Text className="text-base text-gray-800 ml-3">配置管理</Text>
+                </View>
+                <ChevronRight size={20} color="#D1D5DB" />
+              </View>
+            </CardContent>
+          </Card>
+        ) : null}
+
+        {/* 配置管理 - 开发环境所有人可见 */}
+        {Taro.getSystemInfoSync().environment === 'wxwork' ? (
+          <Card className="mt-3">
+            <CardContent className="p-0">
+              <View
+                className="flex items-center justify-between px-4 py-3 active:bg-gray-50"
+                onClick={() => navigateTo('/pages/config-admin/index')}
+              >
+                <View className="flex items-center">
+                  <Settings size={20} color="#1377EB" />
+                  <Text className="text-base text-gray-800 ml-3">配置管理</Text>
+                </View>
+                <ChevronRight size={20} color="#D1D5DB" />
+              </View>
             </CardContent>
           </Card>
         ) : null}
