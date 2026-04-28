@@ -6,7 +6,7 @@ import Taro from '@tarojs/taro';
 import { isWeworkSync } from '@/utils/env';
 import { useUserStore } from '@/stores/user';
 import { callFunction } from '@/utils/cloud';
-import type { CloudResponse, MenuItem } from '@/types';
+import type { CloudResponse } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button as UIButton } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -14,13 +14,6 @@ import { Camera, ChevronRight, LogOut, Trash2, Pencil, Check, X, Shield, Buildin
 import { Switch } from '@/components/ui/switch';
 
 // 默认菜单项配置（不包含功能排序，功能排序放在设置页面）
-const DEFAULT_MENU_ITEMS: MenuItem[] = [
-  { icon: '📈', label: '数据统计', path: '/pages/stats/index', order: 1 },
-  { icon: '📜', label: '历史待办', path: '/pages/history/index', order: 2 },
-  { icon: '📊', label: '周报', path: '/pages/weekly/index', order: 3 },
-  { icon: '⚙️', label: '设置', path: '/pages/settings/index', order: 4 }
-];
-
 export default function Profile() {
   const { openid, logout, userInfo } = useUserStore();
   const [avatarUrl, setAvatarUrl] = useState('');
@@ -28,7 +21,6 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [editNickname, setEditNickname] = useState('');
   const [saving, setSaving] = useState(false);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>(DEFAULT_MENU_ITEMS);
   const [viewMode, setViewMode] = useState<'personal' | 'enterprise'>('personal');
 
   // 调试信息
@@ -41,34 +33,12 @@ export default function Profile() {
 
   useEffect(() => {
     loadUserInfo();
-    loadMenuOrder();
     // 加载视图模式
     const storedViewMode = Taro.getStorageSync('view_mode');
     if (storedViewMode) {
       setViewMode(storedViewMode);
     }
   }, []);
-
-  // 页面显示时重新加载菜单排序
-  Taro.useDidShow(() => {
-    loadMenuOrder();
-  });
-
-  // 加载菜单排序
-  const loadMenuOrder = () => {
-    const storedOrder = Taro.getStorageSync('menu_order');
-    if (storedOrder) {
-      const orderMap = new Map<string, number>(storedOrder.map((item: { path: string; order: number }) => [item.path, item.order]));
-      const sortedItems = [...DEFAULT_MENU_ITEMS].sort((a, b) => {
-        const orderA: number = orderMap.get(a.path) ?? a.order ?? 0;
-        const orderB: number = orderMap.get(b.path) ?? b.order ?? 0;
-        return orderA - orderB;
-      });
-      setMenuItems(sortedItems);
-    } else {
-      setMenuItems(DEFAULT_MENU_ITEMS);
-    }
-  };
 
   // 加载用户信息
   const loadUserInfo = () => {
@@ -440,30 +410,17 @@ export default function Profile() {
                 </View>
                 <ChevronRight size={20} color="#D1D5DB" />
               </View>
-            </CardContent>
-          </Card>
-        </View>
-
-        {/* 功能快捷入口 */}
-        <View className="mb-4">
-          <Text className="text-sm text-gray-500 mb-2 px-1">功能</Text>
-          <Card>
-            <CardContent className="p-0">
-              {menuItems.map((item, index) => (
-                <View key={item.path}>
-                  <View
-                    className="flex items-center justify-between px-4 py-3 active:bg-gray-50"
-                    onClick={() => navigateTo(item.path)}
-                  >
-                    <View className="flex items-center">
-                      <Text className="text-xl mr-3">{item.icon}</Text>
-                      <Text className="text-base text-gray-800">{item.label}</Text>
-                    </View>
-                    <ChevronRight size={20} color="#D1D5DB" />
-                  </View>
-                  {index < menuItems.length - 1 && <Separator className="mx-4" />}
+              <Separator className="mx-4" />
+              <View
+                className="flex items-center justify-between px-4 py-3 active:bg-gray-50"
+                onClick={() => navigateTo('/pages/history/index')}
+              >
+                <View className="flex items-center">
+                  <Text className="text-2xl mr-2">📜</Text>
+                  <Text className="text-base text-gray-800">历史待办</Text>
                 </View>
-              ))}
+                <ChevronRight size={20} color="#D1D5DB" />
+              </View>
             </CardContent>
           </Card>
         </View>
@@ -514,6 +471,17 @@ export default function Profile() {
           <Text className="text-sm text-gray-500 mb-2 px-1">设置</Text>
           <Card>
             <CardContent className="p-0">
+              <View
+                className="flex items-center justify-between px-4 py-3 active:bg-gray-50"
+                onClick={() => navigateTo('/pages/settings/index')}
+              >
+                <View className="flex items-center">
+                  <Text className="text-xl mr-3">⚙️</Text>
+                  <Text className="text-base text-gray-800">设置</Text>
+                </View>
+                <ChevronRight size={20} color="#D1D5DB" />
+              </View>
+              <Separator className="mx-4" />
               <View
                 className="flex items-center justify-between px-4 py-3 active:bg-gray-50"
                 onClick={handleClearCache}
