@@ -34,5 +34,8 @@
     "showES6CompileOption": false
   },
   "compileType": "miniprogram",
+  "packOptions": {
+    "ignore": []
+  },
   "condition": {}
 }
