@@ -39,7 +39,7 @@ export type UserType = 'personal' | 'enterprise';
 /**
  * 任务状态
  */
-export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled' | 'exception';
+export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled' | 'exception' | 'pending_review';
 
 /**
  * 任务优先级
@@ -74,12 +74,17 @@ export interface Task {
   status: TaskStatus;
   priority: TaskPriority;
   category?: string;
-  group_id?: string;
+  group_id?: string;            // 任务分组（个人任务分组，如"紧急任务"）
   group_name?: string;
+  org_team_id?: string;         // 归属团队/部门 ID（企业组织架构）
+  org_team_name?: string;       // 归属团队/部门名称
   publisher_id: string;
   publisher_name?: string;
   executor_id?: string;
   executor_name?: string;
+  reviewer_id?: string;         // 审核人 openid（任务审批）
+  reviewer_name?: string;       // 审核人姓名
+  watchers?: string[];          // 关注人列表（openid）
   require_date: string;
   complete_date?: string;
   score?: number | null;
@@ -119,7 +124,7 @@ export interface User {
   user_type: UserType;         // 用户类型：个人用户/企业用户
   nickname: string;
   avatar_url?: string;
-  role: 'executor' | 'publisher' | 'admin';
+  role: 'executor' | 'publisher' | 'admin' | 'owner'; // 新增 owner 角色
   created_at: string;
   last_login: string;
   
@@ -134,8 +139,10 @@ export interface User {
   is_wework_user?: boolean;      // 是否企业微信用户
   wecom_userid?: string;         // 企业微信成员 UserID
   wecom_corpid?: string;         // 所属企业 ID
-  department_id?: string;        // 主部门 ID
+  department_id?: string;        // 主部门 ID（保留兼容性）
   department_name?: string;      // 主部门名称
+  department_ids?: string[];     // 所属部门 ID 列表（扩展）
+  job_title?: string;            // 职位
 }
 
 /**

@@ -5,14 +5,25 @@
 
 const cloud = require('wx-server-sdk')
 
-// 初始化云开发（单例模式）
-let db = null
-const getDB = () => {
+/**
+ * 初始化云开发（单例模式）
+ * @returns {Object} { db, wxContext }
+ */
+const initCloud = () => {
   if (!db) {
     cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
     db = cloud.database()
   }
-  return db
+  const wxContext = cloud.getWXContext()
+  return { db, wxContext }
+}
+
+/**
+ * 获取数据库实例
+ * @returns {Database} 数据库实例
+ */
+const getDB = () => {
+  return initCloud().db
 }
 
 /**
@@ -59,20 +70,26 @@ const isAdmin = (user) => {
 
 /**
  * 统一响应格式
- * @param {boolean} success - 是否成功
- * @param {string} message - 消息
- * @param {*} data - 数据
- * @returns {Object} 响应对象
+ * 支持两种调用方式：
+ * 1. responseWrapper({ success, message, data, code })
+ * 2. responseWrapper(success, message, data, errCode)
  */
-const responseWrapper = (success, message, data = null, errCode = null) => {
-  const response = {
-    success,
-    message,
-    data
+const responseWrapper = (param1, param2, param3, param4) => {
+  // 对象参数模式
+  if (typeof param1 === 'object' && param1 !== null) {
+    const { success, message, data = null, code = null } = param1
+    const response = { success, message, data }
+    if (code) response.code = code
+    return response
   }
-  if (errCode) {
-    response.errCode = errCode
-  }
+
+  // 位置参数模式（兼容旧代码）
+  const success = param1
+  const message = param2
+  const data = param3 || null
+  const errCode = param4 || null
+  const response = { success, message, data }
+  if (errCode) response.errCode = errCode
   return response
 }
 
@@ -188,7 +205,72 @@ const wecomAPI = {
   },
 
   /**
-   * 发送企业微信应用消息
+   * 获取企业微信 API 实例（支持多企业）
+   * @param {string} corpId - 企业 ID
+   * @returns {Object} 企业微信 API 实例
+   */
+  getAPI(corpId) {
+    return {
+      /**
+       * 发送企业微信应用消息
+       * @param {Object} params - 消息参数
+       * @returns {Promise<Object>}
+       */
+      async message(params) {
+        try {
+          return await cloud.openapi.qywx.message.send(params)
+        } catch (err) {
+          console.error('[wecomAPI] message.send 失败:', err)
+          throw err
+        }
+      },
+
+      /**
+       * 获取企业微信用户信息
+       * @param {string} userid - 企业微信用户ID
+       * @returns {Promise<Object>}
+       */
+      async getUser(userid) {
+        try {
+          return await cloud.openapi.qywx.user.get({ userid })
+        } catch (err) {
+          console.error('[wecomAPI] user.get 失败:', err)
+          throw err
+        }
+      },
+
+      /**
+       * 获取企业微信部门列表
+       * @param {Object} params - 部门查询参数
+       * @returns {Promise<Object>}
+       */
+      async getDepartment(params) {
+        try {
+          return await cloud.openapi.qywx.department.list(params)
+        } catch (err) {
+          console.error('[wecomAPI] department.list 失败:', err)
+          throw err
+        }
+      },
+
+      /**
+       * 获取企业微信成员列表
+       * @param {Object} params - 成员查询参数
+       * @returns {Promise<Object>}
+       */
+      async getSimpleList(params) {
+        try {
+          return await cloud.openapi.qywx.user.simpleList(params)
+        } catch (err) {
+          console.error('[wecomAPI] user.simpleList 失败:', err)
+          throw err
+        }
+      }
+    }
+  },
+
+  /**
+   * 发送企业微信应用消息（旧方法，兼容保留）
    * @param {Object} params - 消息参数
    * @returns {Promise<void>}
    */
@@ -202,7 +284,7 @@ const wecomAPI = {
   },
 
   /**
-   * 获取企业微信用户信息
+   * 获取企业微信用户信息（旧方法，兼容保留）
    * @param {string} userid - 企业微信用户ID
    * @returns {Promise<Object>}
    */
@@ -217,6 +299,7 @@ const wecomAPI = {
 }
 
 module.exports = {
+  initCloud,
   getDB,
   getOpenId,
   validateSession,
@@ -230,5 +313,6 @@ module.exports = {
   validateParams,
   COLLECTIONS,
   batchInsert,
-  wecomAPI
+  wecomAPI,
+  getWecomAPI: wecomAPI.getAPI
 }

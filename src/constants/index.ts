@@ -13,6 +13,7 @@ export const STATUS_MAP: Record<TaskStatus | 'deleted', { label: string; bgClass
   in_progress: { label: '进行中', bgClass: 'bg-blue-50 text-blue-600', color: '#1377EB' },
   completed: { label: '已完成', bgClass: 'bg-green-50 text-green-600', color: '#00B365' },
   cancelled: { label: '已取消', bgClass: 'bg-red-50 text-red-500', color: '#EA4335' },
+  pending_review: { label: '待审核', bgClass: 'bg-yellow-50 text-yellow-600', color: '#F59E0B' },
   exception: { label: '异常', bgClass: 'bg-orange-50 text-orange-600', color: '#F97316' },
   deleted: { label: '已删除', bgClass: 'bg-gray-100 text-gray-400', color: '#9CA3AF' }
 };

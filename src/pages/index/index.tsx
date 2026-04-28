@@ -581,7 +581,8 @@ export default function Index() {
         in_progress: '进行中',
         completed: '已完成',
         cancelled: '已取消',
-        exception: '异常'
+        exception: '异常',
+        pending_review: '待审核'
       };
       return labels[status] || status;
     };

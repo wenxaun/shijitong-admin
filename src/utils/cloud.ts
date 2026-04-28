@@ -170,6 +170,8 @@ export const CLOUD_FUNCTIONS = {
   TASK_CREATE: 'task-create',
   TASK_UPDATE: 'task-update',
   TASK_DELETE: 'task-delete',
+  TASK_TRANSFER: 'task-transfer',
+  TASK_REVIEW: 'task-review',
   SUBTASK_CREATE: 'subtask-create',
   SUBTASK_LIST: 'subtask-list',
   SUBTASK_UPDATE: 'subtask-update',
@@ -183,5 +185,7 @@ export const CLOUD_FUNCTIONS = {
   ORG_LIST: 'org-list',
   DEPT_CREATE: 'dept-create',
   DEPT_LIST: 'dept-list',
+  WECOM_SYNC_ORG: 'wecom-sync-org',
+  PUSH_NOTIFICATION: 'push-notification',
   FEISHU_NOTIFY: 'feishu-notify'
 } as const;

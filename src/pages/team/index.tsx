@@ -6,7 +6,7 @@ import { callFunction } from '@/utils/cloud';
 import type { Team, CloudResponse } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
-import { Plus, ChevronRight, Users, Search, UserPlus, Building, X, Loader } from 'lucide-react-taro';
+import { Plus, ChevronRight, Users, Search, UserPlus, Building, X, Loader, RefreshCw } from 'lucide-react-taro';
 
 type TabType = 'team' | 'enterprise';
 
@@ -175,6 +175,43 @@ export default function TeamPage() {
     } finally {
       setEnterpriseLoading(false);
       isLoadingRef.current = false;
+    }
+  };
+
+  // 同步企业数据
+  const syncEnterpriseData = async () => {
+    Taro.showLoading({ title: '同步中...' });
+
+    try {
+      const result = await callFunction<CloudResponse<{
+        corp_name: string;
+        member_count: number;
+        department_count: number;
+      }>>('wecom-sync-org', {
+        action: 'sync'
+      });
+
+      Taro.hideLoading();
+
+      if (result.success && result.data) {
+        setEnterpriseInfo(result.data);
+        Taro.showToast({
+          title: '同步成功',
+          icon: 'success'
+        });
+      } else {
+        Taro.showToast({
+          title: result.message || '同步失败',
+          icon: 'none'
+        });
+      }
+    } catch (error) {
+      Taro.hideLoading();
+      console.error('[Team] 同步企业数据失败:', error);
+      Taro.showToast({
+        title: '同步失败',
+        icon: 'none'
+      });
     }
   };
 
@@ -376,18 +413,71 @@ export default function TeamPage() {
       <View className="bg-white mb-2">
         <View
           className="flex items-center px-4 py-3 border-b border-gray-100 active:bg-gray-50"
-          onClick={() => Taro.navigateTo({ url: '/pages/enterprise/index' })}
+          onClick={() => Taro.navigateTo({ url: '/pages/org-tree/index' })}
         >
           <View className="w-12 h-12 rounded-lg bg-purple-500 flex items-center justify-center mr-3">
             <Building size={24} color="#ffffff" />
           </View>
           <View className="flex-1">
-            <Text className="text-base text-gray-900">企业组织架构</Text>
-            <Text className="text-xs text-gray-400 mt-1">查看企业信息、成员和部门</Text>
+            <Text className="text-base text-gray-900">组织架构</Text>
+            <Text className="text-xs text-gray-400 mt-1">查看企业组织架构</Text>
+          </View>
+          <ChevronRight size={20} color="#D1D5DB" />
+        </View>
+
+        <View
+          className="flex items-center px-4 py-3 border-b border-gray-100 active:bg-gray-50"
+          onClick={() => Taro.navigateTo({ url: '/pages/enterprise/index' })}
+        >
+          <View className="w-12 h-12 rounded-lg bg-blue-500 flex items-center justify-center mr-3">
+            <Users size={24} color="#ffffff" />
+          </View>
+          <View className="flex-1">
+            <Text className="text-base text-gray-900">企业成员</Text>
+            <Text className="text-xs text-gray-400 mt-1">
+              {enterpriseInfo?.member_count ? `${enterpriseInfo.member_count} 位成员` : '查看企业成员'}
+            </Text>
+          </View>
+          <ChevronRight size={20} color="#D1D5DB" />
+        </View>
+
+        <View
+          className="flex items-center px-4 py-3 border-b border-gray-100 active:bg-gray-50"
+          onClick={() => syncEnterpriseData()}
+        >
+          <View className="w-12 h-12 rounded-lg bg-green-500 flex items-center justify-center mr-3">
+            <RefreshCw size={24} color="#ffffff" />
+          </View>
+          <View className="flex-1">
+            <Text className="text-base text-gray-900">同步企业数据</Text>
+            <Text className="text-xs text-gray-400 mt-1">从企业微信同步最新信息</Text>
           </View>
           <ChevronRight size={20} color="#D1D5DB" />
         </View>
       </View>
+
+      {/* 企业概览 */}
+      {enterpriseInfo && (
+        <View className="bg-white mb-2">
+          <View className="px-4 py-3 border-b border-gray-100">
+            <Text className="text-base font-medium text-gray-900">企业概览</Text>
+          </View>
+          <View className="px-4 py-4">
+            <View className="flex items-center mb-4">
+              <Text className="text-sm text-gray-500 w-24">企业名称</Text>
+              <Text className="text-sm text-gray-900 flex-1">{enterpriseInfo.corp_name}</Text>
+            </View>
+            <View className="flex items-center mb-4">
+              <Text className="text-sm text-gray-500 w-24">成员数量</Text>
+              <Text className="text-sm text-gray-900 flex-1">{enterpriseInfo.member_count} 人</Text>
+            </View>
+            <View className="flex items-center">
+              <Text className="text-sm text-gray-500 w-24">部门数量</Text>
+              <Text className="text-sm text-gray-900 flex-1">{enterpriseInfo.department_count} 个</Text>
+            </View>
+          </View>
+        </View>
+      )}
 
       {/* 提示信息 */}
       <View className="px-4 py-8">
@@ -403,13 +493,15 @@ export default function TeamPage() {
       </View>
 
       {/* 空状态 */}
-      <View className="flex flex-col items-center justify-center py-16">
-        <View className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-          <Building size={32} color="#D1D5DB" />
+      {!enterpriseInfo && (
+        <View className="flex flex-col items-center justify-center py-16">
+          <View className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+            <Building size={32} color="#D1D5DB" />
+          </View>
+          <Text className="text-gray-500 mb-1">暂无企业信息</Text>
+          <Text className="text-gray-400 text-sm">接入企业微信后自动同步</Text>
         </View>
-        <Text className="text-gray-500 mb-1">暂无企业信息</Text>
-        <Text className="text-gray-400 text-sm">接入企业微信后自动同步</Text>
-      </View>
+      )}
     </View>
     );
   };

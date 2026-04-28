@@ -27,7 +27,9 @@ import {
   FileText,
   Share2,
   History,
-  Star
+  Star,
+  Repeat,
+  Shield
 } from 'lucide-react-taro';
 
 interface Comment {
@@ -349,6 +351,61 @@ export default function Detail() {
     Taro.navigateTo({ url: `/pages/exception/index?id=${taskId}` });
   };
 
+  // 转交任务
+  const handleTransfer = () => {
+    Taro.navigateTo({ url: `/pages/task-transfer/index?taskId=${taskId}` });
+  };
+
+  // 审核任务
+  const handleReview = async () => {
+    if (!task) return;
+
+    try {
+      const confirm = await Taro.showModal({
+        title: '确认审核',
+        content: `是否确认审核任务"${task.task_name}"？审核后将标记为已完成。`,
+        confirmText: '确认',
+        cancelText: '取消'
+      });
+
+      if (!confirm.confirm) return;
+
+      Taro.showLoading({ title: '审核中...' });
+
+      const res = await callFunction<CloudResponse>(
+        CLOUD_FUNCTIONS.TASK_REVIEW,
+        {
+          task_id: taskId,
+          action: 'approve',
+          comment: '审核通过'
+        }
+      );
+
+      Taro.hideLoading();
+
+      if (res.success) {
+        Taro.showToast({
+          title: '审核成功',
+          icon: 'success'
+        });
+        // 重新加载任务详情
+        await loadTask();
+      } else {
+        Taro.showToast({
+          title: res.message || '审核失败',
+          icon: 'none'
+        });
+      }
+    } catch (error) {
+      Taro.hideLoading();
+      console.error('审核失败:', error);
+      Taro.showToast({
+        title: '审核失败',
+        icon: 'none'
+      });
+    }
+  };
+
   // 编辑任务
   const editTask = () => {
     setShowMoreMenu(false);
@@ -643,6 +700,28 @@ export default function Detail() {
                   <Text className="text-white ml-2">完成任务</Text>
                 </Button>
               </View>
+            )}
+
+            {/* 转交任务按钮 */}
+            {canOperate && task.status !== 'completed' && (
+              <Button
+                className="w-full mt-3 text-blue-500 border border-blue-400 bg-transparent rounded-lg"
+                onClick={handleTransfer}
+              >
+                <Repeat size={16} color="#1377EB" />
+                <Text className="text-blue-500 ml-2">转交任务</Text>
+              </Button>
+            )}
+
+            {/* 审核任务按钮 - 仅审核人可见且任务待审核 */}
+            {task.reviewer_id === openid && task.status === 'pending_review' && (
+              <Button
+                className="w-full mt-3 bg-purple-500 text-white rounded-lg"
+                onClick={handleReview}
+              >
+                <Shield size={16} color="#ffffff" />
+                <Text className="text-white ml-2">审核通过</Text>
+              </Button>
             )}
 
             {/* 评分信息 */}
