@@ -80,14 +80,22 @@ export default function Profile() {
           Taro.showLoading({ title: '切换中...' });
 
           try {
-            const currentUserInfo = useUserStore.getState().userInfo;
+            // 获取用户信息（优先从 store，其次从本地存储）
+            let currentUserInfo = useUserStore.getState().userInfo;
+
             if (!currentUserInfo) {
-              Taro.hideLoading();
-              Taro.showToast({
-                title: '获取用户信息失败',
-                icon: 'none'
-              });
-              return;
+              // 从本地存储读取
+              currentUserInfo = Taro.getStorageSync('userInfo');
+
+              if (!currentUserInfo) {
+                // 创建默认用户信息
+                currentUserInfo = {
+                  openid: useUserStore.getState().openid || '',
+                  nickName: nickname,
+                  avatarUrl: avatarUrl,
+                  user_type: 'personal'
+                };
+              }
             }
 
             // 同时更新用户类型和视图模式
@@ -116,6 +124,7 @@ export default function Profile() {
             }, 1500);
           } catch (error) {
             Taro.hideLoading();
+            console.error('[Profile] 切换模式失败:', error);
             Taro.showToast({
               title: '切换失败，请重试',
               icon: 'none',
