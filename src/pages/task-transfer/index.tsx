@@ -76,6 +76,16 @@ export default function TaskTransferPage() {
       return
     }
 
+    // 检查是否支持企业微信 API
+    // @ts-ignore
+    if (!Taro.qy || !Taro.qy.selectEnterpriseContact) {
+      Taro.showToast({
+        title: '当前环境不支持企业通讯录',
+        icon: 'none'
+      })
+      return
+    }
+
     // @ts-ignore - 企业微信 API
     Taro.qy.selectEnterpriseContact({
       fromDepartmentId: 0,

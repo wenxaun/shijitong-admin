@@ -39,6 +39,17 @@ export function ContactSelect({
         return;
       }
 
+      // 检查企业微信 API 是否可用
+      // @ts-ignore
+      if (!Taro.qy || !Taro.qy.selectEnterpriseContact) {
+        Taro.showToast({
+          title: '当前环境不支持企业通讯录',
+          icon: 'none',
+          duration: 2000
+        });
+        return;
+      }
+
       // 调用企业微信联系人选择接口
       // @ts-ignore - 企业微信API
       const result = await Taro.qy.selectEnterpriseContact({
