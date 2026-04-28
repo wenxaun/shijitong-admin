@@ -33,7 +33,7 @@ export default function Splash() {
     const timer = setTimeout(() => {
       if (openid) {
         console.log('[Splash] 已登录，跳转首页');
-        Taro.switchTab({ url: '/pages/index/index' });
+        Taro.reLaunch({ url: '/pages/index/index' });
       } else {
         console.log('[Splash] 未登录，跳转登录页');
         Taro.redirectTo({ url: '/pages/login/index' });

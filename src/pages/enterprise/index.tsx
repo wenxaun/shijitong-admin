@@ -56,7 +56,10 @@ export default function Enterprise() {
         </Text>
         <UIButton
           className="w-full max-w-xs"
-          onClick={() => Taro.switchTab({ url: '/pages/profile/index' })}
+          onClick={() => {
+            console.log('[Enterprise] 跳转到个人中心');
+            Taro.switchTab({ url: '/pages/profile/index' });
+          }}
         >
           去个人中心切换模式
         </UIButton>

@@ -292,7 +292,8 @@ export default function ShareCreate() {
       if (res.success) {
         Taro.showToast({ title: '创建成功', icon: 'success' });
         setTimeout(() => {
-          Taro.switchTab({ url: '/pages/index/index' });
+          console.log('[ShareCreate] 跳转到首页');
+          Taro.reLaunch({ url: '/pages/index/index' });
         }, 1000);
       } else {
         Taro.showToast({ title: res.message || '创建失败', icon: 'none' });

@@ -18,7 +18,8 @@ export default function Login() {
   useEffect(() => {
     // 如果已登录，直接跳转
     if (openid) {
-      Taro.switchTab({ url: '/pages/index/index' });
+      console.log('[Login] 已登录，跳转到首页');
+      Taro.reLaunch({ url: '/pages/index/index' });
     }
 
     // 检测运行环境
@@ -101,7 +102,8 @@ export default function Login() {
           });
           
           setTimeout(() => {
-            Taro.switchTab({ url: '/pages/index/index' });
+            console.log('[Login] 登录成功，跳转到首页');
+            Taro.reLaunch({ url: '/pages/index/index' });
           }, 500);
         } else {
           Taro.showToast({ title: loginRes.message || '登录失败', icon: 'none' });
@@ -114,13 +116,14 @@ export default function Login() {
         };
         Taro.setStorageSync('userInfo', mockUserInfo);
         
-        useUserStore.setState({ 
-          openid: 'mock_openid', 
+        useUserStore.setState({
+          openid: 'mock_openid',
           userInfo: mockUserInfo as any,
           isLoading: false
         });
-        
-        Taro.switchTab({ url: '/pages/index/index' });
+
+        console.log('[Login] H5 模拟登录成功，跳转到首页');
+        Taro.reLaunch({ url: '/pages/index/index' });
       }
     } catch (err) {
       console.error('登录失败:', err);

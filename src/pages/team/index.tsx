@@ -421,7 +421,10 @@ export default function TeamPage() {
           </Text>
           <View
             className="bg-blue-500 text-white px-6 py-2 rounded-lg"
-            onClick={() => Taro.switchTab({ url: '/pages/profile/index' })}
+            onClick={() => {
+              console.log('[Team] 跳转到个人中心');
+              Taro.switchTab({ url: '/pages/profile/index' });
+            }}
           >
             <Text className="text-sm">去个人中心切换模式</Text>
           </View>
