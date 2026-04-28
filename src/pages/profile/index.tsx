@@ -424,8 +424,8 @@ export default function Profile() {
                 onClick={() => navigateTo('/pages/weekly/index')}
               >
                 <View className="flex items-center">
-                  <BarChart3 size={20} color="#1377EB" />
-                  <Text className="text-base text-gray-800 ml-3">周报统计</Text>
+                  <Text className="text-2xl mr-2">📊</Text>
+                  <Text className="text-base text-gray-800">周报统计</Text>
                 </View>
                 <ChevronRight size={20} color="#D1D5DB" />
               </View>
@@ -435,8 +435,8 @@ export default function Profile() {
                 onClick={() => navigateTo('/pages/stats/index')}
               >
                 <View className="flex items-center">
-                  <LineChart size={20} color="#1377EB" />
-                  <Text className="text-base text-gray-800 ml-3">数据统计</Text>
+                  <Text className="text-2xl mr-2">📈</Text>
+                  <Text className="text-base text-gray-800">数据统计</Text>
                 </View>
                 <ChevronRight size={20} color="#D1D5DB" />
               </View>
