@@ -1,0 +1,111 @@
+[
+  {
+    "id": "v-1777368329181",
+    "version": "2026.04.28.2",
+    "configSnapshot": {
+      "system": {
+        "version": "1.0.0",
+        "environment": "dev",
+        "apiTimeout": 30000,
+        "cacheTimeout": 300
+      },
+      "features": {
+        "taskReview": false,
+        "orgSync": true,
+        "wecomNotify": true,
+        "voiceInput": true,
+        "taskTransfer": true,
+        "aiAnalysis": true,
+        "statistics": true
+      },
+      "wecom": {
+        "corpId": "",
+        "agentId": 0,
+        "syncInterval": 24,
+        "maxDepartments": 1000,
+        "notifyTemplateId": "",
+        "autoSync": false
+      },
+      "texts": {
+        "appName": "任务管理系统",
+        "welcomeText": "欢迎使用任务管理系统",
+        "errorMessages": {},
+        "successMessages": {}
+      },
+      "business": {
+        "maxTasksPerDay": 100,
+        "maxSubtasksPerTask": 50,
+        "taskAutoArchiveDays": 90,
+        "maxTeamMembers": 500,
+        "taskAutoCloseHours": 168
+      },
+      "_version": "1.0.0",
+      "_updatedAt": "2026-04-28T09:25:29.180Z"
+    },
+    "changes": [
+      {
+        "key": "features.taskReview",
+        "oldValue": true,
+        "newValue": false,
+        "type": "modified"
+      },
+      {
+        "key": "_updatedAt",
+        "oldValue": "2026-04-28T09:25:10.902Z",
+        "newValue": "2026-04-28T09:25:29.180Z",
+        "type": "modified"
+      }
+    ],
+    "createdAt": "2026-04-28T09:25:29.181Z",
+    "createdBy": "test",
+    "comment": "更新配置: features.taskReview"
+  },
+  {
+    "id": "v-1777368310902",
+    "version": "2026.04.28.1",
+    "configSnapshot": {
+      "system": {
+        "version": "1.0.0",
+        "environment": "dev",
+        "apiTimeout": 30000,
+        "cacheTimeout": 300
+      },
+      "features": {
+        "taskReview": true,
+        "orgSync": true,
+        "wecomNotify": true,
+        "voiceInput": true,
+        "taskTransfer": true,
+        "aiAnalysis": true,
+        "statistics": true
+      },
+      "wecom": {
+        "corpId": "",
+        "agentId": 0,
+        "syncInterval": 24,
+        "maxDepartments": 1000,
+        "notifyTemplateId": "",
+        "autoSync": false
+      },
+      "texts": {
+        "appName": "任务管理系统",
+        "welcomeText": "欢迎使用任务管理系统",
+        "errorMessages": {},
+        "successMessages": {}
+      },
+      "business": {
+        "maxTasksPerDay": 100,
+        "maxSubtasksPerTask": 50,
+        "taskAutoArchiveDays": 90,
+        "maxTeamMembers": 500,
+        "taskAutoCloseHours": 168
+      },
+      "_version": "1.0.0",
+      "_updatedAt": "2026-04-28T09:25:10.902Z"
+    },
+    "changes": [],
+    "createdAt": "2026-04-28T09:25:10.902Z",
+    "createdBy": "system",
+    "comment": "初始配置"
+  }
+]

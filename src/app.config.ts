@@ -37,7 +37,8 @@ export default defineAppConfig({
     'pages/admin-groups/index',
     'pages/admin-settings/index',
     'pages/task-transfer/index',
-    'pages/org-tree/index'
+    'pages/org-tree/index',
+    'pages/config-admin/index'
   ],
   window: {
     backgroundTextStyle: 'dark',
