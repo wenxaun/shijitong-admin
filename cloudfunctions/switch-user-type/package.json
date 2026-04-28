@@ -1,0 +1,9 @@
+{
+  "name": "switch-user-type",
+  "version": "1.0.0",
+  "description": "切换用户类型（个人/企业）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

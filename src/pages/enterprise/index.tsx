@@ -20,11 +20,7 @@ export default function Enterprise() {
   }, []);
 
   const loadEnterpriseInfo = async () => {
-    if (userInfo?.user_type !== 'enterprise') {
-      setLoading(false);
-      return;
-    }
-
+    // 允许在企业微信环境下加载企业信息
     try {
       const result = await callFunction<CloudResponse<{
         enterprise: any;
@@ -46,7 +42,7 @@ export default function Enterprise() {
     }
   };
 
-  // 如果不是企业用户，显示提示
+  // 如果不是企业用户，显示提示和引导
   if (userInfo?.user_type !== 'enterprise') {
     return (
       <View className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-8">
@@ -55,10 +51,13 @@ export default function Enterprise() {
         </View>
         <Text className="text-base text-gray-700 font-medium mb-2">企业功能</Text>
         <Text className="text-sm text-gray-400 text-center mb-6">
-          此功能仅企业微信用户可用，请在企业微信中打开小程序
+          切换到企业模式后即可使用企业微信功能
         </Text>
-        <UIButton className="w-full max-w-xs bg-gray-100 text-gray-400">
-          功能暂不可用
+        <UIButton
+          className="w-full max-w-xs"
+          onClick={() => Taro.switchTab({ url: '/pages/profile/index' })}
+        >
+          去个人中心切换模式
         </UIButton>
       </View>
     );

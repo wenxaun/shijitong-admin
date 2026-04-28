@@ -252,6 +252,59 @@ export default function Profile() {
     });
   };
 
+  // 切换到企业模式
+  const handleSwitchToEnterprise = () => {
+    Taro.showModal({
+      title: '切换到企业模式',
+      content: '确定要切换到企业模式吗？\n\n切换后可以体验企业微信专属功能：\n• 企业组织架构查看\n• 企业成员选择\n• 任务流转和审批',
+      confirmText: '确定切换',
+      confirmColor: '#1377EB',
+      success: async (res) => {
+        if (res.confirm) {
+          Taro.showLoading({ title: '切换中...' });
+
+          try {
+            const cloudRes = await callFunction<CloudResponse<{ success: boolean }>>('switch-user-type', {
+              action: 'switch_to_enterprise'
+            });
+
+            Taro.hideLoading();
+
+            if (cloudRes.data?.success) {
+              // 更新用户信息
+              const userInfo = useUserStore.getState().userInfo;
+              const newUserInfo = { ...userInfo, user_type: 'enterprise' as const };
+
+              // 更新本地存储
+              Taro.setStorageSync('userInfo', newUserInfo);
+              useUserStore.setState({ userInfo: newUserInfo });
+
+              Taro.showToast({
+                title: '已切换到企业模式',
+                icon: 'success',
+                duration: 2000
+              });
+
+              // 刷新页面
+              setTimeout(() => {
+                Taro.reLaunch({ url: '/pages/index/index' });
+              }, 1500);
+            } else {
+              throw new Error('切换失败');
+            }
+          } catch (error) {
+            Taro.hideLoading();
+            Taro.showToast({
+              title: '切换失败，请重试',
+              icon: 'none',
+              duration: 2000
+            });
+          }
+        }
+      }
+    });
+  };
+
   return (
     <View className="min-h-screen bg-gray-50">
       {/* 用户信息卡片 */}
@@ -354,6 +407,31 @@ export default function Profile() {
             ))}
           </CardContent>
         </Card>
+
+        {/* 切换到企业模式 - 个人用户可用 */}
+        {userInfo?.user_type === 'personal' && isWework && (
+          <Card className="mt-3">
+            <CardContent className="p-0">
+              <View
+                className="flex items-center justify-between px-4 py-3 active:bg-gray-50"
+                onClick={handleSwitchToEnterprise}
+              >
+                <View className="flex items-center">
+                  <View className="w-10 h-10 rounded-lg bg-purple-500 flex items-center justify-center mr-3">
+                    <Building size={20} color="#ffffff" />
+                  </View>
+                  <View>
+                    <Text className="text-base text-gray-900 block">切换到企业模式</Text>
+                    <Text className="text-xs text-gray-400">
+                      使用企业微信功能
+                    </Text>
+                  </View>
+                </View>
+                <ChevronRight size={20} color="#D1D5DB" />
+              </View>
+            </CardContent>
+          </Card>
+        )}
 
         {/* 视图模式切换 - 企业微信用户可用 */}
         {userInfo?.user_type === 'enterprise' && (
