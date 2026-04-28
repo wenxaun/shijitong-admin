@@ -3,6 +3,7 @@
 import { View, Text, Image, Input, Button } from '@tarojs/components';
 import { useEffect, useState } from 'react';
 import Taro from '@tarojs/taro';
+import { isWeworkSync } from '@/utils/env';
 import { useUserStore } from '@/stores/user';
 import { callFunction } from '@/utils/cloud';
 import type { CloudResponse, MenuItem } from '@/types';
@@ -272,10 +273,21 @@ export default function Profile() {
 
             if (cloudRes.data?.success) {
               // 更新用户信息
-              const userInfo = useUserStore.getState().userInfo;
-              const newUserInfo = { ...userInfo, user_type: 'enterprise' as const };
+              const currentUserInfo = useUserStore.getState().userInfo;
+              if (!currentUserInfo) {
+                Taro.showToast({
+                  title: '获取用户信息失败',
+                  icon: 'none'
+                });
+                return;
+              }
 
-              // 更新本地存储
+              const newUserInfo = {
+                ...currentUserInfo,
+                user_type: 'enterprise' as const
+              };
+
+              // 更新本地存储和状态
               Taro.setStorageSync('userInfo', newUserInfo);
               useUserStore.setState({ userInfo: newUserInfo });
 
@@ -409,7 +421,7 @@ export default function Profile() {
         </Card>
 
         {/* 切换到企业模式 - 个人用户可用 */}
-        {userInfo?.user_type === 'personal' && isWework && (
+        {userInfo?.user_type === 'personal' && isWeworkSync() && (
           <Card className="mt-3">
             <CardContent className="p-0">
               <View

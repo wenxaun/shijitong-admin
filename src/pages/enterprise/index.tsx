@@ -1,6 +1,7 @@
 // 企业信息页面
 import { useState, useEffect } from 'react';
 import { View, Text, ScrollView } from '@tarojs/components';
+import Taro from '@tarojs/taro';
 import { useUserStore } from '@/stores/user';
 import { callFunction } from '@/utils/cloud';
 import { Card, CardContent } from '@/components/ui/card';
