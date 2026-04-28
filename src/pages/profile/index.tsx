@@ -31,6 +31,14 @@ export default function Profile() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>(DEFAULT_MENU_ITEMS);
   const [viewMode, setViewMode] = useState<'personal' | 'enterprise'>('personal');
 
+  // 调试信息
+  console.log('[Profile] 渲染时的状态:', {
+    isWework: isWeworkSync(),
+    userInfo,
+    user_type: userInfo?.user_type,
+    shouldShowSwitchButton: (!userInfo?.user_type || userInfo?.user_type === 'personal') && isWeworkSync()
+  });
+
   useEffect(() => {
     loadUserInfo();
     loadMenuOrder();
@@ -417,6 +425,32 @@ export default function Profile() {
                 {index < menuItems.length - 1 && <Separator className="mx-4" />}
               </View>
             ))}
+          </CardContent>
+        </Card>
+
+        {/* 调试信息 */}
+        <Card className="mt-3 bg-yellow-50">
+          <CardContent className="p-4">
+            <Text className="text-xs text-gray-600 mb-2 block">环境调试：</Text>
+            <Text className="text-xs text-gray-600 block">
+              系统环境: {JSON.stringify(Taro.getSystemInfoSync().environment)}
+            </Text>
+            <Text className="text-xs text-gray-600 block">
+              isWeworkSync: {isWeworkSync() ? 'true' : 'false'}
+            </Text>
+            <Text className="text-xs text-gray-600 block">
+              user_type: {userInfo?.user_type || 'undefined'}
+            </Text>
+            <Text className="text-xs text-gray-600 block">
+              应显示切换按钮: {(!userInfo?.user_type || userInfo?.user_type === 'personal') && isWeworkSync() ? 'true' : 'false'}
+            </Text>
+            {/* 临时测试按钮 - 强制允许切换 */}
+            <View
+              className="mt-2 bg-green-100 px-3 py-2 rounded"
+              onClick={handleSwitchToEnterprise}
+            >
+              <Text className="text-xs text-green-700">测试：强制切换到企业模式</Text>
+            </View>
           </CardContent>
         </Card>
 
