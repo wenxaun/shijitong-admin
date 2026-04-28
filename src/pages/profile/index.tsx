@@ -420,8 +420,8 @@ export default function Profile() {
           </CardContent>
         </Card>
 
-        {/* 切换到企业模式 - 个人用户可用 */}
-        {userInfo?.user_type === 'personal' && isWeworkSync() && (
+        {/* 切换到企业模式 - 个人用户或未设置用户类型时可用 */}
+        {(!userInfo?.user_type || userInfo?.user_type === 'personal') && isWeworkSync() && (
           <Card className="mt-3">
             <CardContent className="p-0">
               <View

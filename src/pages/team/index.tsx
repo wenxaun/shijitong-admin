@@ -407,9 +407,31 @@ export default function TeamPage() {
   };
 
   // 渲染企业页面
-  const renderEnterpriseContent = () => { return (
-    <View className="flex-1">
-      {/* 功能入口 */}
+  const renderEnterpriseContent = () => {
+    // 如果不是企业用户，显示切换引导
+    if (userInfo?.user_type !== 'enterprise') {
+      return (
+        <View className="flex flex-col items-center justify-center py-16 px-8">
+          <View className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+            <Building size={32} color="#D1D5DB" />
+          </View>
+          <Text className="text-gray-700 mb-2 font-medium">企业功能</Text>
+          <Text className="text-gray-400 text-sm mb-6 text-center">
+            切换到企业模式后即可使用企业微信功能
+          </Text>
+          <View
+            className="bg-blue-500 text-white px-6 py-2 rounded-lg"
+            onClick={() => Taro.switchTab({ url: '/pages/profile/index' })}
+          >
+            <Text className="text-sm">去个人中心切换模式</Text>
+          </View>
+        </View>
+      );
+    }
+
+    return (
+      <View className="flex-1">
+        {/* 功能入口 */}
       <View className="bg-white mb-2">
         <View
           className="flex items-center px-4 py-3 border-b border-gray-100 active:bg-gray-50"
