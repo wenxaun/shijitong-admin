@@ -208,6 +208,14 @@ export default function Profile() {
 
   // 更新用户信息到云端
   const updateUserInfo = async (info: { nickName?: string; avatarUrl?: string }) => {
+    // 检查用户是否已登录
+    const currentOpenid = useUserStore.getState().openid || Taro.getStorageSync('openid');
+    const currentUserInfo = useUserStore.getState().userInfo || Taro.getStorageSync('userInfo');
+
+    if (!currentOpenid || !currentUserInfo) {
+      throw new Error('请先登录后再更新用户信息');
+    }
+
     if (Taro.getEnv() === Taro.ENV_TYPE.WEAPP) {
       const res = await callFunction<CloudResponse<{}>>(
         'user-update',
@@ -216,17 +224,20 @@ export default function Profile() {
           avatar_url: info.avatarUrl
         }
       );
-      
+
       if (!res.success) {
         throw new Error(res.message || '更新失败');
       }
     }
-    
-    // 更新本地存储
-    const storedUserInfo = Taro.getStorageSync('userInfo') || {};
+
+    // 更新本地存储（确保有用户信息）
+    const storedUserInfo = Taro.getStorageSync('userInfo');
+    if (!storedUserInfo) {
+      throw new Error('用户信息不存在，请先登录');
+    }
     const newUserInfo = { ...storedUserInfo, ...info };
     Taro.setStorageSync('userInfo', newUserInfo);
-    
+
     // 更新 store
     useUserStore.setState({ userInfo: newUserInfo as any });
   };
