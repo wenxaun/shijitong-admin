@@ -99,8 +99,8 @@ exports.main = async (event) => {
         openid: member.openid,
         nickname: member.nickname || '未知',
         avatar_url: member.avatar_url || '',
-        department_name: dept?.name || '',
-        department_id: dept?.id || '',
+        department_name: (dept && dept.name) || '',
+        department_id: (dept && dept.id) || '',
         role: member.role || 'member'
       };
     });

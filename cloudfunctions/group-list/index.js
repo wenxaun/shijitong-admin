@@ -40,7 +40,7 @@ exports.main = async (event, context) => {
     })
 
     // 容错处理：如果集合不存在，返回空数组而不是失败
-    if (err.errCode === -1 || err.errMsg?.includes('collection not exists')) {
+    if (err.errCode === -1 || (err.errMsg && err.errMsg.includes('collection not exists'))) {
       console.warn('[group-list] task_groups 集合不存在，返回空数组')
       return {
         success: true,

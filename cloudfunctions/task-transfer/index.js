@@ -108,8 +108,8 @@ exports.main = async (event, context) => {
         .field({ nickname: true })
         .get()
 
-      const from_user_name = fromUserResult.data[0]?.nickname || '未知'
-      const final_to_user_name = to_user_name || toUserResult.data[0]?.nickname || '未知'
+      const from_user_name = (fromUserResult.data[0] && fromUserResult.data[0].nickname) || '未知'
+      const final_to_user_name = to_user_name || (toUserResult.data[0] && toUserResult.data[0].nickname) || '未知'
 
       // 使用事务更新任务
       const transaction = await db.startTransaction()

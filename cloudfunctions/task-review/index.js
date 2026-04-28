@@ -68,7 +68,7 @@ exports.main = async (event, context) => {
       .field({ nickname: true })
       .get()
 
-    const reviewer_name = reviewerResult.data[0]?.nickname || '未知'
+    const reviewer_name = (reviewerResult.data[0] && reviewerResult.data[0].nickname) || '未知'
 
     // 使用事务更新任务
     const transaction = await db.startTransaction()

@@ -233,7 +233,7 @@ async function syncMembers(corpId) {
           const needsUpdate =
             existing.name !== member.name ||
             existing.mobile !== member.mobile ||
-            existing.department?.id !== dept.dept_id ||
+            (existing.department && existing.department.id) !== dept.dept_id ||
             existing.position !== member.position
 
           if (needsUpdate) {
