@@ -1,0 +1,45 @@
+# 依赖
+node_modules
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# 构建产物
+dist
+dist-ssr
+*.local
+
+# 开发文件
+.git
+.gitignore
+.vscode
+.idea
+.DS_Store
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# 文档
+*.md
+docs
+
+# 测试
+coverage
+.nyc_output
+test
+
+# Web前端（不需要部署到后端容器）
+web-admin
+src
+public
+
+# 云开发
+.cloudbaserc
+
+# 临时文件
+*.tmp
+*.swp
+*~
