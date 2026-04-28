@@ -31,14 +31,8 @@ export default defineAppConfig({
     'pages/menu-sort/index',
     'pages/privacy/index',
     'pages/agreement/index',
-    'pages/admin/index',
-    'pages/admin-users/index',
-    'pages/admin-tasks/index',
-    'pages/admin-groups/index',
-    'pages/admin-settings/index',
     'pages/task-transfer/index',
-    'pages/org-tree/index',
-    'pages/config-admin/index'
+    'pages/org-tree/index'
   ],
   window: {
     backgroundTextStyle: 'dark',
