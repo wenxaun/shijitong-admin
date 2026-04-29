@@ -3,10 +3,9 @@ import { AppController } from '@/app.controller';
 import { AppService } from '@/app.service';
 import { AiService } from '@/ai.service';
 import { ConfigModule } from './config.module';
-import { AdminModule } from './admin.module';
 
 @Module({
-  imports: [ConfigModule, AdminModule],
+  imports: [ConfigModule],
   controllers: [AppController],
   providers: [AppService, AiService],
 })
