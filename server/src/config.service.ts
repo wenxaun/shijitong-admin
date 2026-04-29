@@ -4,13 +4,8 @@ import {
   ConfigVersion, 
   ConfigChange, 
   ConfigCategory,
-  AppConfig,
-  SystemConfig,
-  FeatureConfig,
-  WecomConfig,
-  TextConfig,
-  BusinessConfig
-} from '../../src/types/config';
+  AppConfig
+} from './types/config';
 import * as fs from 'fs';
 import * as path from 'path';
 

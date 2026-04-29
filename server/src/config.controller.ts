@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Put, Body, Query, Param, UseGuards } from '@nestjs/common';
 import { ConfigService } from './config.service';
-import { ConfigCategory, AppConfig } from '../../src/types/config';
+import { ConfigCategory, AppConfig } from './types/config';
 
 /**
  * 配置管理控制器
