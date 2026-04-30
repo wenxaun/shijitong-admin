@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Typography, Card, Table, Button, Space, message, Modal, Select, Descriptions, Alert, Tabs } from 'antd'
-import { DeleteOutlined, BackupOutlined, UserOutlined } from '@ant-design/icons'
+import { DeleteOutlined, SaveOutlined, UserOutlined } from '@ant-design/icons'
 import { getUserList } from '@/services/config'
 import { getUserRelatedData, backupUserTasks, deleteUserWithCascade } from '@/services/api'
 import type { UserRecord } from '@/types'
@@ -151,7 +151,7 @@ export default function Tasks() {
             <>
               <Space style={{ marginTop: 16 }}>
                 <Button 
-                  icon={<BackupOutlined />} 
+                  icon={<SaveOutlined />} 
                   onClick={() => setBackupModalOpen(true)}
                   disabled={!relatedData || relatedData.summary.taskCount === 0}
                 >
