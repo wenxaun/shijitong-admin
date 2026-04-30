@@ -31,8 +31,14 @@ coverage
 .nyc_output
 test
 
-# Web前端（不需要部署到后端容器）
-web-admin
+# Web前端（只部署 dist）
+web-admin/src
+web-admin/node_modules
+web-admin/package.json
+web-admin/vite.config.ts
+web-admin/tsconfig.json
+web-admin/tsconfig.node.json
+web-admin/index.html
 src
 public
 

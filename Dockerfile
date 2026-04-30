@@ -9,6 +9,7 @@ COPY server/package.json ./
 RUN npm install
 
 COPY server/ ./
+COPY web-admin/dist/ ./public/
 
 RUN npm install -g typescript @nestjs/cli
 
