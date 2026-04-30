@@ -1,21 +1,21 @@
 import { useState, useEffect } from 'react'
 import { Row, Col, Card, Statistic, Typography, Spin } from 'antd'
 import { TeamOutlined, UserOutlined, CheckCircleOutlined, SettingOutlined } from '@ant-design/icons'
-import { callCloudFunction } from '@/services/api'
+import { getStats } from '@/services/api'
 
 const { Title } = Typography
 
 interface DashboardData {
   totalUsers: number
-  enterpriseUsers: number
-  personalUsers: number
+  activeUsers: number
   totalTasks: number
+  completedTasks: number
 }
 
 export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<DashboardData>({
-    totalUsers: 0, enterpriseUsers: 0, personalUsers: 0, totalTasks: 0,
+    totalUsers: 0, activeUsers: 0, totalTasks: 0, completedTasks: 0,
   })
 
   useEffect(() => {
@@ -24,10 +24,9 @@ export default function Dashboard() {
 
   const loadData = async () => {
     try {
-      const result = await callCloudFunction('admin-users', { action: 'list', limit: 1, offset: 0 })
+      const result = await getStats()
       if (result.code === 200) {
-        const d = result.data as { total: number }
-        setData(prev => ({ ...prev, totalUsers: d.total }))
+        setData(result.data)
       }
     } catch {
       // ignore
@@ -48,17 +47,17 @@ export default function Dashboard() {
           </Col>
           <Col span={6}>
             <Card>
-              <Statistic title="企业用户" value={data.enterpriseUsers} prefix={<TeamOutlined />} />
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card>
-              <Statistic title="个人用户" value={data.personalUsers} prefix={<UserOutlined />} />
+              <Statistic title="活跃用户" value={data.activeUsers} prefix={<TeamOutlined />} />
             </Card>
           </Col>
           <Col span={6}>
             <Card>
               <Statistic title="任务总数" value={data.totalTasks} prefix={<CheckCircleOutlined />} />
+            </Card>
+          </Col>
+          <Col span={6}>
+            <Card>
+              <Statistic title="已完成" value={data.completedTasks} prefix={<SettingOutlined />} />
             </Card>
           </Col>
         </Row>
