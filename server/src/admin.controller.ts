@@ -87,4 +87,9 @@ export class AdminController {
   async syncConfigToCloud() {
     return this.adminService.syncConfigToCloud();
   }
+
+  @Get('permissions/:openid')
+  async getUserPermissions(@Param('openid') openid: string) {
+    return this.adminService.getUserPermissions(openid);
+  }
 }

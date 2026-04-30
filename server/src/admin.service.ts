@@ -250,14 +250,135 @@ export class AdminService {
   }
 
   async getConfig() {
-    return { code: 200, msg: 'success', data: {} };
+    const envId = process.env.TCB_ENV_ID;
+    const secretId = process.env.TENCENT_SECRET_ID;
+    const secretKey = process.env.TENCENT_SECRET_KEY;
+    
+    const defaultConfig = {
+      role_config: {
+        member: {
+          features: { task_enabled: true, team_enabled: false, enterprise_enabled: false, notification_enabled: true, weekly_report_enabled: false, voice_input_enabled: false, config_access: false },
+          limits: { max_tasks_per_user: 50, max_subtasks_per_task: 10, max_team_members: 20 }
+        },
+        admin: {
+          features: { task_enabled: true, team_enabled: true, enterprise_enabled: false, notification_enabled: true, weekly_report_enabled: true, voice_input_enabled: false, config_access: true },
+          limits: { max_tasks_per_user: 200, max_subtasks_per_task: 30, max_team_members: 50 }
+        },
+        owner: {
+          features: { task_enabled: true, team_enabled: true, enterprise_enabled: true, notification_enabled: true, weekly_report_enabled: true, voice_input_enabled: true, config_access: true },
+          limits: { max_tasks_per_user: 999, max_subtasks_per_task: 100, max_team_members: 500 }
+        }
+      }
+    };
+    
+    if (!secretId || !secretKey || !envId) {
+      return { code: 200, msg: 'success (default)', data: defaultConfig };
+    }
+
+    try {
+      const cloudbase = require('@cloudbase/node-sdk');
+      const app = cloudbase.init({ env: envId, secretId, secretKey });
+      const db = app.database();
+      
+      const result = await db.collection('config').doc('app_config').get();
+      
+      if (result.data && result.data.length > 0) {
+        return { code: 200, msg: 'success', data: result.data[0] };
+      }
+      
+      await db.collection('config').doc('app_config').set(defaultConfig);
+      return { code: 200, msg: 'success', data: defaultConfig };
+    } catch (error: any) {
+      console.error('[Admin] 获取配置失败:', error.message);
+      return { code: 200, msg: 'success (default)', data: defaultConfig };
+    }
   }
 
   async updateConfig(config: any) {
-    return { code: 200, msg: 'success' };
+    const envId = process.env.TCB_ENV_ID;
+    const secretId = process.env.TENCENT_SECRET_ID;
+    const secretKey = process.env.TENCENT_SECRET_KEY;
+    
+    if (!secretId || !secretKey || !envId) {
+      return { code: 200, msg: 'success (mock)' };
+    }
+
+    try {
+      const cloudbase = require('@cloudbase/node-sdk');
+      const app = cloudbase.init({ env: envId, secretId, secretKey });
+      const db = app.database();
+      
+      await db.collection('config').doc('app_config').update({
+        ...config,
+        updated_at: new Date().toISOString()
+      });
+      
+      return { code: 200, msg: 'success' };
+    } catch (error: any) {
+      console.error('[Admin] 更新配置失败:', error.message);
+      return { code: 500, msg: '更新配置失败: ' + error.message };
+    }
   }
 
   async syncConfigToCloud() {
     return { code: 200, msg: 'success' };
+  }
+
+  async getUserPermissions(openid: string) {
+    const envId = process.env.TCB_ENV_ID;
+    const secretId = process.env.TENCENT_SECRET_ID;
+    const secretKey = process.env.TENCENT_SECRET_KEY;
+    
+    const defaultPermissions = {
+      role: 'member',
+      features: { task_enabled: true, team_enabled: false, enterprise_enabled: false, notification_enabled: true, weekly_report_enabled: false, voice_input_enabled: false, config_access: false },
+      limits: { max_tasks_per_user: 50, max_subtasks_per_task: 10, max_team_members: 20 }
+    };
+    
+    if (!secretId || !secretKey || !envId) {
+      return { code: 200, msg: 'success (default)', data: defaultPermissions };
+    }
+
+    try {
+      const cloudbase = require('@cloudbase/node-sdk');
+      const app = cloudbase.init({ env: envId, secretId, secretKey });
+      const db = app.database();
+      
+      const userResult = await db.collection('users').where({ openid }).get();
+      if (!userResult.data || userResult.data.length === 0) {
+        return { code: 200, msg: 'success (default)', data: defaultPermissions };
+      }
+      
+      const user = userResult.data[0];
+      const role = user.role || 'member';
+      
+      const configResult = await db.collection('config').doc('app_config').get();
+      let config = configResult.data?.[0];
+      
+      if (!config || !config.role_config) {
+        config = {
+          role_config: {
+            member: { features: defaultPermissions.features, limits: defaultPermissions.limits },
+            admin: { features: { ...defaultPermissions.features, team_enabled: true, weekly_report_enabled: true, config_access: true }, limits: { max_tasks_per_user: 200, max_subtasks_per_task: 30, max_team_members: 50 } },
+            owner: { features: { task_enabled: true, team_enabled: true, enterprise_enabled: true, notification_enabled: true, weekly_report_enabled: true, voice_input_enabled: true, config_access: true }, limits: { max_tasks_per_user: 999, max_subtasks_per_task: 100, max_team_members: 500 } }
+          }
+        };
+      }
+      
+      const roleConfig = config.role_config[role] || config.role_config.member;
+      
+      return {
+        code: 200,
+        msg: 'success',
+        data: {
+          role,
+          features: roleConfig.features,
+          limits: roleConfig.limits
+        }
+      };
+    } catch (error: any) {
+      console.error('[Admin] 获取用户权限失败:', error.message);
+      return { code: 200, msg: 'success (default)', data: defaultPermissions };
+    }
   }
 }

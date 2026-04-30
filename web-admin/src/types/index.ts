@@ -23,22 +23,41 @@ export interface UserRecord {
   created_at: string
 }
 
+export type UserRole = 'member' | 'admin' | 'owner'
+
+export interface RoleFeatures {
+  task_enabled: boolean
+  team_enabled: boolean
+  enterprise_enabled: boolean
+  notification_enabled: boolean
+  weekly_report_enabled: boolean
+  voice_input_enabled: boolean
+  config_access: boolean
+}
+
+export interface RoleLimits {
+  max_tasks_per_user: number
+  max_subtasks_per_task: number
+  max_team_members: number
+}
+
 export interface AppConfig {
   _id?: string
-  features: {
-    team_enabled: boolean
-    enterprise_enabled: boolean
-    notification_enabled: boolean
-    weekly_report_enabled: boolean
-    voice_input_enabled: boolean
-  }
-  limits: {
-    max_tasks_per_user: number
-    max_subtasks_per_task: number
-    max_team_members: number
+  role_config: {
+    member: { features: RoleFeatures; limits: RoleLimits }
+    admin: { features: RoleFeatures; limits: RoleLimits }
+    owner: { features: RoleFeatures; limits: RoleLimits }
   }
   updated_at?: string
   updated_by?: string
+}
+
+export interface AuthorizedSubject {
+  user_id: string
+  openid: string
+  nickname: string
+  permissions: string[]
+  created_at: string
 }
 
 export interface ApiResponse<T = unknown> {

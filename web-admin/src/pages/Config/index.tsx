@@ -1,24 +1,62 @@
 import { useState, useEffect } from 'react'
-import { Card, Form, Switch, InputNumber, Button, message, Typography, Divider, Spin, Table, Tag, Space, Modal, Select } from 'antd'
+import { Card, Form, Switch, InputNumber, Button, message, Typography, Divider, Spin, Table, Tag, Space, Modal, Select, Tabs, Checkbox } from 'antd'
 import { SaveOutlined, UserOutlined, PlusOutlined, DeleteOutlined } from '@ant-design/icons'
 import { getConfig, updateConfig, getUserList, updateUserRole } from '@/services/config'
-import type { AppConfig, UserRecord } from '@/types'
+import type { AppConfig, UserRecord, UserRole, RoleFeatures, RoleLimits } from '@/types'
 
 const { Title, Text } = Typography
+
+const DEFAULT_FEATURES: RoleFeatures = {
+  task_enabled: true,
+  team_enabled: false,
+  enterprise_enabled: false,
+  notification_enabled: true,
+  weekly_report_enabled: false,
+  voice_input_enabled: false,
+  config_access: false,
+}
+
+const DEFAULT_LIMITS: RoleLimits = {
+  max_tasks_per_user: 50,
+  max_subtasks_per_task: 10,
+  max_team_members: 20,
+}
+
+const DEFAULT_CONFIG: AppConfig = {
+  role_config: {
+    member: { features: { ...DEFAULT_FEATURES, config_access: false }, limits: { ...DEFAULT_LIMITS } },
+    admin: { features: { ...DEFAULT_FEATURES, config_access: true }, limits: { max_tasks_per_user: 200, max_subtasks_per_task: 30, max_team_members: 50 } },
+    owner: { features: { ...DEFAULT_FEATURES, task_enabled: true, team_enabled: true, enterprise_enabled: true, notification_enabled: true, weekly_report_enabled: true, voice_input_enabled: true, config_access: true }, limits: { max_tasks_per_user: 999, max_subtasks_per_task: 100, max_team_members: 500 } },
+  },
+}
+
+const ROLE_NAMES: Record<UserRole, string> = {
+  member: '普通成员',
+  admin: '管理员',
+  owner: '所有者',
+}
+
+const ROLE_COLORS: Record<UserRole, string> = {
+  member: 'blue',
+  admin: 'orange',
+  owner: 'gold',
+}
 
 export default function ConfigManagement() {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [form] = Form.useForm()
+  const [config, setConfig] = useState<AppConfig>(DEFAULT_CONFIG)
   const [users, setUsers] = useState<UserRecord[]>([])
   const [usersLoading, setUsersLoading] = useState(false)
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [selectedUserId, setSelectedUserId] = useState<string>('')
+  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([])
   const [allUsers, setAllUsers] = useState<UserRecord[]>([])
+  const [authorizedSubjects, setAuthorizedSubjects] = useState<Array<{ user: UserRecord; permissions: string[] }>>([])
 
   useEffect(() => {
     loadConfig()
-    loadAuthorizedUsers()
+    loadUsers()
   }, [])
 
   const loadConfig = async () => {
@@ -26,7 +64,12 @@ export default function ConfigManagement() {
     try {
       const result = await getConfig()
       if (result.code === 200 && result.data) {
-        form.setFieldsValue(result.data)
+        const cfg = result.data as AppConfig
+        if (!cfg.role_config) {
+          setConfig(DEFAULT_CONFIG)
+        } else {
+          setConfig(cfg)
+        }
       }
     } catch {
       message.error('获取配置失败')
@@ -35,7 +78,7 @@ export default function ConfigManagement() {
     }
   }
 
-  const loadAuthorizedUsers = async () => {
+  const loadUsers = async () => {
     setUsersLoading(true)
     try {
       const result = await getUserList({ limit: 100 })
@@ -43,19 +86,21 @@ export default function ConfigManagement() {
         const d = result.data as { list: UserRecord[]; total: number }
         const userList = d.list || []
         setAllUsers(userList)
-        setUsers(userList.filter(u => u.role === 'admin' || u.role === 'owner'))
+        const admins = userList.filter(u => u.role === 'admin' || u.role === 'owner')
+        setUsers(admins)
+        setAuthorizedSubjects(admins.map(u => ({ user: u, permissions: ['config_access', 'user_manage'] })))
       }
     } catch {
-      message.error('获取授权用户失败')
+      message.error('获取用户失败')
     } finally {
       setUsersLoading(false)
     }
   }
 
-  const handleSave = async (values: AppConfig) => {
+  const handleSave = async () => {
     setSaving(true)
     try {
-      const result = await updateConfig(values)
+      const result = await updateConfig(config)
       if (result.code === 200) {
         message.success('配置已保存')
       } else {
@@ -80,7 +125,8 @@ export default function ConfigManagement() {
         message.success('已添加授权')
         setAddModalOpen(false)
         setSelectedUserId('')
-        loadAuthorizedUsers()
+        setSelectedPermissions([])
+        loadUsers()
       } else {
         message.error(result.msg || '添加失败')
       }
@@ -99,7 +145,7 @@ export default function ConfigManagement() {
       const result = await updateUserRole(userId, 'member')
       if (result.code === 200) {
         message.success('已移除授权')
-        loadAuthorizedUsers()
+        loadUsers()
       } else {
         message.error(result.msg || '移除失败')
       }
@@ -108,13 +154,147 @@ export default function ConfigManagement() {
     }
   }
 
+  const updateRoleFeatures = (role: UserRole, key: keyof RoleFeatures, value: boolean) => {
+    setConfig(prev => ({
+      ...prev,
+      role_config: {
+        ...prev.role_config,
+        [role]: {
+          ...prev.role_config[role],
+          features: { ...prev.role_config[role].features, [key]: value },
+        },
+      },
+    }))
+  }
+
+  const updateRoleLimits = (role: UserRole, key: keyof RoleLimits, value: number) => {
+    setConfig(prev => ({
+      ...prev,
+      role_config: {
+        ...prev.role_config,
+        [role]: {
+          ...prev.role_config[role],
+          limits: { ...prev.role_config[role].limits, [key]: value },
+        },
+      },
+    }))
+  }
+
+  const renderRoleConfig = (role: UserRole) => {
+    const roleData = config.role_config?.[role] || { features: DEFAULT_FEATURES, limits: DEFAULT_LIMITS }
+    const features = roleData.features
+    const limits = roleData.limits
+
+    return (
+      <div key={role}>
+        <Card 
+          title={
+            <Space>
+              <Tag color={ROLE_COLORS[role]}>{ROLE_NAMES[role]}</Tag>
+              <Text type="secondary">功能权限与使用限制</Text>
+            </Space>
+          }
+          style={{ marginBottom: 16 }}
+        >
+          <Space direction="vertical" style={{ width: '100%' }} size="middle">
+            <div>
+              <Text strong style={{ marginBottom: 8, display: 'block' }}>功能开关</Text>
+              <Space wrap>
+                <Checkbox 
+                  checked={features.task_enabled} 
+                  onChange={e => updateRoleFeatures(role, 'task_enabled', e.target.checked)}
+                >
+                  任务功能
+                </Checkbox>
+                <Checkbox 
+                  checked={features.team_enabled} 
+                  onChange={e => updateRoleFeatures(role, 'team_enabled', e.target.checked)}
+                >
+                  团队功能
+                </Checkbox>
+                <Checkbox 
+                  checked={features.enterprise_enabled} 
+                  onChange={e => updateRoleFeatures(role, 'enterprise_enabled', e.target.checked)}
+                >
+                  企业功能
+                </Checkbox>
+                <Checkbox 
+                  checked={features.notification_enabled} 
+                  onChange={e => updateRoleFeatures(role, 'notification_enabled', e.target.checked)}
+                >
+                  消息通知
+                </Checkbox>
+                <Checkbox 
+                  checked={features.weekly_report_enabled} 
+                  onChange={e => updateRoleFeatures(role, 'weekly_report_enabled', e.target.checked)}
+                >
+                  周报功能
+                </Checkbox>
+                <Checkbox 
+                  checked={features.voice_input_enabled} 
+                  onChange={e => updateRoleFeatures(role, 'voice_input_enabled', e.target.checked)}
+                >
+                  语音输入
+                </Checkbox>
+                <Checkbox 
+                  checked={features.config_access} 
+                  onChange={e => updateRoleFeatures(role, 'config_access', e.target.checked)}
+                >
+                  配置管理访问
+                </Checkbox>
+              </Space>
+            </div>
+
+            <Divider style={{ margin: '12px 0' }} />
+
+            <div>
+              <Text strong style={{ marginBottom: 8, display: 'block' }}>使用限制</Text>
+              <Space wrap size="large">
+                <div>
+                  <Text type="secondary" style={{ fontSize: 12, marginRight: 8 }}>每人最大任务数</Text>
+                  <InputNumber 
+                    min={1} 
+                    max={999} 
+                    value={limits.max_tasks_per_user}
+                    onChange={v => v && updateRoleLimits(role, 'max_tasks_per_user', v)}
+                    style={{ width: 80 }}
+                  />
+                </div>
+                <div>
+                  <Text type="secondary" style={{ fontSize: 12, marginRight: 8 }}>每任务最大子任务数</Text>
+                  <InputNumber 
+                    min={1} 
+                    max={100} 
+                    value={limits.max_subtasks_per_task}
+                    onChange={v => v && updateRoleLimits(role, 'max_subtasks_per_task', v)}
+                    style={{ width: 80 }}
+                  />
+                </div>
+                <div>
+                  <Text type="secondary" style={{ fontSize: 12, marginRight: 8 }}>团队最大人数</Text>
+                  <InputNumber 
+                    min={2} 
+                    max={500} 
+                    value={limits.max_team_members}
+                    onChange={v => v && updateRoleLimits(role, 'max_team_members', v)}
+                    style={{ width: 80 }}
+                  />
+                </div>
+              </Space>
+            </div>
+          </Space>
+        </Card>
+      </div>
+    )
+  }
+
   const authorizedColumns = [
-    { title: '用户', dataIndex: 'nickname', key: 'nickname', width: 200 },
+    { title: '用户', dataIndex: 'nickname', key: 'nickname', width: 150 },
     { 
       title: 'OpenID', 
       dataIndex: 'openid', 
       key: 'openid', 
-      width: 200, 
+      width: 120, 
       ellipsis: true,
       render: (openid: string) => openid?.slice(-8) || '-'
     },
@@ -122,20 +302,29 @@ export default function ConfigManagement() {
       title: '角色',
       dataIndex: 'role',
       key: 'role',
-      width: 120,
+      width: 100,
       render: (role: string) => {
-        const roleMap: Record<string, { color: string; text: string }> = {
-          owner: { color: 'gold', text: '所有者' },
-          admin: { color: 'red', text: '管理员' },
-        }
-        const r = roleMap[role] || { color: 'default', text: role }
-        return <Tag color={r.color}>{r.text}</Tag>
+        const r = role as UserRole
+        return <Tag color={ROLE_COLORS[r] || 'default'}>{ROLE_NAMES[r] || role}</Tag>
+      },
+    },
+    {
+      title: '小程序端权限',
+      key: 'permissions',
+      width: 200,
+      render: (_: unknown, record: UserRecord) => {
+        const perms = record.role === 'owner' 
+          ? ['全部权限'] 
+          : record.role === 'admin' 
+            ? ['配置管理', '用户管理'] 
+            : []
+        return perms.map(p => <Tag key={p} style={{ marginBottom: 4 }}>{p}</Tag>)
       },
     },
     {
       title: '操作',
       key: 'action',
-      width: 100,
+      width: 80,
       render: (_: unknown, record: UserRecord) => (
         <Button
           type="link"
@@ -158,41 +347,28 @@ export default function ConfigManagement() {
       <Title level={4} style={{ marginBottom: 24 }}>配置管理</Title>
       
       <Spin spinning={loading}>
-        <Form form={form} onFinish={handleSave} layout="vertical">
-          <Card title="功能开关" style={{ marginBottom: 16 }}>
-            <Form.Item name={['features', 'team_enabled']} valuePropName="checked" label="团队功能">
-              <Switch />
-            </Form.Item>
-            <Form.Item name={['features', 'enterprise_enabled']} valuePropName="checked" label="企业功能">
-              <Switch />
-            </Form.Item>
-            <Form.Item name={['features', 'notification_enabled']} valuePropName="checked" label="消息通知">
-              <Switch />
-            </Form.Item>
-            <Form.Item name={['features', 'weekly_report_enabled']} valuePropName="checked" label="周报功能">
-              <Switch />
-            </Form.Item>
-            <Form.Item name={['features', 'voice_input_enabled']} valuePropName="checked" label="语音输入">
-              <Switch />
-            </Form.Item>
-          </Card>
+        <Card style={{ marginBottom: 16 }}>
+          <div style={{ marginBottom: 16 }}>
+            <Text strong>按角色配置功能权限与使用限制</Text>
+            <Text type="secondary" style={{ marginLeft: 8 }}>
+              不同角色拥有不同的功能开关和使用限制
+            </Text>
+          </div>
+          
+          <Tabs
+            items={[
+              { key: 'member', label: <Tag color="blue">普通成员</Tag>, children: renderRoleConfig('member') },
+              { key: 'admin', label: <Tag color="orange">管理员</Tag>, children: renderRoleConfig('admin') },
+              { key: 'owner', label: <Tag color="gold">所有者</Tag>, children: renderRoleConfig('owner') },
+            ]}
+          />
 
-          <Card title="使用限制" style={{ marginBottom: 16 }}>
-            <Form.Item name={['limits', 'max_tasks_per_user']} label="每人最大任务数">
-              <InputNumber min={1} max={1000} style={{ width: 200 }} />
-            </Form.Item>
-            <Form.Item name={['limits', 'max_subtasks_per_task']} label="每任务最大子任务数">
-              <InputNumber min={1} max={100} style={{ width: 200 }} />
-            </Form.Item>
-            <Form.Item name={['limits', 'max_team_members']} label="团队最大人数">
-              <InputNumber min={2} max={500} style={{ width: 200 }} />
-            </Form.Item>
-          </Card>
+          <Divider />
 
-          <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={saving} size="large">
+          <Button type="primary" icon={<SaveOutlined />} onClick={handleSave} loading={saving} size="large">
             保存配置
           </Button>
-        </Form>
+        </Card>
       </Spin>
 
       <Divider />
@@ -212,7 +388,7 @@ export default function ConfigManagement() {
         style={{ marginBottom: 16 }}
       >
         <Text type="secondary" style={{ marginBottom: 16, display: 'block' }}>
-          授权用户可以访问小程序端的管理功能和配置管理页面
+          授权用户可在小程序端访问管理功能和配置管理页面。权限由角色配置控制。
         </Text>
         <Table
           columns={authorizedColumns}
@@ -228,28 +404,34 @@ export default function ConfigManagement() {
         title="添加授权用户"
         open={addModalOpen}
         onOk={handleAddAuthorizedUser}
-        onCancel={() => { setAddModalOpen(false); setSelectedUserId('') }}
+        onCancel={() => { setAddModalOpen(false); setSelectedUserId(''); setSelectedPermissions([]) }}
         okText="添加"
         cancelText="取消"
       >
-        <Form layout="vertical">
-          <Form.Item label="选择用户">
-            <Select
-              style={{ width: '100%' }}
-              placeholder="请选择用户"
-              value={selectedUserId || undefined}
-              onChange={setSelectedUserId}
-              showSearch
-              filterOption={(input, option) => 
-                (option?.label as string)?.toLowerCase().includes(input.toLowerCase())
-              }
-              options={availableUsers.map(u => ({
-                value: u._id,
-                label: `${u.nickname || '未命名'} (${u.openid?.slice(-8)})`
-              }))}
-            />
-          </Form.Item>
-        </Form>
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <Select
+            style={{ width: '100%' }}
+            placeholder="请选择用户"
+            value={selectedUserId || undefined}
+            onChange={setSelectedUserId}
+            showSearch
+            filterOption={(input, option) => 
+              (option?.label as string)?.toLowerCase().includes(input.toLowerCase())
+            }
+            options={availableUsers.map(u => ({
+              value: u._id,
+              label: `${u.nickname || '未命名'} (${u.openid?.slice(-8)})`
+            }))}
+          />
+          <Checkbox.Group
+            value={selectedPermissions}
+            onChange={v => setSelectedPermissions(v as string[])}
+            options={[
+              { label: '配置管理访问', value: 'config_access' },
+              { label: '用户管理', value: 'user_manage' },
+            ]}
+          />
+        </Space>
       </Modal>
     </div>
   )

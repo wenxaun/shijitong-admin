@@ -15,7 +15,7 @@ import { Switch } from '@/components/ui/switch';
 
 // 默认菜单项配置（不包含功能排序，功能排序放在设置页面）
 export default function Profile() {
-  const { openid, logout, userInfo } = useUserStore();
+  const { openid, logout, userInfo, hasFeature } = useUserStore();
   const [avatarUrl, setAvatarUrl] = useState('');
   const [nickname, setNickname] = useState('微信用户');
   const [isEditing, setIsEditing] = useState(false);
@@ -23,7 +23,6 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [viewMode, setViewMode] = useState<'personal' | 'enterprise'>('personal');
 
-  // 调试信息
   console.log('[Profile] 渲染时的状态:', {
     isWework: isWeworkSync(),
     userInfo,
@@ -460,8 +459,8 @@ export default function Profile() {
           </Card>
         </View>
 
-        {/* 管理功能 - 仅管理员可见 */}
-        {(userInfo?.role === 'admin' || userInfo?.role === 'owner') && (
+        {/* 管理功能 - 根据权限配置显示 */}
+        {hasFeature('config_access') && (
           <View className="mb-4">
             <Text className="text-sm text-gray-500 mb-2 px-1">管理</Text>
             <Card>

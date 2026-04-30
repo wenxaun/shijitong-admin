@@ -10,7 +10,7 @@ import { Button as UIButton } from '@/components/ui/button';
 import { CircleCheck, Building2 } from 'lucide-react-taro';
 
 export default function Login() {
-  const { openid } = useUserStore();
+  const { openid, loadPermissions } = useUserStore();
   const [loading, setLoading] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [envType, setEnvType] = useState<'weixin' | 'wework' | 'h5' | 'other'>('weixin');
@@ -87,17 +87,16 @@ export default function Login() {
             role: loginRes.data.role || 'member'
           };
           
-          // 保存用户信息到本地
           Taro.setStorageSync('userInfo', userInfo);
           
-          // 更新 store
           useUserStore.setState({ 
             openid: userOpenid, 
             userInfo: userInfo as any,
             isLoading: false
           });
           
-          // 显示登录成功提示
+          await loadPermissions();
+          
           Taro.showToast({ 
             title: envType === 'wework' ? '企业微信登录成功' : '登录成功', 
             icon: 'success' 
@@ -105,7 +104,7 @@ export default function Login() {
           
           setTimeout(() => {
             console.log('[Login] 登录成功，跳转到首页');
-            Taro.reLaunch({ url: '/pages/index/index' });
+            Taro.switchTab({ url: '/pages/index/index' });
           }, 500);
         } else {
           Taro.showToast({ title: loginRes.message || '登录失败', icon: 'none' });
