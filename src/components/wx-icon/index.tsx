@@ -243,6 +243,30 @@ const WX_ICON_SVG: Record<WxIconName, string> = {
   'pencil-fill': '<path d="M17 3a2.828 2.828 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z" fill="currentColor"/>',
 }
 
+const base64Encode = (str: string): string => {
+  const base64Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+  let result = ''
+  let i = 0
+  const len = str.length
+  
+  while (i < len) {
+    const byte1 = str.charCodeAt(i++)
+    const byte2 = i < len ? str.charCodeAt(i++) : 0
+    const byte3 = i < len ? str.charCodeAt(i++) : 0
+    
+    const enc1 = byte1 >> 2
+    const enc2 = ((byte1 & 3) << 4) | (byte2 >> 4)
+    const enc3 = ((byte2 & 15) << 2) | (byte3 >> 6)
+    const enc4 = byte3 & 63
+    
+    result += base64Chars[enc1] + base64Chars[enc2]
+    result += i - 2 < len ? base64Chars[enc3] : '='
+    result += i - 1 < len ? base64Chars[enc4] : '='
+  }
+  
+  return result
+}
+
 const WxIcon = memo(({ name, size = 24, color = '#333333', className = '', style }: WxIconProps) => {
   const svgPath = WX_ICON_SVG[name]
   
@@ -252,9 +276,7 @@ const WxIcon = memo(({ name, size = 24, color = '#333333', className = '', style
   }
   
   const svgString = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none">${svgPath.replace(/currentColor/g, color)}</svg>`
-  const base64 = Taro.getEnv() === Taro.ENV_TYPE.WEAPP 
-    ? `data:image/svg+xml;base64,${Taro.base64.encode(svgString)}`
-    : `data:image/svg+xml,${encodeURIComponent(svgString)}`
+  const base64 = `data:image/svg+xml;base64,${base64Encode(svgString)}`
   
   return (
     <Image 
