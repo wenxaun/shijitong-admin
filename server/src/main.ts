@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from '@/app.module';
 import * as express from 'express';
 import { HttpStatusInterceptor } from '@/interceptors/http-status.interceptor';
+import { join } from 'path';
 
 function parsePort(): number {
   const args = process.argv.slice(2);
@@ -22,9 +23,22 @@ async function bootstrap() {
     origin: true,
     credentials: true,
   });
-  app.setGlobalPrefix('api');
+  
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
+  
+  const publicPath = join(__dirname, '..', 'public');
+  app.use(express.static(publicPath));
+  
+  app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (!req.path.startsWith('/api') && !req.path.includes('.')) {
+      res.sendFile(join(publicPath, 'index.html'));
+    } else {
+      next();
+    }
+  });
+  
+  app.setGlobalPrefix('api');
 
   // 全局拦截器：统一将 POST 请求的 201 状态码改为 200
   app.useGlobalInterceptors(new HttpStatusInterceptor());
