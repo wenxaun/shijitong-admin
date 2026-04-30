@@ -144,7 +144,12 @@ export default function Profile() {
   };
 
   const navigateTo = (path: string) => {
-    Taro.navigateTo({ url: path });
+    const tabBarPages = ['/pages/index/index', '/pages/team/index', '/pages/profile/index'];
+    if (tabBarPages.includes(path)) {
+      Taro.switchTab({ url: path });
+    } else {
+      Taro.navigateTo({ url: path });
+    }
   };
 
   const handleLogout = () => {
@@ -188,17 +193,18 @@ export default function Profile() {
     });
   };
 
-  const MenuItem = ({ icon, title, onClick, showArrow = true, rightText }: {
+  const MenuItem = ({ icon, title, onClick, showArrow = true, rightText, rightIcon }: {
     icon: any;
     title: string;
     onClick?: () => void;
     showArrow?: boolean;
     rightText?: string;
+    rightIcon?: any;
   }) => (
     <View 
       className="flex items-center justify-between px-4 py-3 bg-white active:bg-gray-50"
       onClick={onClick}
-      style={{ minHeight: '52px' }}
+      style={{ minHeight: '50px' }}
     >
       <View className="flex items-center">
         <WxIcon name={icon} size={20} color="#333" />
@@ -206,7 +212,8 @@ export default function Profile() {
       </View>
       <View className="flex items-center">
         {rightText && <Text className="text-sm text-gray-400 mr-2">{rightText}</Text>}
-        {showArrow && <WxIcon name="chevron-right" size={16} color="#C8C8C8" />}
+        {rightIcon && <WxIcon name={rightIcon} size={16} color="#999" />}
+        {showArrow && !rightIcon && <WxIcon name="chevron-right" size={16} color="#C8C8C8" />}
       </View>
     </View>
   );
@@ -214,9 +221,8 @@ export default function Profile() {
   return (
     <View className="min-h-screen bg-gray-100">
       {/* 用户信息头部 */}
-      <View className="bg-white px-4 pt-6 pb-4 mb-2">
+      <View className="bg-white px-4 pt-4 pb-4">
         <View className="flex items-center">
-          {/* 头像 */}
           <Button
             className="bg-transparent p-0 border-0 mr-4"
             openType="chooseAvatar"
@@ -235,7 +241,6 @@ export default function Profile() {
             )}
           </Button>
           
-          {/* 昵称和ID */}
           <View className="flex-1">
             {isEditing ? (
               <View className="flex items-center gap-2">
@@ -262,7 +267,7 @@ export default function Profile() {
             ) : (
               <View className="flex items-center" onClick={startEditNickname}>
                 <Text className="text-lg font-medium text-gray-800">{nickname}</Text>
-                <WxIcon name="pencil" size={14} color="#999" className="ml-2" />
+                <WxIcon name="pencil" size={14} color="#999" style={{ marginLeft: 8 }} />
               </View>
             )}
             {openid && (
@@ -271,30 +276,21 @@ export default function Profile() {
               </Text>
             )}
           </View>
-          
-          {/* 二维码 */}
-          <View className="flex items-center">
-            <WxIcon name="chevron-right" size={20} color="#C8C8C8" />
-          </View>
         </View>
       </View>
 
-      {/* 功能区域 */}
-      <View className="mb-2">
-        {/* 任务相关 */}
+      {/* 功能服务 */}
+      <View className="mt-2">
         <MenuItem 
           icon="task" 
           title="我的任务" 
           onClick={() => navigateTo('/pages/history/index')}
         />
-      </View>
-
-      <View className="mb-2">
-        {/* 团队相关 */}
+        <View className="h-px bg-gray-100 ml-12" />
         <MenuItem 
-          icon="team" 
-          title="我的团队" 
-          onClick={() => navigateTo('/pages/team/index')}
+          icon="clipboard" 
+          title="数据周报" 
+          onClick={() => navigateTo('/pages/weekly/index')}
         />
         <View className="h-px bg-gray-100 ml-12" />
         <MenuItem 
@@ -304,23 +300,23 @@ export default function Profile() {
         />
       </View>
 
-      {/* 企业功能 */}
+      {/* 企业功能 - 企业微信环境 */}
       {isWeworkSync() && (
-        <View className="mb-2">
-          <View className="flex items-center justify-between px-4 py-3 bg-white" style={{ minHeight: '52px' }}>
+        <View className="mt-2">
+          <View className="flex items-center justify-between px-4 py-3 bg-white" style={{ minHeight: '50px' }}>
             <View className="flex items-center">
               <WxIcon name="building" size={20} color="#333" />
               <Text className="text-base text-gray-800 ml-3">企业模式</Text>
             </View>
             <View 
-              className={`w-12 h-7 rounded-full flex items-center px-1 transition-all ${
-                viewMode === 'enterprise' ? 'bg-green-500' : 'bg-gray-200'
+              className={`w-11 h-6 rounded-full flex items-center px-0.5 ${
+                viewMode === 'enterprise' ? 'bg-green-500' : 'bg-gray-300'
               }`}
               onClick={() => handleViewModeChange(viewMode !== 'enterprise')}
             >
               <View 
-                className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${
-                  viewMode === 'enterprise' ? 'translate-x-5' : 'translate-x-0'
+                className={`w-5 h-5 rounded-full bg-white shadow ${
+                  viewMode === 'enterprise' ? 'ml-auto' : 'ml-0'
                 }`}
               />
             </View>
@@ -330,7 +326,7 @@ export default function Profile() {
 
       {/* 管理功能 */}
       {hasFeature('config_access') && (
-        <View className="mb-2">
+        <View className="mt-2">
           <MenuItem 
             icon="shield" 
             title="管理控制台" 
@@ -345,8 +341,8 @@ export default function Profile() {
         </View>
       )}
 
-      {/* 设置区域 */}
-      <View className="mb-2">
+      {/* 设置 */}
+      <View className="mt-2">
         <MenuItem 
           icon="setting" 
           title="设置" 
@@ -355,7 +351,7 @@ export default function Profile() {
       </View>
 
       {/* 底部操作 */}
-      <View className="mt-6 px-4">
+      <View className="mt-4 px-4">
         <View 
           className="flex items-center justify-center py-3 bg-white rounded-lg active:bg-gray-50"
           onClick={handleClearCache}
