@@ -164,6 +164,35 @@ export class AdminService {
     }
   }
 
+  async updateUserRole(userId: string, role: string) {
+    const envId = process.env.TCB_ENV_ID;
+    const secretId = process.env.TENCENT_SECRET_ID;
+    const secretKey = process.env.TENCENT_SECRET_KEY;
+    
+    if (!['member', 'admin', 'owner'].includes(role)) {
+      return { code: 400, msg: '无效的角色类型' };
+    }
+    
+    if (!secretId || !secretKey || !envId) {
+      return { code: 200, msg: 'success (mock)' };
+    }
+
+    try {
+      const cloudbase = require('@cloudbase/node-sdk');
+      const app = cloudbase.init({ env: envId, secretId, secretKey });
+      const db = app.database();
+      
+      await db.collection('users').doc(userId).update({
+        role,
+        updated_at: new Date().toISOString()
+      });
+      
+      return { code: 200, msg: '角色更新成功' };
+    } catch (error: any) {
+      return { code: 500, msg: '更新角色失败: ' + error.message };
+    }
+  }
+
   async getAnalytics(startDate: string, endDate: string) {
     return this.getMockAnalytics(startDate, endDate);
   }

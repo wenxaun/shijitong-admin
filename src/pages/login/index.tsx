@@ -64,7 +64,7 @@ export default function Login() {
 
     setLoading(true);
     try {
-      if (Taro.getEnv() === Taro.ENV_TYPE.WEAPP || Taro.getEnv() === Taro.ENV_TYPE.WEAPP) {
+      if (Taro.getEnv() === Taro.ENV_TYPE.WEAPP) {
         // 调用云函数进行登录/注册（云函数会根据环境自动处理）
         const loginRes = await callFunction<CloudResponse<{ 
           openid: string; 
@@ -82,7 +82,9 @@ export default function Login() {
           const userOpenid = loginRes.data.openid;
           const userInfo = {
             nickName: loginRes.data.nickname || '微信用户',
-            avatarUrl: loginRes.data.avatar_url || ''
+            avatarUrl: loginRes.data.avatar_url || '',
+            user_type: loginRes.data.user_type || 'personal',
+            role: loginRes.data.role || 'member'
           };
           
           // 保存用户信息到本地

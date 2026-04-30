@@ -10,7 +10,7 @@ import type { CloudResponse } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button as UIButton } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Camera, ChevronRight, LogOut, Trash2, Pencil, Check, X, Shield, Building } from 'lucide-react-taro';
+import { Camera, ChevronRight, LogOut, Trash2, Pencil, Check, X, Shield, Building, Settings } from 'lucide-react-taro';
 import { Switch } from '@/components/ui/switch';
 
 // 默认菜单项配置（不包含功能排序，功能排序放在设置页面）
@@ -82,29 +82,28 @@ export default function Profile() {
           try {
             // 获取用户信息（优先从 store，其次从本地存储）
             let currentUserInfo = useUserStore.getState().userInfo;
+            const currentOpenid = useUserStore.getState().openid;
 
+            // 如果 store 中没有，从本地存储读取
             if (!currentUserInfo) {
-              // 从本地存储读取
               currentUserInfo = Taro.getStorageSync('userInfo');
             }
+            
+            // 检查 openid（用户已登录的主要标识）
+            if (!currentOpenid) {
+              const storedOpenid = Taro.getStorageSync('openid');
+              if (storedOpenid) {
+                useUserStore.setState({ openid: storedOpenid });
+              }
+            }
 
-            // 检查用户是否已登录
-            const currentOpenid = useUserStore.getState().openid || Taro.getStorageSync('openid');
-
-            if (!currentOpenid || !currentUserInfo) {
-              Taro.hideLoading();
-              Taro.showModal({
-                title: '未登录',
-                content: '请先登录后再切换模式',
-                showCancel: false,
-                confirmText: '去登录',
-                success: (modalRes) => {
-                  if (modalRes.confirm) {
-                    Taro.navigateTo({ url: '/pages/login/index' });
-                  }
-                }
-              });
-              return;
+            // 如果用户信息不存在，使用默认信息
+            if (!currentUserInfo) {
+              currentUserInfo = {
+                nickName: nickname || '用户',
+                avatarUrl: avatarUrl || '',
+                user_type: 'personal'
+              };
             }
 
             // 同时更新用户类型和视图模式
@@ -124,12 +123,15 @@ export default function Profile() {
             Taro.showToast({
               title: checked ? '已切换到企业模式' : '已切换到个人模式',
               icon: 'success',
-              duration: 2000
+              duration: 1500
             });
 
-            // 刷新页面以应用新的模式
+            // 刷新页面以应用新的模式（使用 switchTab 避免超时）
             setTimeout(() => {
-              Taro.reLaunch({ url: '/pages/index/index' });
+              Taro.switchTab({ url: '/pages/index/index' }).catch(() => {
+                // switchTab 失败时尝试 reLaunch
+                Taro.reLaunch({ url: '/pages/index/index' });
+              });
             }, 1500);
           } catch (error) {
             Taro.hideLoading();
@@ -153,6 +155,7 @@ export default function Profile() {
     
     // 上传头像到云存储并更新用户信息
     if (newAvatarUrl && Taro.getEnv() === Taro.ENV_TYPE.WEAPP) {
+      Taro.showLoading({ title: '上传中...' });
       try {
         // 上传到云存储
         // @ts-ignore
@@ -166,10 +169,13 @@ export default function Profile() {
           // 更新到云端
           await updateUserInfo({ avatarUrl: uploadRes.fileID });
           setAvatarUrl(uploadRes.fileID);
+          Taro.showToast({ title: '头像更新成功', icon: 'success' });
         }
       } catch (err) {
         console.error('[Profile] 头像上传失败:', err);
         Taro.showToast({ title: '头像上传失败', icon: 'none' });
+      } finally {
+        Taro.hideLoading();
       }
     }
   };
@@ -454,42 +460,36 @@ export default function Profile() {
           </Card>
         </View>
 
-        {/* 管理功能 - 管理员可见 */}
-        {(userInfo?.role === 'admin' || userInfo?.role === 'owner' || isWeworkSync()) && (
+        {/* 管理功能 - 仅管理员可见 */}
+        {(userInfo?.role === 'admin' || userInfo?.role === 'owner') && (
           <View className="mb-4">
             <Text className="text-sm text-gray-500 mb-2 px-1">管理</Text>
             <Card>
               <CardContent className="p-0">
-                {/* 管理控制台 - 仅管理员可见 */}
-                {userInfo?.role === 'admin' || userInfo?.role === 'owner' ? (
-                  <>
-                    <View
-                      className="flex items-center justify-between px-4 py-3 active:bg-gray-50"
-                      onClick={() => navigateTo('/pages/admin/index')}
-                    >
-                      <View className="flex items-center">
-                        <Shield size={20} color="#1377EB" />
-                        <Text className="text-base text-gray-800 ml-3">管理控制台</Text>
-                      </View>
-                      <ChevronRight size={20} color="#D1D5DB" />
-                    </View>
-                    <Separator className="mx-4" />
-                  </>
-                ) : null}
-
-                {/* 配置管理 - 管理员或企业微信环境可见 */}
-                {(userInfo?.role === 'admin' || userInfo?.role === 'owner' || isWeworkSync()) && (
-                  <View
-                    className="flex items-center justify-between px-4 py-3 active:bg-gray-50"
-                    onClick={() => navigateTo('/pages/config-admin/index')}
-                  >
-                    <View className="flex items-center">
-                      <Settings size={20} color="#1377EB" />
-                      <Text className="text-base text-gray-800 ml-3">配置管理</Text>
-                    </View>
-                    <ChevronRight size={20} color="#D1D5DB" />
+                {/* 管理控制台 */}
+                <View
+                  className="flex items-center justify-between px-4 py-3 active:bg-gray-50"
+                  onClick={() => navigateTo('/pages/admin/index')}
+                >
+                  <View className="flex items-center">
+                    <Shield size={20} color="#1377EB" />
+                    <Text className="text-base text-gray-800 ml-3">管理控制台</Text>
                   </View>
-                )}
+                  <ChevronRight size={20} color="#D1D5DB" />
+                </View>
+                <Separator className="mx-4" />
+                
+                {/* 配置管理 */}
+                <View
+                  className="flex items-center justify-between px-4 py-3 active:bg-gray-50"
+                  onClick={() => navigateTo('/pages/config-admin/index')}
+                >
+                  <View className="flex items-center">
+                    <Settings size={20} color="#1377EB" />
+                    <Text className="text-base text-gray-800 ml-3">配置管理</Text>
+                  </View>
+                  <ChevronRight size={20} color="#D1D5DB" />
+                </View>
               </CardContent>
             </Card>
           </View>

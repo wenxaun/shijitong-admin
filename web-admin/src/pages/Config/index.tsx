@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Card, Form, Switch, InputNumber, Button, message, Typography, Divider, Spin } from 'antd'
-import { SaveOutlined } from '@ant-design/icons'
-import { getConfig, updateConfig } from '@/services/config'
-import type { AppConfig } from '@/types'
+import { Card, Form, Switch, InputNumber, Button, message, Typography, Divider, Spin, Table, Tag, Space, Modal, Select } from 'antd'
+import { SaveOutlined, UserOutlined, PlusOutlined, DeleteOutlined } from '@ant-design/icons'
+import { getConfig, updateConfig, getUserList, updateUserRole } from '@/services/config'
+import type { AppConfig, UserRecord } from '@/types'
 
 const { Title, Text } = Typography
 
@@ -10,9 +10,15 @@ export default function ConfigManagement() {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [form] = Form.useForm()
+  const [users, setUsers] = useState<UserRecord[]>([])
+  const [usersLoading, setUsersLoading] = useState(false)
+  const [addModalOpen, setAddModalOpen] = useState(false)
+  const [selectedUserId, setSelectedUserId] = useState<string>('')
+  const [allUsers, setAllUsers] = useState<UserRecord[]>([])
 
   useEffect(() => {
     loadConfig()
+    loadAuthorizedUsers()
   }, [])
 
   const loadConfig = async () => {
@@ -26,6 +32,23 @@ export default function ConfigManagement() {
       message.error('获取配置失败')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadAuthorizedUsers = async () => {
+    setUsersLoading(true)
+    try {
+      const result = await getUserList({ limit: 100 })
+      if (result.code === 200) {
+        const d = result.data as { list: UserRecord[]; total: number }
+        const userList = d.list || []
+        setAllUsers(userList)
+        setUsers(userList.filter(u => u.role === 'admin' || u.role === 'owner'))
+      }
+    } catch {
+      message.error('获取授权用户失败')
+    } finally {
+      setUsersLoading(false)
     }
   }
 
@@ -45,9 +68,95 @@ export default function ConfigManagement() {
     }
   }
 
+  const handleAddAuthorizedUser = async () => {
+    if (!selectedUserId) {
+      message.error('请选择用户')
+      return
+    }
+    
+    try {
+      const result = await updateUserRole(selectedUserId, 'admin')
+      if (result.code === 200) {
+        message.success('已添加授权')
+        setAddModalOpen(false)
+        setSelectedUserId('')
+        loadAuthorizedUsers()
+      } else {
+        message.error(result.msg || '添加失败')
+      }
+    } catch {
+      message.error('添加失败')
+    }
+  }
+
+  const handleRemoveAuthorizedUser = async (userId: string, currentRole: string) => {
+    if (currentRole === 'owner') {
+      message.error('不能移除所有者权限')
+      return
+    }
+    
+    try {
+      const result = await updateUserRole(userId, 'member')
+      if (result.code === 200) {
+        message.success('已移除授权')
+        loadAuthorizedUsers()
+      } else {
+        message.error(result.msg || '移除失败')
+      }
+    } catch {
+      message.error('移除失败')
+    }
+  }
+
+  const authorizedColumns = [
+    { title: '用户', dataIndex: 'nickname', key: 'nickname', width: 200 },
+    { 
+      title: 'OpenID', 
+      dataIndex: 'openid', 
+      key: 'openid', 
+      width: 200, 
+      ellipsis: true,
+      render: (openid: string) => openid?.slice(-8) || '-'
+    },
+    {
+      title: '角色',
+      dataIndex: 'role',
+      key: 'role',
+      width: 120,
+      render: (role: string) => {
+        const roleMap: Record<string, { color: string; text: string }> = {
+          owner: { color: 'gold', text: '所有者' },
+          admin: { color: 'red', text: '管理员' },
+        }
+        const r = roleMap[role] || { color: 'default', text: role }
+        return <Tag color={r.color}>{r.text}</Tag>
+      },
+    },
+    {
+      title: '操作',
+      key: 'action',
+      width: 100,
+      render: (_: unknown, record: UserRecord) => (
+        <Button
+          type="link"
+          danger
+          size="small"
+          icon={<DeleteOutlined />}
+          onClick={() => handleRemoveAuthorizedUser(record._id, record.role || 'member')}
+          disabled={record.role === 'owner'}
+        >
+          移除
+        </Button>
+      ),
+    },
+  ]
+
+  const availableUsers = allUsers.filter(u => !['admin', 'owner'].includes(u.role || 'member'))
+
   return (
     <div>
       <Title level={4} style={{ marginBottom: 24 }}>配置管理</Title>
+      
       <Spin spinning={loading}>
         <Form form={form} onFinish={handleSave} layout="vertical">
           <Card title="功能开关" style={{ marginBottom: 16 }}>
@@ -85,6 +194,63 @@ export default function ConfigManagement() {
           </Button>
         </Form>
       </Spin>
+
+      <Divider />
+
+      <Card 
+        title={
+          <Space>
+            <UserOutlined />
+            <span>授权主体</span>
+          </Space>
+        }
+        extra={
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddModalOpen(true)}>
+            添加授权
+          </Button>
+        }
+        style={{ marginBottom: 16 }}
+      >
+        <Text type="secondary" style={{ marginBottom: 16, display: 'block' }}>
+          授权用户可以访问小程序端的管理功能和配置管理页面
+        </Text>
+        <Table
+          columns={authorizedColumns}
+          dataSource={users}
+          rowKey="_id"
+          loading={usersLoading}
+          pagination={false}
+          size="small"
+        />
+      </Card>
+
+      <Modal
+        title="添加授权用户"
+        open={addModalOpen}
+        onOk={handleAddAuthorizedUser}
+        onCancel={() => { setAddModalOpen(false); setSelectedUserId('') }}
+        okText="添加"
+        cancelText="取消"
+      >
+        <Form layout="vertical">
+          <Form.Item label="选择用户">
+            <Select
+              style={{ width: '100%' }}
+              placeholder="请选择用户"
+              value={selectedUserId || undefined}
+              onChange={setSelectedUserId}
+              showSearch
+              filterOption={(input, option) => 
+                (option?.label as string)?.toLowerCase().includes(input.toLowerCase())
+              }
+              options={availableUsers.map(u => ({
+                value: u._id,
+                label: `${u.nickname || '未命名'} (${u.openid?.slice(-8)})`
+              }))}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   )
 }

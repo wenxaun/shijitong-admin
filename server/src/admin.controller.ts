@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Body, Query, Param } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Put, Body, Query, Param } from '@nestjs/common';
 import { AdminService } from './admin.service';
 
 @Controller('admin')
@@ -33,6 +33,11 @@ export class AdminController {
   @Delete('users/:id')
   async deleteUser(@Param('id') id: string) {
     return this.adminService.deleteUser(id);
+  }
+
+  @Put('users/:id/role')
+  async updateUserRole(@Param('id') id: string, @Body() body: { role: string }) {
+    return this.adminService.updateUserRole(id, body.role);
   }
 
   @Get('analytics')

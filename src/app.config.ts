@@ -32,7 +32,9 @@ export default defineAppConfig({
     'pages/privacy/index',
     'pages/agreement/index',
     'pages/task-transfer/index',
-    'pages/org-tree/index'
+    'pages/org-tree/index',
+    'pages/admin/index',
+    'pages/config-admin/index'
   ],
   window: {
     backgroundTextStyle: 'dark',

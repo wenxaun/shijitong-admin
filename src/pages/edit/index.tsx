@@ -87,8 +87,21 @@ export default function Edit() {
           return;
         }
 
-        // 检查是否逾期
-        const overdue = !!(task.require_date && new Date(task.require_date) < new Date() && task.status !== 'completed');
+        // 检查任务状态
+        if (task.status === 'cancelled') {
+          Taro.showToast({ title: '任务已取消', icon: 'none' });
+          setTimeout(() => Taro.navigateBack(), 1500);
+          return;
+        }
+
+        // 检查是否逾期（只比较日期部分）
+        const overdue = !!(task.require_date && task.status !== 'completed' && (() => {
+          const requireDate = new Date(task.require_date);
+          const today = new Date();
+          requireDate.setHours(0, 0, 0, 0);
+          today.setHours(0, 0, 0, 0);
+          return requireDate < today;
+        })());
 
         setTaskName(task.task_name);
         setTaskDescription(task.task_description || '');

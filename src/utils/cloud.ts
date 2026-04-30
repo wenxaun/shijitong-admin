@@ -56,18 +56,29 @@ export const callFunction = async <T = any>(name: string, data?: any): Promise<T
       console.log('===== [Cloud] 云函数调用结束 =====');
       return res.result as T;
     } catch (err: any) {
-      console.error('[Cloud] 云函数调用失败:', name, err);
-      console.error('[Cloud] 错误详情:', err.message || err.errMsg);
+      const errorInfo = {
+        function: name,
+        params: data,
+        environment: 'WEAPP',
+        error: err.message || err.errMsg || String(err),
+        stack: err.stack
+      };
+      console.error('[Cloud] 云函数调用失败:', JSON.stringify(errorInfo, null, 2));
       console.log('===== [Cloud] 云函数调用结束（失败）=====');
-      throw err;
+      throw new Error(`云函数 ${name} 调用失败: ${errorInfo.error}`);
     }
   } else {
     // H5 端：使用模拟数据
     console.log('[Cloud] H5 端使用模拟数据');
-    const result = await mockCloudFunction(name, data);
-    console.log('[Cloud] 模拟返回:', name, JSON.stringify(result));
-    console.log('===== [Cloud] 云函数调用结束 =====');
-    return result as T;
+    try {
+      const result = await mockCloudFunction(name, data);
+      console.log('[Cloud] 模拟返回:', name, JSON.stringify(result));
+      console.log('===== [Cloud] 云函数调用结束 =====');
+      return result as T;
+    } catch (err: any) {
+      console.error('[Cloud] 模拟数据失败:', name, err);
+      throw new Error(`H5 模拟云函数 ${name} 失败: ${err.message}`);
+    }
   }
 };
 

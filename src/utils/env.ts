@@ -38,44 +38,53 @@ export async function isWework(): Promise<boolean> {
  * 使用多种检测方法提高准确性
  */
 export function isWeworkSync(): boolean {
+  // 方法1：检查缓存的系统信息
   if (cachedSystemInfo) {
-    // 方法1：检测 environment 字段
     if (cachedSystemInfo.environment === 'wxwork') {
+      console.log('[Env] 企业微信环境检测成功（缓存）: environment=wxwork');
       return true;
     }
-
-    // 方法2：检测平台信息（企微小程序可能在 platform 中标注）
+    
     if (cachedSystemInfo.platform && cachedSystemInfo.platform.includes('wxwork')) {
+      console.log('[Env] 企业微信环境检测成功（缓存）: platform includes wxwork');
       return true;
     }
   }
-
-  // 方法3：使用 Taro.getEnv() 检测
+  
+  // 方法2：实时获取系统信息
   try {
     const systemInfo = Taro.getSystemInfoSync() as SystemInfo;
     if (!cachedSystemInfo) {
       cachedSystemInfo = systemInfo;
     }
-
-    // 优先检查 environment
+    
+    console.log('[Env] 系统信息:', {
+      environment: systemInfo.environment,
+      platform: systemInfo.platform,
+      version: systemInfo.version,
+      SDKVersion: systemInfo.SDKVersion
+    });
+    
+    // 优先检查 environment 字段（企业微信标准字段）
     if (systemInfo.environment === 'wxwork') {
+      console.log('[Env] 企业微信环境检测成功: environment=wxwork');
       return true;
     }
-
-    // 检查平台信息
+    
+    // 检查 platform
     if (systemInfo.platform && systemInfo.platform.includes('wxwork')) {
+      console.log('[Env] 企业微信环境检测成功: platform includes wxwork');
       return true;
     }
-
-    // 方法4：检查 App 的基础库版本和企业微信特有的特征
-    // 企业微信通常有特定的 SDKVersion 范围
-    const version = systemInfo.SDKVersion;
-    if (version && version >= '2.3.0') {
-      // 基础库 >= 2.3.0 可能支持企业微信
-      // 可以结合其他判断
-      return systemInfo.environment === 'wxwork';
+    
+    // 方法3：检查企业微信特有 API
+    // @ts-ignore
+    if (typeof wx !== 'undefined' && wx.qy) {
+      console.log('[Env] 企业微信环境检测成功: wx.qy 存在');
+      return true;
     }
-
+    
+    console.log('[Env] 非企业微信环境');
     return false;
   } catch (error) {
     console.error('[Env] 检测企业微信环境失败:', error);

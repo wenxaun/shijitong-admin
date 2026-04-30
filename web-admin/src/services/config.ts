@@ -1,4 +1,4 @@
-import { getUsers, deleteUser as apiDeleteUser, getConfig as apiGetConfig, updateConfig as apiUpdateConfig } from './api'
+import { getUsers, deleteUser as apiDeleteUser, getConfig as apiGetConfig, updateConfig as apiUpdateConfig, updateUserRole as apiUpdateUserRole } from './api'
 import type { AppConfig, UserRecord, ApiResponse } from '@/types'
 
 export async function getUserList(params: {
@@ -12,6 +12,10 @@ export async function getUserList(params: {
 
 export async function deleteUser(userId: string): Promise<ApiResponse> {
   return apiDeleteUser(userId)
+}
+
+export async function updateUserRole(userId: string, role: string): Promise<ApiResponse> {
+  return apiUpdateUserRole(userId, role)
 }
 
 export async function getConfig(): Promise<ApiResponse> {

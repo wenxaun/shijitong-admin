@@ -1,7 +1,9 @@
-import Taro, { useState, useEffect } from '@tarojs/taro';
+import Taro from '@tarojs/taro';
+import { useState, useEffect } from 'react';
 import { View, Text, ScrollView } from '@tarojs/components';
-import { Network } from '@/network';
+import { callFunction } from '@/utils/cloud';
 import { configManager, AppConfig } from '@/utils/configManager';
+import { useUserStore } from '@/stores/user';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -14,15 +16,22 @@ import { Settings, RefreshCw, History } from 'lucide-react-taro';
  * 供管理员管理应用配置
  */
 export default function ConfigAdminPage() {
+  const { userInfo } = useUserStore();
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [versions, setVersions] = useState<any[]>([]);
 
   useEffect(() => {
+    if (userInfo?.role !== 'admin' && userInfo?.role !== 'owner') {
+      Taro.showToast({ title: '无权限访问', icon: 'none' });
+      setTimeout(() => Taro.navigateBack(), 1500);
+      return;
+    }
+    
     loadConfig();
     loadVersions();
-  }, []);
+  }, [userInfo]);
 
   const loadConfig = async () => {
     setLoading(true);
@@ -31,6 +40,7 @@ export default function ConfigAdminPage() {
       setConfig(data);
     } catch (error) {
       console.error('加载配置失败:', error);
+      Taro.showToast({ title: '加载配置失败', icon: 'none' });
     } finally {
       setLoading(false);
     }
@@ -38,13 +48,12 @@ export default function ConfigAdminPage() {
 
   const loadVersions = async () => {
     try {
-      const res = await Network.request({
-        url: '/api/config/versions',
-        method: 'GET',
+      const res = await callFunction<{ success: boolean; data?: any[] }>('admin-config', {
+        action: 'getVersions'
       });
-
-      if (res.statusCode === 200) {
-        setVersions(res.data || []);
+      
+      if (res.success && res.data) {
+        setVersions(res.data);
       }
     } catch (error) {
       console.error('加载版本失败:', error);
@@ -54,52 +63,45 @@ export default function ConfigAdminPage() {
   const updateConfig = async (id: string, value: any) => {
     setSaving(true);
     try {
-      const res = await Network.request({
-        url: `/api/config/records/${id}`,
-        method: 'PUT',
-        data: { value, operator: 'admin' },
+      const res = await callFunction<{ success: boolean }>('admin-config', {
+        action: 'update',
+        configId: id,
+        value
       });
-
-      if (res.statusCode === 200 && res.data.success) {
-        // 刷新配置
+      
+      if (res.success) {
+        Taro.showToast({ title: '更新成功', icon: 'success' });
         await loadConfig();
         await loadVersions();
       }
     } catch (error) {
       console.error('更新配置失败:', error);
+      Taro.showToast({ title: '更新失败', icon: 'none' });
     } finally {
       setSaving(false);
     }
   };
 
   const rollback = async (versionId: string) => {
-    // 使用 Taro.showModal 替代 confirm
     Taro.showModal({
       title: '确认回滚',
       content: '确定要回滚到这个版本吗？',
       success: async (res) => {
         if (res.confirm) {
           try {
-            const response = await Network.request({
-              url: `/api/config/versions/${versionId}/rollback`,
-              method: 'POST',
-              data: { operator: 'admin' },
+            const response = await callFunction<{ success: boolean }>('admin-config', {
+              action: 'rollback',
+              versionId
             });
-
-            if (response.statusCode === 200 && response.data.success) {
-              Taro.showToast({
-                title: '回滚成功',
-                icon: 'success',
-              });
+            
+            if (response.success) {
+              Taro.showToast({ title: '回滚成功', icon: 'success' });
               await loadConfig();
               await loadVersions();
             }
           } catch (error) {
             console.error('回滚失败:', error);
-            Taro.showToast({
-              title: '回滚失败',
-              icon: 'error',
-            });
+            Taro.showToast({ title: '回滚失败', icon: 'none' });
           }
         }
       },

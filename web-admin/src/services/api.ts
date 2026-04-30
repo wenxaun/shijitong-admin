@@ -30,6 +30,15 @@ export async function deleteUser(id: string) {
   return res.json()
 }
 
+export async function updateUserRole(userId: string, role: string) {
+  const res = await fetch(`${API_BASE_URL}/api/admin/users/${userId}/role`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ role }),
+  })
+  return res.json()
+}
+
 export async function getAnalytics(startDate: string, endDate: string) {
   const res = await fetch(`${API_BASE_URL}/api/admin/analytics?startDate=${startDate}&endDate=${endDate}`)
   return res.json()

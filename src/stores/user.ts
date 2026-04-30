@@ -53,7 +53,7 @@ export const useUserStore = create<UserState>()(
       init: async () => {
         console.log('[Store] 开始初始化用户状态...');
         
-        // 云开发已在 app.tsx 的 useLaunch 中初始化，这里不再重复初始化
+        // 云开发已在 app.tsx 中初始化
         
         // 获取 OpenID
         const openid = await getOpenId();
