@@ -193,50 +193,25 @@ export default function Profile() {
     });
   };
 
-  const MenuItem = ({ icon, title, onClick, showArrow = true, rightText, rightIcon }: {
-    icon: any;
-    title: string;
-    onClick?: () => void;
-    showArrow?: boolean;
-    rightText?: string;
-    rightIcon?: any;
-  }) => (
-    <View 
-      className="flex items-center justify-between px-4 py-3 bg-white active:bg-gray-50"
-      onClick={onClick}
-      style={{ minHeight: '50px' }}
-    >
-      <View className="flex items-center">
-        <WxIcon name={icon} size={20} color="#333" />
-        <Text className="text-base text-gray-800 ml-3">{title}</Text>
-      </View>
-      <View className="flex items-center">
-        {rightText && <Text className="text-sm text-gray-400 mr-2">{rightText}</Text>}
-        {rightIcon && <WxIcon name={rightIcon} size={16} color="#999" />}
-        {showArrow && !rightIcon && <WxIcon name="chevron-right" size={16} color="#C8C8C8" />}
-      </View>
-    </View>
-  );
-
   return (
-    <View className="min-h-screen bg-gray-100">
-      {/* 用户信息头部 */}
-      <View className="bg-white px-4 pt-4 pb-4">
+    <View className="min-h-screen bg-gray-100 flex flex-col">
+      {/* 用户信息头部 - 放大 */}
+      <View className="bg-white px-6 pt-6 pb-6">
         <View className="flex items-center">
           <Button
-            className="bg-transparent p-0 border-0 mr-4"
+            className="bg-transparent p-0 border-0 mr-5"
             openType="chooseAvatar"
             onChooseAvatar={onChooseAvatar}
           >
             {avatarUrl ? (
               <Image
-                className="w-16 h-16 rounded-full"
+                className="w-20 h-20 rounded-full"
                 src={avatarUrl}
                 mode="aspectFill"
               />
             ) : (
-              <View className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center">
-                <WxIcon name="user" size={32} color="#999" />
+              <View className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center">
+                <WxIcon name="user" size={40} color="#999" />
               </View>
             )}
           </Button>
@@ -245,33 +220,33 @@ export default function Profile() {
             {isEditing ? (
               <View className="flex items-center gap-2">
                 <Input
-                  className="flex-1 bg-gray-50 rounded px-2 py-1 text-base border border-gray-200"
+                  className="flex-1 bg-gray-50 rounded-lg px-3 py-2 text-base border border-gray-200"
                   type="nickname"
                   placeholder="输入昵称"
                   value={editNickname}
                   onInput={(e) => setEditNickname(e.detail.value)}
                 />
                 <View 
-                  className="w-7 h-7 bg-green-500 rounded-full flex items-center justify-center"
+                  className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center"
                   onClick={saveNickname}
                 >
-                  <WxIcon name="check" size={16} color="#fff" />
+                  <WxIcon name="check" size={18} color="#fff" />
                 </View>
                 <View 
-                  className="w-7 h-7 bg-gray-200 rounded-full flex items-center justify-center"
+                  className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center"
                   onClick={cancelEdit}
                 >
-                  <WxIcon name="close" size={16} color="#666" />
+                  <WxIcon name="close" size={18} color="#666" />
                 </View>
               </View>
             ) : (
               <View className="flex items-center" onClick={startEditNickname}>
-                <Text className="text-lg font-medium text-gray-800">{nickname}</Text>
-                <WxIcon name="pencil" size={14} color="#999" style={{ marginLeft: 8 }} />
+                <Text className="text-xl font-semibold text-gray-800">{nickname}</Text>
+                <WxIcon name="pencil" size={16} color="#999" style={{ marginLeft: 10 }} />
               </View>
             )}
             {openid && (
-              <Text className="text-sm text-gray-400 mt-1">
+              <Text className="text-sm text-gray-500 mt-2">
                 微信号: {openid.slice(-8)}
               </Text>
             )}
@@ -279,101 +254,130 @@ export default function Profile() {
         </View>
       </View>
 
-      {/* 功能服务 */}
-      <View className="mt-2">
-        <MenuItem 
-          icon="task" 
-          title="我的任务" 
-          onClick={() => navigateTo('/pages/history/index')}
-        />
-        <View className="h-px bg-gray-100 ml-12" />
-        <MenuItem 
-          icon="clipboard" 
-          title="数据周报" 
-          onClick={() => navigateTo('/pages/weekly/index')}
-        />
-        <View className="h-px bg-gray-100 ml-12" />
-        <MenuItem 
-          icon="chart" 
-          title="数据统计" 
-          onClick={() => navigateTo('/pages/stats/index')}
-        />
-      </View>
-
-      {/* 企业功能 - 企业微信环境 */}
-      {isWeworkSync() && (
-        <View className="mt-2">
-          <View className="flex items-center justify-between px-4 py-3 bg-white" style={{ minHeight: '50px' }}>
+      {/* 功能区域 - 均匀分布 */}
+      <View className="flex-1 px-4 py-4">
+        {/* 功能服务 */}
+        <View className="bg-white rounded-xl overflow-hidden mb-4">
+          <View 
+            className="flex items-center justify-between px-5 py-4 active:bg-gray-50 border-b border-gray-100"
+            onClick={() => navigateTo('/pages/history/index')}
+          >
             <View className="flex items-center">
-              <WxIcon name="building" size={20} color="#333" />
-              <Text className="text-base text-gray-800 ml-3">企业模式</Text>
+              <WxIcon name="task" size={22} color="#333" />
+              <Text className="text-base text-gray-800 ml-4">我的任务</Text>
             </View>
-            <View 
-              className={`w-11 h-6 rounded-full flex items-center px-0.5 ${
-                viewMode === 'enterprise' ? 'bg-green-500' : 'bg-gray-300'
-              }`}
-              onClick={() => handleViewModeChange(viewMode !== 'enterprise')}
-            >
-              <View 
-                className={`w-5 h-5 rounded-full bg-white shadow ${
-                  viewMode === 'enterprise' ? 'ml-auto' : 'ml-0'
-                }`}
-              />
+            <WxIcon name="chevron-right" size={18} color="#C8C8C8" />
+          </View>
+          
+          <View 
+            className="flex items-center justify-between px-5 py-4 active:bg-gray-50 border-b border-gray-100"
+            onClick={() => navigateTo('/pages/weekly/index')}
+          >
+            <View className="flex items-center">
+              <WxIcon name="clipboard" size={22} color="#333" />
+              <Text className="text-base text-gray-800 ml-4">数据周报</Text>
             </View>
+            <WxIcon name="chevron-right" size={18} color="#C8C8C8" />
+          </View>
+          
+          <View 
+            className="flex items-center justify-between px-5 py-4 active:bg-gray-50"
+            onClick={() => navigateTo('/pages/stats/index')}
+          >
+            <View className="flex items-center">
+              <WxIcon name="chart" size={22} color="#333" />
+              <Text className="text-base text-gray-800 ml-4">数据统计</Text>
+            </View>
+            <WxIcon name="chevron-right" size={18} color="#C8C8C8" />
           </View>
         </View>
-      )}
 
-      {/* 管理功能 */}
-      {hasFeature('config_access') && (
-        <View className="mt-2">
-          <MenuItem 
-            icon="shield" 
-            title="管理控制台" 
-            onClick={() => navigateTo('/pages/admin/index')}
-          />
-          <View className="h-px bg-gray-100 ml-12" />
-          <MenuItem 
-            icon="setting" 
-            title="配置管理" 
-            onClick={() => navigateTo('/pages/config-admin/index')}
-          />
+        {/* 企业功能 */}
+        {isWeworkSync() && (
+          <View className="bg-white rounded-xl overflow-hidden mb-4">
+            <View className="flex items-center justify-between px-5 py-4">
+              <View className="flex items-center">
+                <WxIcon name="building" size={22} color="#333" />
+                <Text className="text-base text-gray-800 ml-4">企业模式</Text>
+              </View>
+              <View 
+                className={`w-12 h-7 rounded-full flex items-center px-0.5 ${
+                  viewMode === 'enterprise' ? 'bg-green-500' : 'bg-gray-300'
+                }`}
+                onClick={() => handleViewModeChange(viewMode !== 'enterprise')}
+              >
+                <View 
+                  className={`w-6 h-6 rounded-full bg-white shadow ${
+                    viewMode === 'enterprise' ? 'ml-auto' : 'ml-0'
+                  }`}
+                />
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* 管理功能 */}
+        {hasFeature('config_access') && (
+          <View className="bg-white rounded-xl overflow-hidden mb-4">
+            <View 
+              className="flex items-center justify-between px-5 py-4 active:bg-gray-50 border-b border-gray-100"
+              onClick={() => navigateTo('/pages/admin/index')}
+            >
+              <View className="flex items-center">
+                <WxIcon name="shield" size={22} color="#333" />
+                <Text className="text-base text-gray-800 ml-4">管理控制台</Text>
+              </View>
+              <WxIcon name="chevron-right" size={18} color="#C8C8C8" />
+            </View>
+            
+            <View 
+              className="flex items-center justify-between px-5 py-4 active:bg-gray-50"
+              onClick={() => navigateTo('/pages/config-admin/index')}
+            >
+              <View className="flex items-center">
+                <WxIcon name="setting" size={22} color="#333" />
+                <Text className="text-base text-gray-800 ml-4">配置管理</Text>
+              </View>
+              <WxIcon name="chevron-right" size={18} color="#C8C8C8" />
+            </View>
+          </View>
+        )}
+
+        {/* 设置 */}
+        <View className="bg-white rounded-xl overflow-hidden mb-4">
+          <View 
+            className="flex items-center justify-between px-5 py-4 active:bg-gray-50 border-b border-gray-100"
+            onClick={() => navigateTo('/pages/settings/index')}
+          >
+            <View className="flex items-center">
+              <WxIcon name="setting" size={22} color="#333" />
+              <Text className="text-base text-gray-800 ml-4">设置</Text>
+            </View>
+            <WxIcon name="chevron-right" size={18} color="#C8C8C8" />
+          </View>
+          
+          <View 
+            className="flex items-center justify-between px-5 py-4 active:bg-gray-50"
+            onClick={handleClearCache}
+          >
+            <View className="flex items-center">
+              <WxIcon name="refresh" size={22} color="#333" />
+              <Text className="text-base text-gray-800 ml-4">清除缓存</Text>
+            </View>
+            <WxIcon name="chevron-right" size={18} color="#C8C8C8" />
+          </View>
         </View>
-      )}
-
-      {/* 设置 */}
-      <View className="mt-2">
-        <MenuItem 
-          icon="setting" 
-          title="设置" 
-          onClick={() => navigateTo('/pages/settings/index')}
-        />
       </View>
 
-      {/* 底部操作 */}
-      <View className="mt-4 px-4">
+      {/* 退出登录 - 页面底部 */}
+      <View className="px-4 pb-6">
         <View 
-          className="flex items-center justify-center py-3 bg-white rounded-lg active:bg-gray-50"
-          onClick={handleClearCache}
-        >
-          <WxIcon name="refresh" size={18} color="#666" />
-          <Text className="text-base text-gray-600 ml-2">清除缓存</Text>
-        </View>
-      </View>
-
-      <View className="mt-3 px-4 mb-8">
-        <View 
-          className="flex items-center justify-center py-3 bg-white rounded-lg active:bg-gray-50"
+          className="flex items-center justify-center py-4 bg-white rounded-xl active:bg-gray-50"
           onClick={handleLogout}
         >
-          <WxIcon name="logout" size={18} color="#FA5151" />
+          <WxIcon name="logout" size={20} color="#FA5151" />
           <Text className="text-base text-red-500 ml-2">退出登录</Text>
         </View>
-      </View>
-
-      {/* 版本信息 */}
-      <View className="flex items-center justify-center pb-6">
-        <Text className="text-xs text-gray-300">事绩通 v1.0.0</Text>
       </View>
     </View>
   );
