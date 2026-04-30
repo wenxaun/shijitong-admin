@@ -381,4 +381,228 @@ export class AdminService {
       return { code: 200, msg: 'success (default)', data: defaultPermissions };
     }
   }
+
+  async getUserRelatedData(userId: string) {
+    const envId = process.env.TCB_ENV_ID;
+    const secretId = process.env.TENCENT_SECRET_ID;
+    const secretKey = process.env.TENCENT_SECRET_KEY;
+    
+    if (!secretId || !secretKey || !envId) {
+      return { 
+        code: 200, 
+        msg: 'success (mock)', 
+        data: { 
+          tasks: [], 
+          teams: [], 
+          relatedUsers: [],
+          summary: { taskCount: 0, teamCount: 0, relatedUserCount: 0 }
+        } 
+      };
+    }
+
+    try {
+      const cloudbase = require('@cloudbase/node-sdk');
+      const app = cloudbase.init({ env: envId, secretId, secretKey });
+      const db = app.database();
+      
+      const userRes = await db.collection('users').doc(userId).get();
+      if (!userRes.data || userRes.data.length === 0) {
+        return { code: 404, msg: '用户不存在' };
+      }
+      const user = userRes.data[0];
+      
+      const tasksWhere = db.collection('tasks').where(
+        db.command.or([
+          { creator_id: userId },
+          { assignee_id: userId },
+          { 'members.user_id': userId }
+        ])
+      );
+      const tasksRes = await tasksWhere.get();
+      const tasks = tasksRes.data || [];
+      
+      const teamsWhere = db.collection('teams').where(
+        db.command.or([
+          { creator_id: userId },
+          { 'members.user_id': userId }
+        ])
+      );
+      const teamsRes = await teamsWhere.get();
+      const teams = teamsRes.data || [];
+      
+      const relatedUserIds = new Set<string>();
+      tasks.forEach((task: any) => {
+        if (task.creator_id && task.creator_id !== userId) relatedUserIds.add(task.creator_id);
+        if (task.assignee_id && task.assignee_id !== userId) relatedUserIds.add(task.assignee_id);
+        if (task.members) {
+          task.members.forEach((m: any) => {
+            if (m.user_id && m.user_id !== userId) relatedUserIds.add(m.user_id);
+          });
+        }
+      });
+      teams.forEach((team: any) => {
+        if (team.creator_id && team.creator_id !== userId) relatedUserIds.add(team.creator_id);
+        if (team.members) {
+          team.members.forEach((m: any) => {
+            if (m.user_id && m.user_id !== userId) relatedUserIds.add(m.user_id);
+          });
+        }
+      });
+      
+      let relatedUsers: any[] = [];
+      if (relatedUserIds.size > 0) {
+        const relatedUsersRes = await db.collection('users').where({
+          _id: db.command.in(Array.from(relatedUserIds))
+        }).field({ _id: true, nickname: true, openid: true }).get();
+        relatedUsers = relatedUsersRes.data || [];
+      }
+      
+      return {
+        code: 200,
+        msg: 'success',
+        data: {
+          tasks,
+          teams,
+          relatedUsers,
+          summary: {
+            taskCount: tasks.length,
+            teamCount: teams.length,
+            relatedUserCount: relatedUsers.length
+          }
+        }
+      };
+    } catch (error: any) {
+      console.error('[Admin] 获取用户关联数据失败:', error.message);
+      return { code: 500, msg: '获取关联数据失败: ' + error.message };
+    }
+  }
+
+  async backupUserTasks(userId: string, targetUserId: string) {
+    const envId = process.env.TCB_ENV_ID;
+    const secretId = process.env.TENCENT_SECRET_ID;
+    const secretKey = process.env.TENCENT_SECRET_KEY;
+    
+    if (!secretId || !secretKey || !envId) {
+      return { code: 200, msg: 'success (mock)', data: { backupCount: 0 } };
+    }
+
+    try {
+      const cloudbase = require('@cloudbase/node-sdk');
+      const app = cloudbase.init({ env: envId, secretId, secretKey });
+      const db = app.database();
+      
+      const targetUserRes = await db.collection('users').doc(targetUserId).get();
+      if (!targetUserRes.data || targetUserRes.data.length === 0) {
+        return { code: 404, msg: '目标用户不存在' };
+      }
+      
+      const tasksWhere = db.collection('tasks').where(
+        db.command.or([
+          { creator_id: userId },
+          { assignee_id: userId },
+          { 'members.user_id': userId }
+        ])
+      );
+      const tasksRes = await tasksWhere.get();
+      const tasks = tasksRes.data || [];
+      
+      let backupCount = 0;
+      for (const task of tasks) {
+        const backupTask = {
+          ...task,
+          _id: undefined,
+          original_task_id: task._id,
+          original_user_id: userId,
+          backup_to_user_id: targetUserId,
+          backup_at: new Date().toISOString(),
+          title: `[备份] ${task.title || task.name || '未命名任务'}`,
+          creator_id: targetUserId,
+          assignee_id: task.assignee_id === userId ? targetUserId : task.assignee_id,
+        };
+        delete backupTask._id;
+        
+        await db.collection('tasks').add(backupTask);
+        backupCount++;
+      }
+      
+      return { 
+        code: 200, 
+        msg: 'success', 
+        data: { backupCount, message: `已备份 ${backupCount} 条任务到目标用户` } 
+      };
+    } catch (error: any) {
+      console.error('[Admin] 备份用户任务失败:', error.message);
+      return { code: 500, msg: '备份失败: ' + error.message };
+    }
+  }
+
+  async deleteUserWithCascade(userId: string, options: { backupToUserId?: string } = {}) {
+    const envId = process.env.TCB_ENV_ID;
+    const secretId = process.env.TENCENT_SECRET_ID;
+    const secretKey = process.env.TENCENT_SECRET_KEY;
+    
+    if (!secretId || !secretKey || !envId) {
+      return { code: 200, msg: 'success (mock)' };
+    }
+
+    try {
+      const cloudbase = require('@cloudbase/node-sdk');
+      const app = cloudbase.init({ env: envId, secretId, secretKey });
+      const db = app.database();
+      
+      if (options.backupToUserId) {
+        await this.backupUserTasks(userId, options.backupToUserId);
+      }
+      
+      const tasksWhere = db.collection('tasks').where(
+        db.command.or([
+          { creator_id: userId },
+          { assignee_id: userId },
+          { 'members.user_id': userId }
+        ])
+      );
+      const tasksRes = await tasksWhere.get();
+      const tasks = tasksRes.data || [];
+      
+      for (const task of tasks) {
+        await db.collection('tasks').doc(task._id).remove();
+      }
+      
+      const teamsWhere = db.collection('teams').where(
+        db.command.or([
+          { creator_id: userId },
+          { 'members.user_id': userId }
+        ])
+      );
+      const teamsRes = await teamsWhere.get();
+      const teams = teamsRes.data || [];
+      
+      for (const team of teams) {
+        if (team.creator_id === userId) {
+          await db.collection('teams').doc(team._id).remove();
+        } else {
+          const updatedMembers = (team.members || []).filter((m: any) => m.user_id !== userId);
+          await db.collection('teams').doc(team._id).update({
+            members: updatedMembers,
+            updated_at: new Date().toISOString()
+          });
+        }
+      }
+      
+      await db.collection('users').doc(userId).remove();
+      
+      return { 
+        code: 200, 
+        msg: 'success',
+        data: {
+          deletedTasks: tasks.length,
+          deletedTeams: teams.filter((t: any) => t.creator_id === userId).length,
+          updatedTeams: teams.filter((t: any) => t.creator_id !== userId).length
+        }
+      };
+    } catch (error: any) {
+      console.error('[Admin] 级联删除用户失败:', error.message);
+      return { code: 500, msg: '删除失败: ' + error.message };
+    }
+  }
 }

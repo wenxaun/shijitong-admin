@@ -92,4 +92,25 @@ export class AdminController {
   async getUserPermissions(@Param('openid') openid: string) {
     return this.adminService.getUserPermissions(openid);
   }
+
+  @Get('users/:id/related-data')
+  async getUserRelatedData(@Param('id') id: string) {
+    return this.adminService.getUserRelatedData(id);
+  }
+
+  @Post('users/:id/backup')
+  async backupUserTasks(
+    @Param('id') id: string,
+    @Body() body: { targetUserId: string }
+  ) {
+    return this.adminService.backupUserTasks(id, body.targetUserId);
+  }
+
+  @Delete('users/:id/cascade')
+  async deleteUserWithCascade(
+    @Param('id') id: string,
+    @Body() body?: { backupToUserId?: string }
+  ) {
+    return this.adminService.deleteUserWithCascade(id, body || {});
+  }
 }

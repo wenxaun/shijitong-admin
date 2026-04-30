@@ -1,10 +1,18 @@
 import { useState, useEffect } from 'react'
-import { Table, Button, Input, Tag, Space, message, Popconfirm, Typography, Select, Modal, Form } from 'antd'
-import { DeleteOutlined, SearchOutlined, ReloadOutlined, EditOutlined } from '@ant-design/icons'
-import { getUserList, deleteUser, updateUserRole } from '@/services/config'
+import { Table, Button, Input, Tag, Space, message, Typography, Select, Modal, Form, Descriptions, Alert, Transfer } from 'antd'
+import { DeleteOutlined, SearchOutlined, ReloadOutlined, EditOutlined, ExclamationCircleOutlined } from '@ant-design/icons'
+import { getUserList, updateUserRole } from '@/services/config'
+import { getUserRelatedData, backupUserTasks, deleteUserWithCascade } from '@/services/api'
 import type { UserRecord } from '@/types'
 
 const { Title } = Typography
+
+interface RelatedData {
+  tasks: any[]
+  teams: any[]
+  relatedUsers: any[]
+  summary: { taskCount: number; teamCount: number; relatedUserCount: number }
+}
 
 export default function UserManagement() {
   const [users, setUsers] = useState<UserRecord[]>([])
@@ -15,6 +23,13 @@ export default function UserManagement() {
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<UserRecord | null>(null)
   const [form] = Form.useForm()
+  
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [deletingUser, setDeletingUser] = useState<UserRecord | null>(null)
+  const [relatedData, setRelatedData] = useState<RelatedData | null>(null)
+  const [relatedDataLoading, setRelatedDataLoading] = useState(false)
+  const [backupUserId, setBackupUserId] = useState<string>('')
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
   useEffect(() => {
     loadUsers()
@@ -36,17 +51,43 @@ export default function UserManagement() {
     }
   }
 
-  const handleDelete = async (userId: string) => {
+  const handleDeleteClick = async (user: UserRecord) => {
+    setDeletingUser(user)
+    setRelatedDataLoading(true)
+    setDeleteModalOpen(true)
+    setBackupUserId('')
+    
     try {
-      const result = await deleteUser(userId)
+      const result = await getUserRelatedData(user._id)
       if (result.code === 200) {
-        message.success('删除成功')
+        setRelatedData(result.data)
+      }
+    } catch {
+      message.error('获取关联数据失败')
+    } finally {
+      setRelatedDataLoading(false)
+    }
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingUser) return
+    
+    setDeleteLoading(true)
+    try {
+      const result = await deleteUserWithCascade(deletingUser._id, backupUserId || undefined)
+      if (result.code === 200) {
+        message.success(`删除成功，已删除 ${result.data?.deletedTasks || 0} 条任务`)
+        setDeleteModalOpen(false)
+        setDeletingUser(null)
+        setRelatedData(null)
         loadUsers()
       } else {
         message.error(result.msg || '删除失败')
       }
     } catch {
       message.error('操作失败')
+    } finally {
+      setDeleteLoading(false)
     }
   }
 
@@ -113,9 +154,9 @@ export default function UserManagement() {
           <Button type="link" icon={<EditOutlined />} size="small" onClick={() => handleEditRole(record)}>
             角色
           </Button>
-          <Popconfirm title="确定删除该用户？" onConfirm={() => handleDelete(record._id)} okText="确定" cancelText="取消">
-            <Button type="link" danger icon={<DeleteOutlined />} size="small" />
-          </Popconfirm>
+          <Button type="link" danger icon={<DeleteOutlined />} size="small" onClick={() => handleDeleteClick(record)}>
+            删除
+          </Button>
         </Space>
       ),
     },
@@ -154,6 +195,85 @@ export default function UserManagement() {
             </Select>
           </Form.Item>
         </Form>
+      </Modal>
+
+      <Modal
+        title={
+          <Space>
+            <ExclamationCircleOutlined style={{ color: '#faad14' }} />
+            <span>删除用户确认</span>
+          </Space>
+        }
+        open={deleteModalOpen}
+        onOk={handleDeleteConfirm}
+        onCancel={() => { setDeleteModalOpen(false); setDeletingUser(null); setRelatedData(null) }}
+        okText="确认删除"
+        okButtonProps={{ danger: true, loading: deleteLoading }}
+        cancelText="取消"
+        width={700}
+      >
+        {relatedDataLoading ? (
+          <div style={{ textAlign: 'center', padding: 20 }}>加载关联数据中...</div>
+        ) : (
+          <>
+            <Alert
+              message={`即将删除用户: ${deletingUser?.nickname || deletingUser?.openid?.slice(-8)}`}
+              description="删除用户将同时删除其所有关联数据（任务、团队等），此操作不可恢复。"
+              type="warning"
+              showIcon
+              style={{ marginBottom: 16 }}
+            />
+            
+            {relatedData && (
+              <>
+                <Descriptions title="关联数据统计" bordered size="small" column={3} style={{ marginBottom: 16 }}>
+                  <Descriptions.Item label="任务数量">{relatedData.summary.taskCount}</Descriptions.Item>
+                  <Descriptions.Item label="团队数量">{relatedData.summary.teamCount}</Descriptions.Item>
+                  <Descriptions.Item label="关联用户">{relatedData.summary.relatedUserCount}</Descriptions.Item>
+                </Descriptions>
+
+                {relatedData.summary.taskCount > 0 && (
+                  <>
+                    <Alert
+                      message="备份选项"
+                      description="可以将该用户的任务备份到其他用户账号下，避免数据丢失。"
+                      type="info"
+                      showIcon
+                      style={{ marginBottom: 16 }}
+                    />
+                    
+                    <Form.Item label="备份到用户（可选）">
+                      <Select
+                        style={{ width: '100%' }}
+                        placeholder="选择备份目标用户"
+                        allowClear
+                        value={backupUserId || undefined}
+                        onChange={setBackupUserId}
+                        options={relatedData.relatedUsers.map((u: any) => ({
+                          value: u._id,
+                          label: `${u.nickname || '未命名'} (${u.openid?.slice(-8)})`
+                        }))}
+                      />
+                    </Form.Item>
+                  </>
+                )}
+
+                {relatedData.relatedUsers.length > 0 && (
+                  <div style={{ marginTop: 16 }}>
+                    <Title level={5}>受影响的关联用户</Title>
+                    <div style={{ maxHeight: 150, overflow: 'auto' }}>
+                      {relatedData.relatedUsers.map((u: any) => (
+                        <Tag key={u._id} style={{ margin: 4 }}>
+                          {u.nickname || u.openid?.slice(-8)}
+                        </Tag>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </>
+        )}
       </Modal>
     </div>
   )

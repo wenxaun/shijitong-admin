@@ -87,3 +87,26 @@ export async function callCloudFunction(name: string, data?: any) {
   })
   return res.json()
 }
+
+export async function getUserRelatedData(userId: string) {
+  const res = await fetch(`${API_BASE_URL}/api/admin/users/${userId}/related-data`)
+  return res.json()
+}
+
+export async function backupUserTasks(userId: string, targetUserId: string) {
+  const res = await fetch(`${API_BASE_URL}/api/admin/users/${userId}/backup`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ targetUserId }),
+  })
+  return res.json()
+}
+
+export async function deleteUserWithCascade(userId: string, backupToUserId?: string) {
+  const res = await fetch(`${API_BASE_URL}/api/admin/users/${userId}/cascade`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(backupToUserId ? { backupToUserId } : {}),
+  })
+  return res.json()
+}
