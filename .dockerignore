@@ -5,7 +5,7 @@ yarn-error.log
 package-lock.json
 yarn.lock
 
-# 构建产物
+# 构建产物（保留 web-admin/dist 用于 Dockerfile）
 dist
 dist-ssr
 *.local
@@ -31,16 +31,10 @@ coverage
 .nyc_output
 test
 
-# Web前端（只部署 dist）
-web-admin/src
-web-admin/node_modules
-web-admin/package.json
-web-admin/vite.config.ts
-web-admin/tsconfig.json
-web-admin/tsconfig.node.json
-web-admin/index.html
+# 小程序源码（不需要部署到云托管）
 src
 public
+dist-weapp
 
 # 云开发
 .cloudbaserc
@@ -49,3 +43,6 @@ public
 *.tmp
 *.swp
 *~
+
+# web-admin 依赖
+web-admin/node_modules
