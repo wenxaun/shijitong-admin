@@ -159,3 +159,109 @@ image {
   background-color: var(--selection);
   color: var(--selection-foreground);
 }
+
+/* 页面过渡动画 */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideOutRight {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(100%); opacity: 0; }
+}
+
+@keyframes slideInUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-fade-out {
+  animation: fadeOut 0.3s ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.3s ease-out;
+}
+
+.animate-slide-in-up {
+  animation: slideInUp 0.3s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-out;
+}
+
+/* 页面容器动画 */
+.page-content {
+  animation: fadeIn 0.25s ease-out;
+}
+
+/* 骨架屏闪烁动画 */
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* 平滑滚动 */
+scroll-view {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 点击反馈 */
+.active\:bg-gray-50:active {
+  background-color: #f9fafb !important;
+}
+
+/* 禁用按钮默认边框 */
+button {
+  border: none;
+  background: transparent;
+}
+
+button::after {
+  border: none;
+}
+
+/* 微信绿色 */
+.wx-green {
+  color: #07C160;
+}
+
+.bg-wx-green {
+  background-color: #07C160;
+}
+
+/* 微信红色 */
+.wx-red {
+  color: #FA5151;
+}
+
+.bg-wx-red {
+  background-color: #FA5151;
+}

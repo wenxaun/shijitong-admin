@@ -41,7 +41,9 @@ export default defineAppConfig({
     navigationBarBackgroundColor: '#1377EB',
     navigationBarTitleText: '事绩通',
     navigationBarTextStyle: 'white',
-    backgroundColor: '#F5F7FA'
+    backgroundColor: '#F5F7FA',
+    enablePullDownRefresh: false,
+    pageOrientation: 'portrait'
   },
   // 移除全局 Skyline 配置，改为在需要高性能渲染的页面单独配置
   lazyCodeLoading: 'requiredComponents',

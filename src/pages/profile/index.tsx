@@ -1,5 +1,3 @@
-// 注意：头像选择和昵称输入必须使用 Taro 原生组件，因为需要 openType="chooseAvatar" 和 type="nickname"
-// eslint-disable-next-line no-restricted-syntax
 import { View, Text, Image, Input, Button } from '@tarojs/components';
 import { useEffect, useState } from 'react';
 import Taro from '@tarojs/taro';
@@ -7,13 +5,8 @@ import { isWeworkSync } from '@/utils/env';
 import { useUserStore } from '@/stores/user';
 import { callFunction } from '@/utils/cloud';
 import type { CloudResponse } from '@/types';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button as UIButton } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Camera, ChevronRight, LogOut, Trash2, Pencil, Check, X, Shield, Building, Settings } from 'lucide-react-taro';
-import { Switch } from '@/components/ui/switch';
+import WxIcon from '@/components/wx-icon';
 
-// 默认菜单项配置（不包含功能排序，功能排序放在设置页面）
 export default function Profile() {
   const { openid, logout, userInfo, hasFeature } = useUserStore();
   const [avatarUrl, setAvatarUrl] = useState('');
@@ -23,35 +16,23 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [viewMode, setViewMode] = useState<'personal' | 'enterprise'>('personal');
 
-  console.log('[Profile] 渲染时的状态:', {
-    isWework: isWeworkSync(),
-    userInfo,
-    user_type: userInfo?.user_type,
-    shouldShowSwitchButton: (!userInfo?.user_type || userInfo?.user_type === 'personal') && isWeworkSync()
-  });
-
   useEffect(() => {
     loadUserInfo();
-    // 加载视图模式
     const storedViewMode = Taro.getStorageSync('view_mode');
     if (storedViewMode) {
       setViewMode(storedViewMode);
     }
   }, []);
 
-  // 加载用户信息
   const loadUserInfo = () => {
-    // 从 store 获取
     const storeUserInfo = useUserStore.getState().userInfo;
     if (storeUserInfo) {
       setAvatarUrl(storeUserInfo.avatarUrl || '');
       setNickname(storeUserInfo.nickName || '微信用户');
-      // 根据用户类型设置视图模式
       if (storeUserInfo.user_type === 'enterprise') {
         setViewMode('enterprise');
       }
     } else {
-      // 从本地存储获取
       const storedUserInfo = Taro.getStorageSync('userInfo');
       if (storedUserInfo) {
         setAvatarUrl(storedUserInfo.avatarUrl || '');
@@ -63,139 +44,67 @@ export default function Profile() {
     }
   };
 
-  // 切换企业模式（同时切换用户类型和视图模式）
   const handleViewModeChange = async (checked: boolean) => {
     const newMode = checked ? 'enterprise' : 'personal';
-
     Taro.showModal({
       title: checked ? '切换到企业模式' : '切换到个人模式',
       content: checked
-        ? '确定要切换到企业模式吗？\n\n切换后可以体验企业微信专属功能：\n• 企业组织架构查看\n• 企业成员选择\n• 任务流转和审批'
-        : '确定要切换到个人模式吗？\n\n切换后将返回个人视图，企业功能将不可用。',
-      confirmText: '确定切换',
-      confirmColor: '#1377EB',
+        ? '确定要切换到企业模式吗？\n\n切换后可以体验企业微信专属功能'
+        : '确定要切换到个人模式吗？',
+      confirmText: '确定',
+      confirmColor: '#07C160',
       success: async (res) => {
         if (res.confirm) {
           Taro.showLoading({ title: '切换中...' });
-
           try {
-            // 获取用户信息（优先从 store，其次从本地存储）
-            let currentUserInfo = useUserStore.getState().userInfo;
             const currentOpenid = useUserStore.getState().openid;
-
-            // 如果 store 中没有，从本地存储读取
-            if (!currentUserInfo) {
-              currentUserInfo = Taro.getStorageSync('userInfo');
+            if (Taro.getEnv() === Taro.ENV_TYPE.WEAPP && currentOpenid) {
+              await callFunction('user-update', { user_type: newMode === 'enterprise' ? 'enterprise' : 'personal' });
             }
-            
-            // 检查 openid（用户已登录的主要标识）
-            if (!currentOpenid) {
-              const storedOpenid = Taro.getStorageSync('openid');
-              if (storedOpenid) {
-                useUserStore.setState({ openid: storedOpenid });
-              }
-            }
-
-            // 如果用户信息不存在，使用默认信息
-            if (!currentUserInfo) {
-              currentUserInfo = {
-                nickName: nickname || '用户',
-                avatarUrl: avatarUrl || '',
-                user_type: 'personal'
-              };
-            }
-
-            // 同时更新用户类型和视图模式
-            const newUserInfo = {
-              ...currentUserInfo,
-              user_type: newMode as 'personal' | 'enterprise'
-            };
-
-            // 更新本地存储和状态
-            Taro.setStorageSync('userInfo', newUserInfo);
-            useUserStore.setState({ userInfo: newUserInfo });
-            setViewMode(newMode);
             Taro.setStorageSync('view_mode', newMode);
-
+            setViewMode(newMode);
+            useUserStore.getState().updateUserInfo({ user_type: newMode === 'enterprise' ? 'enterprise' : 'personal' });
             Taro.hideLoading();
-
-            Taro.showToast({
-              title: checked ? '已切换到企业模式' : '已切换到个人模式',
-              icon: 'success',
-              duration: 1500
-            });
-
-            // 刷新页面以应用新的模式（使用 switchTab 避免超时）
-            setTimeout(() => {
-              Taro.switchTab({ url: '/pages/index/index' }).catch(() => {
-                // switchTab 失败时尝试 reLaunch
-                Taro.reLaunch({ url: '/pages/index/index' });
-              });
-            }, 1500);
-          } catch (error) {
+            Taro.showToast({ title: '切换成功', icon: 'success' });
+          } catch (err) {
             Taro.hideLoading();
-            console.error('[Profile] 切换模式失败:', error);
-            Taro.showToast({
-              title: '切换失败，请重试',
-              icon: 'none',
-              duration: 2000
-            });
+            Taro.showToast({ title: '切换失败', icon: 'none' });
           }
         }
       }
     });
   };
 
-  // 选择头像
   const onChooseAvatar = async (e: any) => {
     const { avatarUrl: newAvatarUrl } = e.detail;
-    console.log('[Profile] 选择的头像:', newAvatarUrl);
-    setAvatarUrl(newAvatarUrl);
-    
-    // 上传头像到云存储并更新用户信息
-    if (newAvatarUrl && Taro.getEnv() === Taro.ENV_TYPE.WEAPP) {
+    if (newAvatarUrl) {
       Taro.showLoading({ title: '上传中...' });
       try {
-        // 上传到云存储
-        // @ts-ignore
-        const uploadRes = await wx.cloud.uploadFile({
-          cloudPath: `avatars/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`,
-          filePath: newAvatarUrl
-        });
-        
-        if (uploadRes.fileID) {
-          console.log('[Profile] 头像上传成功:', uploadRes.fileID);
-          // 更新到云端
-          await updateUserInfo({ avatarUrl: uploadRes.fileID });
-          setAvatarUrl(uploadRes.fileID);
-          Taro.showToast({ title: '头像更新成功', icon: 'success' });
-        }
-      } catch (err) {
-        console.error('[Profile] 头像上传失败:', err);
-        Taro.showToast({ title: '头像上传失败', icon: 'none' });
-      } finally {
+        setAvatarUrl(newAvatarUrl);
+        await updateUserInfo({ avatarUrl: newAvatarUrl });
         Taro.hideLoading();
+        Taro.showToast({ title: '头像已更新', icon: 'success' });
+      } catch (err) {
+        Taro.hideLoading();
+        Taro.showToast({ title: '上传失败', icon: 'none' });
       }
     }
   };
 
-  // 开始编辑昵称
   const startEditNickname = () => {
     setEditNickname(nickname);
     setIsEditing(true);
   };
 
-  // 保存昵称
   const saveNickname = async () => {
     if (!editNickname.trim()) {
       Taro.showToast({ title: '昵称不能为空', icon: 'none' });
       return;
     }
-    
     setSaving(true);
     try {
-      await updateUserInfo({ nickName: editNickname.trim() });
-      setNickname(editNickname.trim());
+      setNickname(editNickname);
+      await updateUserInfo({ nickName: editNickname });
       setIsEditing(false);
       Taro.showToast({ title: '保存成功', icon: 'success' });
     } catch (err) {
@@ -205,58 +114,44 @@ export default function Profile() {
     }
   };
 
-  // 取消编辑
   const cancelEdit = () => {
     setIsEditing(false);
     setEditNickname('');
   };
 
-  // 更新用户信息到云端
   const updateUserInfo = async (info: { nickName?: string; avatarUrl?: string }) => {
-    // 检查用户是否已登录
     const currentOpenid = useUserStore.getState().openid || Taro.getStorageSync('openid');
     const currentUserInfo = useUserStore.getState().userInfo || Taro.getStorageSync('userInfo');
-
     if (!currentOpenid || !currentUserInfo) {
-      throw new Error('请先登录后再更新用户信息');
+      throw new Error('请先登录');
     }
-
     if (Taro.getEnv() === Taro.ENV_TYPE.WEAPP) {
-      const res = await callFunction<CloudResponse<{}>>(
-        'user-update',
-        {
-          nickname: info.nickName,
-          avatar_url: info.avatarUrl
-        }
-      );
-
+      const res = await callFunction<CloudResponse<{}>>('user-update', {
+        nickname: info.nickName,
+        avatar_url: info.avatarUrl
+      });
       if (!res.success) {
         throw new Error(res.message || '更新失败');
       }
     }
-
-    // 更新本地存储（确保有用户信息）
     const storedUserInfo = Taro.getStorageSync('userInfo');
     if (!storedUserInfo) {
-      throw new Error('用户信息不存在，请先登录');
+      throw new Error('用户信息不存在');
     }
     const newUserInfo = { ...storedUserInfo, ...info };
     Taro.setStorageSync('userInfo', newUserInfo);
-
-    // 更新 store
     useUserStore.setState({ userInfo: newUserInfo as any });
   };
 
-  // 跳转页面
   const navigateTo = (path: string) => {
     Taro.navigateTo({ url: path });
   };
 
-  // 退出登录
   const handleLogout = () => {
     Taro.showModal({
-      title: '提示',
+      title: '退出登录',
       content: '确定要退出登录吗？',
+      confirmColor: '#FA5151',
       success: (res) => {
         if (res.confirm) {
           logout();
@@ -267,281 +162,222 @@ export default function Profile() {
     });
   };
 
-  // 清除本地缓存
   const handleClearCache = () => {
     Taro.showModal({
       title: '清除缓存',
-      content: '确定要清除本地缓存吗？\n\n您的用户信息、任务记录、团队信息等数据已安全存储在云端，清除后重新登录即可恢复。',
-      confirmText: '确定清除',
-      confirmColor: '#EA4335',
+      content: '确定要清除本地缓存吗？\n\n您的数据已安全存储在云端，清除后重新登录即可恢复。',
+      confirmText: '确定',
+      confirmColor: '#FA5151',
       success: (res) => {
         if (res.confirm) {
-          // 保留用户登录状态
           const currentOpenid = useUserStore.getState().openid;
           const token = Taro.getStorageSync('token');
-
-          // 清除所有本地缓存
           Taro.clearStorageSync();
-
-          // 恢复登录状态
           if (currentOpenid) {
             useUserStore.setState({ openid: currentOpenid });
           }
           if (token) {
             Taro.setStorageSync('token', token);
           }
-
-          Taro.showToast({
-            title: '缓存已清除',
-            icon: 'success',
-            duration: 2000
-          });
-
-          // 2秒后刷新页面
+          Taro.showToast({ title: '缓存已清除', icon: 'success' });
           setTimeout(() => {
             Taro.reLaunch({ url: '/pages/index/index' });
-          }, 2000);
+          }, 1500);
         }
       }
     });
   };
 
+  const MenuItem = ({ icon, title, onClick, showArrow = true, rightText }: {
+    icon: any;
+    title: string;
+    onClick?: () => void;
+    showArrow?: boolean;
+    rightText?: string;
+  }) => (
+    <View 
+      className="flex items-center justify-between px-4 py-3 bg-white active:bg-gray-50"
+      onClick={onClick}
+      style={{ minHeight: '52px' }}
+    >
+      <View className="flex items-center">
+        <WxIcon name={icon} size={20} color="#333" />
+        <Text className="text-base text-gray-800 ml-3">{title}</Text>
+      </View>
+      <View className="flex items-center">
+        {rightText && <Text className="text-sm text-gray-400 mr-2">{rightText}</Text>}
+        {showArrow && <WxIcon name="chevron-right" size={16} color="#C8C8C8" />}
+      </View>
+    </View>
+  );
+
   return (
-    <View className="min-h-screen bg-gray-50">
-      {/* 用户信息卡片 */}
-      <View className="px-4 pt-6 pb-4">
-        <Card className="overflow-hidden">
-          <View className="bg-gradient-to-r from-blue-500 to-blue-600 h-24" />
-          <CardContent className="p-0">
-            <View className="flex flex-col items-center -mt-12 pb-4">
-              {/* 头像 */}
-              <Button
-                className="bg-transparent p-0 border-0 relative"
-                openType="chooseAvatar"
-                onChooseAvatar={onChooseAvatar}
-              >
-                {avatarUrl ? (
-                  <Image
-                    className="w-24 h-24 rounded-full border-4 border-white shadow-lg"
-                    src={avatarUrl}
-                    mode="aspectFill"
-                  />
-                ) : (
-                  <View className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center border-4 border-white shadow-lg">
-                    <Text className="text-3xl text-white font-bold">
-                      {nickname ? nickname[0] : '我'}
-                    </Text>
-                  </View>
-                )}
-                {/* 编辑图标 */}
-                <View className="absolute bottom-0 right-0 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md border border-gray-100">
-                  <Camera size={16} color="#1377EB" />
-                </View>
-              </Button>
-              
-              {/* 昵称 */}
-              <View className="mt-3 flex items-center gap-2">
-                {isEditing ? (
-                  <View className="flex items-center gap-2">
-                    <Input
-                      className="bg-gray-50 rounded-lg px-3 py-1 text-base text-gray-800 border border-gray-200"
-                      type="nickname"
-                      placeholder="输入昵称"
-                      value={editNickname}
-                      onInput={(e) => setEditNickname(e.detail.value)}
-                    />
-                    <View 
-                      className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center"
-                      onClick={saveNickname}
-                    >
-                      {saving ? (
-                        <Text className="text-white text-xs">...</Text>
-                      ) : (
-                        <Check size={16} color="#ffffff" />
-                      )}
-                    </View>
-                    <View 
-                      className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center"
-                      onClick={cancelEdit}
-                    >
-                      <X size={16} color="#6B7280" />
-                    </View>
-                  </View>
-                ) : (
-                  <View className="flex items-center gap-2" onClick={startEditNickname}>
-                    <Text className="text-lg text-gray-800 font-semibold">{nickname}</Text>
-                    <Pencil size={14} color="#9CA3AF" />
-                  </View>
-                )}
-              </View>
-              
-              {/* 用户ID */}
-              {openid && (
-                <Text className="text-xs text-gray-400 mt-1">
-                  ID: {openid.slice(-8)}
-                </Text>
-              )}
-            </View>
-          </CardContent>
-        </Card>
-      </View>
-
-      {/* 功能菜单 */}
-      <View className="px-3 py-4">
-
-        {/* 企业功能 - 企业微信环境中显示 */}
-        {isWeworkSync() && (
-          <View className="mb-4">
-            <Text className="text-sm text-gray-500 mb-2 px-1">企业功能</Text>
-            <Card>
-              <CardContent className="p-0">
-                {/* 企业模式开关 */}
-                <View className="flex items-center justify-between px-4 py-3">
-                  <View className="flex items-center">
-                    <View className="w-10 h-10 rounded-lg bg-purple-500 flex items-center justify-center mr-3">
-                      <Building size={20} color="#ffffff" />
-                    </View>
-                    <View>
-                      <Text className="text-base text-gray-900 block">企业模式</Text>
-                      <Text className="text-xs text-gray-400">
-                        {viewMode === 'enterprise' ? '已启用企业功能' : '启用企业微信功能'}
-                      </Text>
-                    </View>
-                  </View>
-                  <Switch
-                    checked={viewMode === 'enterprise'}
-                    onCheckedChange={handleViewModeChange}
-                  />
-                </View>
-              </CardContent>
-            </Card>
-          </View>
-        )}
-
-        {/* 报表统计 */}
-        <View className="mb-4">
-          <Text className="text-sm text-gray-500 mb-2 px-1">报表统计</Text>
-          <Card>
-            <CardContent className="p-0">
-              <View
-                className="flex items-center justify-between px-4 py-3 active:bg-gray-50"
-                onClick={() => navigateTo('/pages/weekly/index')}
-              >
-                <View className="flex items-center">
-                  <Text className="text-2xl mr-2">📊</Text>
-                  <Text className="text-base text-gray-800">周报统计</Text>
-                </View>
-                <ChevronRight size={20} color="#D1D5DB" />
-              </View>
-              <Separator className="mx-4" />
-              <View
-                className="flex items-center justify-between px-4 py-3 active:bg-gray-50"
-                onClick={() => navigateTo('/pages/stats/index')}
-              >
-                <View className="flex items-center">
-                  <Text className="text-2xl mr-2">📈</Text>
-                  <Text className="text-base text-gray-800">数据统计</Text>
-                </View>
-                <ChevronRight size={20} color="#D1D5DB" />
-              </View>
-              <Separator className="mx-4" />
-              <View
-                className="flex items-center justify-between px-4 py-3 active:bg-gray-50"
-                onClick={() => navigateTo('/pages/history/index')}
-              >
-                <View className="flex items-center">
-                  <Text className="text-2xl mr-2">📜</Text>
-                  <Text className="text-base text-gray-800">历史待办</Text>
-                </View>
-                <ChevronRight size={20} color="#D1D5DB" />
-              </View>
-            </CardContent>
-          </Card>
-        </View>
-
-        {/* 管理功能 - 根据权限配置显示 */}
-        {hasFeature('config_access') && (
-          <View className="mb-4">
-            <Text className="text-sm text-gray-500 mb-2 px-1">管理</Text>
-            <Card>
-              <CardContent className="p-0">
-                {/* 管理控制台 */}
-                <View
-                  className="flex items-center justify-between px-4 py-3 active:bg-gray-50"
-                  onClick={() => navigateTo('/pages/admin/index')}
-                >
-                  <View className="flex items-center">
-                    <Shield size={20} color="#1377EB" />
-                    <Text className="text-base text-gray-800 ml-3">管理控制台</Text>
-                  </View>
-                  <ChevronRight size={20} color="#D1D5DB" />
-                </View>
-                <Separator className="mx-4" />
-                
-                {/* 配置管理 */}
-                <View
-                  className="flex items-center justify-between px-4 py-3 active:bg-gray-50"
-                  onClick={() => navigateTo('/pages/config-admin/index')}
-                >
-                  <View className="flex items-center">
-                    <Settings size={20} color="#1377EB" />
-                    <Text className="text-base text-gray-800 ml-3">配置管理</Text>
-                  </View>
-                  <ChevronRight size={20} color="#D1D5DB" />
-                </View>
-              </CardContent>
-            </Card>
-          </View>
-        )}
-
-        {/* 系统设置 */}
-        <View className="mb-4">
-          <Text className="text-sm text-gray-500 mb-2 px-1">设置</Text>
-          <Card>
-            <CardContent className="p-0">
-              <View
-                className="flex items-center justify-between px-4 py-3 active:bg-gray-50"
-                onClick={() => navigateTo('/pages/settings/index')}
-              >
-                <View className="flex items-center">
-                  <Text className="text-xl mr-3">⚙️</Text>
-                  <Text className="text-base text-gray-800">设置</Text>
-                </View>
-                <ChevronRight size={20} color="#D1D5DB" />
-              </View>
-              <Separator className="mx-4" />
-              <View
-                className="flex items-center justify-between px-4 py-3 active:bg-gray-50"
-                onClick={handleClearCache}
-              >
-                <View className="flex items-center">
-                  <Trash2 size={18} color="#6B7280" />
-                  <Text className="text-base text-gray-600 ml-3">清除本地缓存</Text>
-                </View>
-                <ChevronRight size={20} color="#D1D5DB" />
-              </View>
-            </CardContent>
-          </Card>
-        </View>
-      </View>
-
-      {/* 退出登录 */}
-      {openid && (
-        <View className="px-3 py-4">
-          <UIButton
-            variant="outline"
-            className="w-full text-gray-600"
-            onClick={handleLogout}
+    <View className="min-h-screen bg-gray-100">
+      {/* 用户信息头部 */}
+      <View className="bg-white px-4 pt-6 pb-4 mb-2">
+        <View className="flex items-center">
+          {/* 头像 */}
+          <Button
+            className="bg-transparent p-0 border-0 mr-4"
+            openType="chooseAvatar"
+            onChooseAvatar={onChooseAvatar}
           >
-            <LogOut size={16} color="#6B7280" />
-            <Text className="ml-2">退出登录</Text>
-          </UIButton>
+            {avatarUrl ? (
+              <Image
+                className="w-16 h-16 rounded-full"
+                src={avatarUrl}
+                mode="aspectFill"
+              />
+            ) : (
+              <View className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center">
+                <WxIcon name="user" size={32} color="#999" />
+              </View>
+            )}
+          </Button>
+          
+          {/* 昵称和ID */}
+          <View className="flex-1">
+            {isEditing ? (
+              <View className="flex items-center gap-2">
+                <Input
+                  className="flex-1 bg-gray-50 rounded px-2 py-1 text-base border border-gray-200"
+                  type="nickname"
+                  placeholder="输入昵称"
+                  value={editNickname}
+                  onInput={(e) => setEditNickname(e.detail.value)}
+                />
+                <View 
+                  className="w-7 h-7 bg-green-500 rounded-full flex items-center justify-center"
+                  onClick={saveNickname}
+                >
+                  <WxIcon name="check" size={16} color="#fff" />
+                </View>
+                <View 
+                  className="w-7 h-7 bg-gray-200 rounded-full flex items-center justify-center"
+                  onClick={cancelEdit}
+                >
+                  <WxIcon name="close" size={16} color="#666" />
+                </View>
+              </View>
+            ) : (
+              <View className="flex items-center" onClick={startEditNickname}>
+                <Text className="text-lg font-medium text-gray-800">{nickname}</Text>
+                <WxIcon name="pencil" size={14} color="#999" className="ml-2" />
+              </View>
+            )}
+            {openid && (
+              <Text className="text-sm text-gray-400 mt-1">
+                微信号: {openid.slice(-8)}
+              </Text>
+            )}
+          </View>
+          
+          {/* 二维码 */}
+          <View className="flex items-center">
+            <WxIcon name="chevron-right" size={20} color="#C8C8C8" />
+          </View>
+        </View>
+      </View>
+
+      {/* 功能区域 */}
+      <View className="mb-2">
+        {/* 任务相关 */}
+        <MenuItem 
+          icon="task" 
+          title="我的任务" 
+          onClick={() => navigateTo('/pages/history/index')}
+        />
+      </View>
+
+      <View className="mb-2">
+        {/* 团队相关 */}
+        <MenuItem 
+          icon="team" 
+          title="我的团队" 
+          onClick={() => navigateTo('/pages/team/index')}
+        />
+        <View className="h-px bg-gray-100 ml-12" />
+        <MenuItem 
+          icon="chart" 
+          title="数据统计" 
+          onClick={() => navigateTo('/pages/stats/index')}
+        />
+      </View>
+
+      {/* 企业功能 */}
+      {isWeworkSync() && (
+        <View className="mb-2">
+          <View className="flex items-center justify-between px-4 py-3 bg-white" style={{ minHeight: '52px' }}>
+            <View className="flex items-center">
+              <WxIcon name="building" size={20} color="#333" />
+              <Text className="text-base text-gray-800 ml-3">企业模式</Text>
+            </View>
+            <View 
+              className={`w-12 h-7 rounded-full flex items-center px-1 transition-all ${
+                viewMode === 'enterprise' ? 'bg-green-500' : 'bg-gray-200'
+              }`}
+              onClick={() => handleViewModeChange(viewMode !== 'enterprise')}
+            >
+              <View 
+                className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                  viewMode === 'enterprise' ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </View>
+          </View>
         </View>
       )}
 
+      {/* 管理功能 */}
+      {hasFeature('config_access') && (
+        <View className="mb-2">
+          <MenuItem 
+            icon="shield" 
+            title="管理控制台" 
+            onClick={() => navigateTo('/pages/admin/index')}
+          />
+          <View className="h-px bg-gray-100 ml-12" />
+          <MenuItem 
+            icon="setting" 
+            title="配置管理" 
+            onClick={() => navigateTo('/pages/config-admin/index')}
+          />
+        </View>
+      )}
+
+      {/* 设置区域 */}
+      <View className="mb-2">
+        <MenuItem 
+          icon="setting" 
+          title="设置" 
+          onClick={() => navigateTo('/pages/settings/index')}
+        />
+      </View>
+
+      {/* 底部操作 */}
+      <View className="mt-6 px-4">
+        <View 
+          className="flex items-center justify-center py-3 bg-white rounded-lg active:bg-gray-50"
+          onClick={handleClearCache}
+        >
+          <WxIcon name="refresh" size={18} color="#666" />
+          <Text className="text-base text-gray-600 ml-2">清除缓存</Text>
+        </View>
+      </View>
+
+      <View className="mt-3 px-4 mb-8">
+        <View 
+          className="flex items-center justify-center py-3 bg-white rounded-lg active:bg-gray-50"
+          onClick={handleLogout}
+        >
+          <WxIcon name="logout" size={18} color="#FA5151" />
+          <Text className="text-base text-red-500 ml-2">退出登录</Text>
+        </View>
+      </View>
+
       {/* 版本信息 */}
-      <View className="flex justify-center py-6">
-        <Text className="text-sm text-gray-400">事绩通 v2.0.0</Text>
+      <View className="flex items-center justify-center pb-6">
+        <Text className="text-xs text-gray-300">事绩通 v1.0.0</Text>
       </View>
     </View>
   );
