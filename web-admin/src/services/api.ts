@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://shijitong-admin-252051-7-1414730907.sh.run.tcloudbase.com'
+const API_BASE_URL = ''
 
 export async function login(username: string, password: string) {
   const res = await fetch(`${API_BASE_URL}/api/admin/login`, {
