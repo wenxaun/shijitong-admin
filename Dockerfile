@@ -17,8 +17,8 @@ COPY server/package.json ./
 RUN npm install
 
 COPY server/ ./
-RUN npm install -g typescript @nestjs/cli
-RUN npx tsc
+RUN npm install -g @nestjs/cli
+RUN nest build
 RUN node fix-paths.js
 
 # Copy frontend build to public
