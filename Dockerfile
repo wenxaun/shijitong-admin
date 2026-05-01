@@ -10,7 +10,10 @@ WORKDIR /app/frontend
 RUN npm install -g pnpm && pnpm install --frozen-lockfile || pnpm install
 COPY web-admin/ ./
 RUN pnpm build
+
+# Move frontend dist to public and cleanup
 WORKDIR /app
+RUN mkdir -p public && cp -r /app/frontend/dist/* ./public/ && rm -rf /app/frontend
 
 # Setup backend
 COPY server/package.json ./
@@ -20,9 +23,6 @@ COPY server/ ./
 RUN npm install -g @nestjs/cli
 RUN nest build
 RUN node fix-paths.js
-
-# Copy frontend build to public
-RUN cp -r /app/frontend/dist/* ./public/
 
 EXPOSE 3000
 
