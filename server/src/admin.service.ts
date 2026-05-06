@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from './config.service';
 
 export interface User {
   _id: string;
@@ -21,6 +22,7 @@ export interface LogEntry {
 
 @Injectable()
 export class AdminService {
+  constructor(private readonly configService: ConfigService) {}
   async login(username: string, password: string) {
     const adminUsername = process.env.ADMIN_USERNAME || 'admin';
     const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
@@ -250,68 +252,34 @@ export class AdminService {
   }
 
   async getConfig() {
-    const envId = process.env.TCB_ENV_ID;
-    const secretId = process.env.TENCENT_SECRET_ID;
-    const secretKey = process.env.TENCENT_SECRET_KEY;
-    
-    const defaultConfig = {
-      role_config: {
-        member: {
-          features: { task_enabled: true, team_enabled: false, enterprise_enabled: false, notification_enabled: true, weekly_report_enabled: false, voice_input_enabled: false, config_access: false },
-          limits: { max_tasks_per_user: 50, max_subtasks_per_task: 10, max_team_members: 20 }
-        },
-        admin: {
-          features: { task_enabled: true, team_enabled: true, enterprise_enabled: false, notification_enabled: true, weekly_report_enabled: true, voice_input_enabled: false, config_access: true },
-          limits: { max_tasks_per_user: 200, max_subtasks_per_task: 30, max_team_members: 50 }
-        },
-        owner: {
-          features: { task_enabled: true, team_enabled: true, enterprise_enabled: true, notification_enabled: true, weekly_report_enabled: true, voice_input_enabled: true, config_access: true },
-          limits: { max_tasks_per_user: 999, max_subtasks_per_task: 100, max_team_members: 500 }
-        }
-      }
-    };
-    
-    if (!secretId || !secretKey || !envId) {
-      return { code: 200, msg: 'success (default)', data: defaultConfig };
-    }
-
     try {
-      const cloudbase = require('@cloudbase/node-sdk');
-      const app = cloudbase.init({ env: envId, secretId, secretKey });
-      const db = app.database();
-      
-      const result = await db.collection('config').doc('app_config').get();
-      
-      if (result.data && result.data.length > 0) {
-        return { code: 200, msg: 'success', data: result.data[0] };
-      }
-      
-      await db.collection('config').doc('app_config').set(defaultConfig);
-      return { code: 200, msg: 'success', data: defaultConfig };
+      const config = await this.configService.getCurrentConfig();
+      return { code: 200, msg: 'success', data: config };
     } catch (error: any) {
       console.error('[Admin] 获取配置失败:', error.message);
-      return { code: 200, msg: 'success (default)', data: defaultConfig };
+      return { code: 500, msg: '获取配置失败: ' + error.message };
     }
   }
 
   async updateConfig(config: any) {
-    const envId = process.env.TCB_ENV_ID;
-    const secretId = process.env.TENCENT_SECRET_ID;
-    const secretKey = process.env.TENCENT_SECRET_KEY;
-    
-    if (!secretId || !secretKey || !envId) {
-      return { code: 200, msg: 'success (mock)' };
-    }
-
     try {
-      const cloudbase = require('@cloudbase/node-sdk');
-      const app = cloudbase.init({ env: envId, secretId, secretKey });
-      const db = app.database();
+      const updates: Array<{ id: string; value: any }> = [];
       
-      await db.collection('config').doc('app_config').update({
-        ...config,
-        updated_at: new Date().toISOString()
-      });
+      if (config.role_config) {
+        updates.push({ id: 'role_config', value: config.role_config });
+      }
+      
+      if (config.wecom) {
+        if (config.wecom.corpId !== undefined) updates.push({ id: 'wecom-corpId', value: config.wecom.corpId });
+        if (config.wecom.corpSecret !== undefined) updates.push({ id: 'wecom-corpSecret', value: config.wecom.corpSecret });
+        if (config.wecom.agentId !== undefined) updates.push({ id: 'wecom-agentId', value: config.wecom.agentId });
+        if (config.wecom.agentSecret !== undefined) updates.push({ id: 'wecom-agentSecret', value: config.wecom.agentSecret });
+        if (config.wecom.contactSecret !== undefined) updates.push({ id: 'wecom-contactSecret', value: config.wecom.contactSecret });
+      }
+      
+      if (updates.length > 0) {
+        await this.configService.batchUpdateConfig(updates, 'admin');
+      }
       
       return { code: 200, msg: 'success' };
     } catch (error: any) {

@@ -53,6 +53,14 @@ export default function ConfigManagement() {
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([])
   const [allUsers, setAllUsers] = useState<UserRecord[]>([])
   const [authorizedSubjects, setAuthorizedSubjects] = useState<Array<{ user: UserRecord; permissions: string[] }>>([])
+  
+  const [wecomConfig, setWecomConfig] = useState({
+    corpId: '',
+    corpSecret: '',
+    agentId: 0,
+    agentSecret: '',
+    contactSecret: ''
+  })
 
   useEffect(() => {
     loadConfig()
@@ -103,6 +111,22 @@ export default function ConfigManagement() {
       const result = await updateConfig(config)
       if (result.code === 200) {
         message.success('配置已保存')
+      } else {
+        message.error(result.msg || '保存失败')
+      }
+    } catch {
+      message.error('保存失败')
+    } finally {
+      setSaving(false)
+    }
+  }
+  
+  const handleSaveWecom = async () => {
+    setSaving(true)
+    try {
+      const result = await updateConfig({ wecom: wecomConfig })
+      if (result.code === 200) {
+        message.success('企业微信配置已保存')
       } else {
         message.error(result.msg || '保存失败')
       }
@@ -375,24 +399,44 @@ export default function ConfigManagement() {
         <Card title="企业微信配置" style={{ marginBottom: 16 }}>
           <Form layout="vertical">
             <Form.Item label="企业ID" help="在企业微信管理后台 -> 我的企业 -> 企业信息中查看">
-              <Input placeholder="请输入企业ID" />
+              <Input 
+                placeholder="请输入企业ID" 
+                value={wecomConfig.corpId}
+                onChange={e => setWecomConfig({ ...wecomConfig, corpId: e.target.value })}
+              />
             </Form.Item>
             <Form.Item label="通讯录管理Secret" help="在企业微信管理后台 -> 管理工具 -> 通讯录同步中获取">
-              <Input.Password placeholder="请输入通讯录管理Secret" />
+              <Input.Password 
+                placeholder="请输入通讯录管理Secret" 
+                value={wecomConfig.corpSecret}
+                onChange={e => setWecomConfig({ ...wecomConfig, corpSecret: e.target.value })}
+              />
             </Form.Item>
             <Form.Item label="应用AgentId" help="在企业微信管理后台 -> 应用管理中查看">
-              <InputNumber placeholder="请输入应用AgentId" style={{ width: '100%' }} />
+              <InputNumber 
+                placeholder="请输入应用AgentId" 
+                style={{ width: '100%' }} 
+                value={wecomConfig.agentId}
+                onChange={v => setWecomConfig({ ...wecomConfig, agentId: v || 0 })}
+              />
             </Form.Item>
             <Form.Item label="应用Secret" help="在企业微信管理后台 -> 应用管理中获取">
-              <Input.Password placeholder="请输入应用Secret" />
+              <Input.Password 
+                placeholder="请输入应用Secret" 
+                value={wecomConfig.agentSecret}
+                onChange={e => setWecomConfig({ ...wecomConfig, agentSecret: e.target.value })}
+              />
             </Form.Item>
             <Alert 
               message="提示" 
               description="企业微信配置保存在后端，敏感信息（Secret）不会暴露给前端。配置完成后，小程序端可正常同步企业数据。"
               type="info" 
               showIcon 
-              style={{ marginTop: 16 }} 
+              style={{ marginBottom: 16 }} 
             />
+            <Button type="primary" icon={<SaveOutlined />} onClick={handleSaveWecom} loading={saving}>
+              保存企业微信配置
+            </Button>
           </Form>
         </Card>
       </Spin>
