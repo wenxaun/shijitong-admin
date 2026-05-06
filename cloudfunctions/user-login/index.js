@@ -53,71 +53,106 @@ exports.main = async (event, context) => {
 
 // 微信登录（支持企业微信）
 async function wechatLogin(userInfo, OPENID, APPID, db, isWework = false) {
-  // 企业微信用户使用特殊的 openid 格式
   let openid = OPENID
   let userType = 'personal'
+  let wecomUserid = null
+  let wecomCorpid = null
   
   if (isWework) {
-    // 企业微信用户：尝试从 wxContext 获取企业信息
     const wxContext = cloud.getWXContext()
     userType = 'enterprise'
+    wecomCorpid = wxContext.CORP_ID || userInfo.corpId
+    wecomUserid = userInfo.userid // 企业微信用户唯一标识
     
-    // 如果有企业微信特有的标识，使用企业用户的唯一标识
-    if (wxContext && wxContext.CORP_ID) {
-      openid = `wework_${OPENID}_${wxContext.CORP_ID}`
-    }
+    console.log('[企业微信登录] CORP_ID:', wecomCorpid, 'userid:', wecomUserid, 'OPENID:', OPENID)
   }
   
-  const userRes = await db.collection('users').where({
-    openid: openid
-  }).get()
+  // 去重查询逻辑
+  let userRes
+  
+  if (isWework && wecomUserid) {
+    // 企业微信：优先用 wecom_userid 查询（企业内唯一）
+    userRes = await db.collection('users').where({
+      wecom_userid: wecomUserid
+    }).get()
+    console.log('[企业微信] 按 wecom_userid 查询:', userRes.data.length, '条')
+    
+    // 如果没找到，再按 openid 查询
+    if (userRes.data.length === 0) {
+      userRes = await db.collection('users').where({
+        openid: openid,
+        user_type: 'enterprise'
+      }).get()
+      console.log('[企业微信] 按 openid 查询:', userRes.data.length, '条')
+    }
+  } else {
+    // 普通微信：按 openid 查询
+    userRes = await db.collection('users').where({
+      openid: openid
+    }).get()
+  }
   
   let user
   let isNewUser = false
   
   if (userRes.data.length > 0) {
+    // 已存在用户，更新信息
     user = userRes.data[0]
+    
+    const updateData = {
+      nickname: userInfo.nickName || user.nickname,
+      avatar_url: userInfo.avatarUrl || user.avatar_url,
+      last_login: new Date()
+    }
+    
+    // 企业微信用户更新 wecom_userid（可能之前没有）
+    if (isWework && wecomUserid && !user.wecom_userid) {
+      updateData.wecom_userid = wecomUserid
+      updateData.wecom_corpid = wecomCorpid
+    }
+    
     await db.collection('users').doc(user._id).update({
-      data: {
-        nickname: userInfo.nickName || user.nickname,
-        avatar_url: userInfo.avatarUrl || user.avatar_url,
-        last_login: new Date()
-      }
+      data: updateData
     })
+    console.log('[登录] 更新用户信息:', user._id)
   } else {
+    // 新用户
     isNewUser = true
-
-    // 检查是否是第一个用户，如果是则自动设为超级管理员
-    const allUsers = await db.collection('users').count()
-    const isFirstUser = allUsers.total === 0
-
+    
+    const newUserData = {
+      openid: openid,
+      appid: APPID,
+      user_type: userType,
+      nickname: userInfo.nickName || (isWework ? '企业用户' : '微信用户'),
+      avatar_url: userInfo.avatarUrl || '',
+      role: 'member', // 所有新用户默认为普通成员
+      created_at: new Date(),
+      last_login: new Date()
+    }
+    
+    if (isWework) {
+      Object.assign(newUserData, {
+        is_wework_user: true,
+        wecom_userid: wecomUserid,
+        wecom_corpid: wecomCorpid
+      })
+    }
+    
     const result = await db.collection('users').add({
-      data: {
-        openid: openid,
-        appid: APPID,
-        user_type: userType,             // 添加用户类型
-        nickname: userInfo.nickName || (isWework ? '企业用户' : '微信用户'),
-        avatar_url: userInfo.avatarUrl || '',
-        role: isFirstUser ? 'owner' : 'member',  // 第一个用户自动成为管理员
-        ...(isWework && {
-          is_wework_user: true,
-          // 企业微信特有字段（如果有企业API可以获取更多信息）
-          wecom_userid: userInfo.userid || null,
-          wecom_corpid: userInfo.corpId || null
-        }),
-        created_at: new Date(),
-        last_login: new Date()
-      }
+      data: newUserData
     })
+    
     user = {
       _id: result._id,
       openid: openid,
       user_type: userType,
-      nickname: userInfo.nickName || (isWework ? '企业用户' : '微信用户'),
-      avatar_url: userInfo.avatarUrl || '',
-      role: isFirstUser ? 'owner' : 'member',
+      nickname: newUserData.nickname,
+      avatar_url: newUserData.avatar_url,
+      role: 'member',
       is_wework_user: isWework
     }
+    
+    console.log('[登录] 创建新用户:', result._id, '类型:', userType)
   }
   
   return {
