@@ -51,6 +51,17 @@ exports.main = async (event, context) => {
     
     console.log('[task-create] 创建任务:', { task_name, executor_id: finalExecutorId })
     
+    // 获取用户类型
+    let userType = 'personal'
+    try {
+      const userRes = await db.collection('users').where({ openid: OPENID }).get()
+      if (userRes.data && userRes.data.length > 0) {
+        userType = userRes.data[0].user_type || 'personal'
+      }
+    } catch (err) {
+      console.error('[task-create] 获取用户类型失败:', err)
+    }
+    
     // 构建任务数据
     const taskData = {
       task_name,
@@ -63,6 +74,7 @@ exports.main = async (event, context) => {
       publisher_id: OPENID,
       executor_id: finalExecutorId,
       executor_name: finalExecutorName,
+      user_type: userType, // 添加用户类型字段
       require_date: require_date, // 保持字符串格式 YYYY-MM-DD
       complete_date: null,
       score: null,
