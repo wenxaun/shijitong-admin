@@ -48,6 +48,17 @@ export interface AppConfig {
     admin: { features: RoleFeatures; limits: RoleLimits }
     owner: { features: RoleFeatures; limits: RoleLimits }
   }
+  wecom?: {
+    corpId?: string
+    corpSecret?: string
+    agentId?: number
+    agentSecret?: string
+    contactSecret?: string
+    syncInterval?: number
+    maxDepartments?: number
+    notifyTemplateId?: string
+    autoSync?: boolean
+  }
   updated_at?: string
   updated_by?: string
 }
