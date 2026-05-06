@@ -205,9 +205,23 @@ export default function OrgTreePage() {
 
       Taro.showLoading({ title: '同步中...' })
 
+      // 从配置管理器获取企业微信配置
+      const { configManager } = await import('@/utils/configManager')
+      const config = configManager.getWecomConfig()
+      const corpId = config?.corpId
+
+      if (!corpId) {
+        Taro.hideLoading()
+        Taro.showToast({
+          title: '请先在企业微信配置中设置企业ID',
+          icon: 'none'
+        })
+        return
+      }
+
       const result = await Taro.cloud.callFunction({
         name: 'wecom-sync-org',
-        data: {}
+        data: { corp_id: corpId }
       }) as any
 
       Taro.hideLoading()

@@ -183,12 +183,26 @@ export default function TeamPage() {
     Taro.showLoading({ title: '同步中...' });
 
     try {
+      // 从配置管理器获取企业微信配置
+      const { configManager } = await import('@/utils/configManager')
+      const config = configManager.getWecomConfig()
+      const corpId = config?.corpId
+
+      if (!corpId) {
+        Taro.hideLoading()
+        Taro.showToast({
+          title: '请先在企业微信配置中设置企业ID',
+          icon: 'none'
+        })
+        return
+      }
+
       const result = await callFunction<CloudResponse<{
         corp_name: string;
         member_count: number;
         department_count: number;
       }>>('wecom-sync-org', {
-        action: 'sync'
+        corp_id: corpId
       });
 
       Taro.hideLoading();
