@@ -1,12 +1,14 @@
 import { Controller, Get, Post, Body, Headers, HttpCode, HttpStatus } from '@nestjs/common';
 import { AppService } from '@/app.service';
 import { AiService } from '@/ai.service';
+import { ConfigService } from './config.service';
 
 @Controller()
 export class AppController {
   constructor(
     private readonly appService: AppService,
-    private readonly aiService: AiService
+    private readonly aiService: AiService,
+    private readonly configService: ConfigService
   ) {}
 
   @Get('hello')
@@ -23,6 +25,33 @@ export class AppController {
       status: 'success',
       data: new Date().toISOString(),
     };
+  }
+
+  @Get('config/version')
+  async getConfigVersion() {
+    try {
+      const config = await this.configService.getCurrentConfig();
+      return {
+        version: config._version || '1.0.0',
+        updatedAt: config._updatedAt || new Date().toISOString()
+      };
+    } catch (error) {
+      return {
+        version: '1.0.0',
+        updatedAt: new Date().toISOString()
+      };
+    }
+  }
+
+  @Get('config/current')
+  async getCurrentConfig() {
+    try {
+      const config = await this.configService.getCurrentConfig();
+      return config;
+    } catch (error) {
+      console.error('[App] 获取配置失败:', error);
+      return null;
+    }
   }
 
   /**
