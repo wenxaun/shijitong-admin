@@ -378,12 +378,13 @@ export class AdminService {
         return { code: 404, msg: '用户不存在' };
       }
       const user = userRes.data[0];
+      const openid = user.openid;
       
       const tasksWhere = db.collection('tasks').where(
         db.command.or([
-          { creator_id: userId },
-          { assignee_id: userId },
-          { 'members.user_id': userId }
+          { publisher_id: openid },
+          { executor_id: openid },
+          { _openid: openid }
         ])
       );
       const tasksRes = await tasksWhere.get();
@@ -391,8 +392,8 @@ export class AdminService {
       
       const teamsWhere = db.collection('teams').where(
         db.command.or([
-          { creator_id: userId },
-          { 'members.user_id': userId }
+          { creator_id: openid },
+          { 'members.user_id': openid }
         ])
       );
       const teamsRes = await teamsWhere.get();
@@ -400,19 +401,14 @@ export class AdminService {
       
       const relatedUserIds = new Set<string>();
       tasks.forEach((task: any) => {
-        if (task.creator_id && task.creator_id !== userId) relatedUserIds.add(task.creator_id);
-        if (task.assignee_id && task.assignee_id !== userId) relatedUserIds.add(task.assignee_id);
-        if (task.members) {
-          task.members.forEach((m: any) => {
-            if (m.user_id && m.user_id !== userId) relatedUserIds.add(m.user_id);
-          });
-        }
+        if (task.publisher_id && task.publisher_id !== openid) relatedUserIds.add(task.publisher_id);
+        if (task.executor_id && task.executor_id !== openid) relatedUserIds.add(task.executor_id);
       });
       teams.forEach((team: any) => {
-        if (team.creator_id && team.creator_id !== userId) relatedUserIds.add(team.creator_id);
+        if (team.creator_id && team.creator_id !== openid) relatedUserIds.add(team.creator_id);
         if (team.members) {
           team.members.forEach((m: any) => {
-            if (m.user_id && m.user_id !== userId) relatedUserIds.add(m.user_id);
+            if (m.user_id && m.user_id !== openid) relatedUserIds.add(m.user_id);
           });
         }
       });
@@ -420,7 +416,7 @@ export class AdminService {
       let relatedUsers: any[] = [];
       if (relatedUserIds.size > 0) {
         const relatedUsersRes = await db.collection('users').where({
-          _id: db.command.in(Array.from(relatedUserIds))
+          openid: db.command.in(Array.from(relatedUserIds))
         }).field({ _id: true, nickname: true, openid: true }).get();
         relatedUsers = relatedUsersRes.data || [];
       }
@@ -459,16 +455,23 @@ export class AdminService {
       const app = cloudbase.init({ env: envId, secretId, secretKey });
       const db = app.database();
       
+      const userRes = await db.collection('users').doc(userId).get();
+      if (!userRes.data || userRes.data.length === 0) {
+        return { code: 404, msg: '用户不存在' };
+      }
+      const openid = userRes.data[0].openid;
+      
       const targetUserRes = await db.collection('users').doc(targetUserId).get();
       if (!targetUserRes.data || targetUserRes.data.length === 0) {
         return { code: 404, msg: '目标用户不存在' };
       }
+      const targetOpenid = targetUserRes.data[0].openid;
       
       const tasksWhere = db.collection('tasks').where(
         db.command.or([
-          { creator_id: userId },
-          { assignee_id: userId },
-          { 'members.user_id': userId }
+          { publisher_id: openid },
+          { executor_id: openid },
+          { _openid: openid }
         ])
       );
       const tasksRes = await tasksWhere.get();
@@ -480,12 +483,12 @@ export class AdminService {
           ...task,
           _id: undefined,
           original_task_id: task._id,
-          original_user_id: userId,
-          backup_to_user_id: targetUserId,
+          original_user_id: openid,
+          backup_to_user_id: targetOpenid,
           backup_at: new Date().toISOString(),
-          title: `[备份] ${task.title || task.name || '未命名任务'}`,
-          creator_id: targetUserId,
-          assignee_id: task.assignee_id === userId ? targetUserId : task.assignee_id,
+          task_name: `[备份] ${task.task_name || '未命名任务'}`,
+          publisher_id: targetOpenid,
+          executor_id: task.executor_id === openid ? targetOpenid : task.executor_id,
         };
         delete backupTask._id;
         
@@ -518,15 +521,21 @@ export class AdminService {
       const app = cloudbase.init({ env: envId, secretId, secretKey });
       const db = app.database();
       
+      const userRes = await db.collection('users').doc(userId).get();
+      if (!userRes.data || userRes.data.length === 0) {
+        return { code: 404, msg: '用户不存在' };
+      }
+      const openid = userRes.data[0].openid;
+      
       if (options.backupToUserId) {
         await this.backupUserTasks(userId, options.backupToUserId);
       }
       
       const tasksWhere = db.collection('tasks').where(
         db.command.or([
-          { creator_id: userId },
-          { assignee_id: userId },
-          { 'members.user_id': userId }
+          { publisher_id: openid },
+          { executor_id: openid },
+          { _openid: openid }
         ])
       );
       const tasksRes = await tasksWhere.get();
@@ -538,18 +547,18 @@ export class AdminService {
       
       const teamsWhere = db.collection('teams').where(
         db.command.or([
-          { creator_id: userId },
-          { 'members.user_id': userId }
+          { creator_id: openid },
+          { 'members.user_id': openid }
         ])
       );
       const teamsRes = await teamsWhere.get();
       const teams = teamsRes.data || [];
       
       for (const team of teams) {
-        if (team.creator_id === userId) {
+        if (team.creator_id === openid) {
           await db.collection('teams').doc(team._id).remove();
         } else {
-          const updatedMembers = (team.members || []).filter((m: any) => m.user_id !== userId);
+          const updatedMembers = (team.members || []).filter((m: any) => m.user_id !== openid);
           await db.collection('teams').doc(team._id).update({
             members: updatedMembers,
             updated_at: new Date().toISOString()
@@ -564,8 +573,8 @@ export class AdminService {
         msg: 'success',
         data: {
           deletedTasks: tasks.length,
-          deletedTeams: teams.filter((t: any) => t.creator_id === userId).length,
-          updatedTeams: teams.filter((t: any) => t.creator_id !== userId).length
+          deletedTeams: teams.filter((t: any) => t.creator_id === openid).length,
+          updatedTeams: teams.filter((t: any) => t.creator_id !== openid).length
         }
       };
     } catch (error: any) {
