@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Card, Form, Switch, InputNumber, Button, message, Typography, Divider, Spin, Table, Tag, Space, Modal, Select, Tabs, Checkbox } from 'antd'
+import { Card, Form, Switch, InputNumber, Input, Button, message, Typography, Divider, Spin, Table, Tag, Space, Modal, Select, Tabs, Checkbox, Alert } from 'antd'
 import { SaveOutlined, UserOutlined, PlusOutlined, DeleteOutlined } from '@ant-design/icons'
 import { getConfig, updateConfig, getUserList, updateUserRole } from '@/services/config'
 import type { AppConfig, UserRecord, UserRole, RoleFeatures, RoleLimits } from '@/types'
@@ -368,6 +368,32 @@ export default function ConfigManagement() {
           <Button type="primary" icon={<SaveOutlined />} onClick={handleSave} loading={saving} size="large">
             保存配置
           </Button>
+        </Card>
+
+        <Divider />
+
+        <Card title="企业微信配置" style={{ marginBottom: 16 }}>
+          <Form layout="vertical">
+            <Form.Item label="企业ID" help="在企业微信管理后台 -> 我的企业 -> 企业信息中查看">
+              <Input placeholder="请输入企业ID" />
+            </Form.Item>
+            <Form.Item label="通讯录管理Secret" help="在企业微信管理后台 -> 管理工具 -> 通讯录同步中获取">
+              <Input.Password placeholder="请输入通讯录管理Secret" />
+            </Form.Item>
+            <Form.Item label="应用AgentId" help="在企业微信管理后台 -> 应用管理中查看">
+              <InputNumber placeholder="请输入应用AgentId" style={{ width: '100%' }} />
+            </Form.Item>
+            <Form.Item label="应用Secret" help="在企业微信管理后台 -> 应用管理中获取">
+              <Input.Password placeholder="请输入应用Secret" />
+            </Form.Item>
+            <Alert 
+              message="提示" 
+              description="企业微信配置保存在后端，敏感信息（Secret）不会暴露给前端。配置完成后，小程序端可正常同步企业数据。"
+              type="info" 
+              showIcon 
+              style={{ marginTop: 16 }} 
+            />
+          </Form>
         </Card>
       </Spin>
 

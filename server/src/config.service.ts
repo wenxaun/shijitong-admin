@@ -246,12 +246,45 @@ export class ConfigService {
         updatedBy: 'system'
       },
       {
+        id: 'wecom-corpSecret',
+        key: 'wecom.corpSecret',
+        value: '',
+        description: '企业微信通讯录管理Secret',
+        category: ConfigCategory.WECOM,
+        dataType: 'string',
+        isPublic: false,
+        updatedAt: new Date(),
+        updatedBy: 'system'
+      },
+      {
         id: 'wecom-agentId',
         key: 'wecom.agentId',
         value: 0,
         description: '应用ID',
         category: ConfigCategory.WECOM,
         dataType: 'number',
+        isPublic: false,
+        updatedAt: new Date(),
+        updatedBy: 'system'
+      },
+      {
+        id: 'wecom-agentSecret',
+        key: 'wecom.agentSecret',
+        value: '',
+        description: '应用Secret',
+        category: ConfigCategory.WECOM,
+        dataType: 'string',
+        isPublic: false,
+        updatedAt: new Date(),
+        updatedBy: 'system'
+      },
+      {
+        id: 'wecom-contactSecret',
+        key: 'wecom.contactSecret',
+        value: '',
+        description: '通讯录同步Secret',
+        category: ConfigCategory.WECOM,
+        dataType: 'string',
         isPublic: false,
         updatedAt: new Date(),
         updatedBy: 'system'
@@ -411,7 +444,10 @@ export class ConfigService {
       },
       wecom: {
         corpId: getRecordValue('wecom.corpId', ''),
+        corpSecret: getRecordValue('wecom.corpSecret', ''),
         agentId: getRecordValue('wecom.agentId', 0),
+        agentSecret: getRecordValue('wecom.agentSecret', ''),
+        contactSecret: getRecordValue('wecom.contactSecret', ''),
         syncInterval: getRecordValue('wecom.syncInterval', 24),
         maxDepartments: getRecordValue('wecom.maxDepartments', 1000),
         notifyTemplateId: getRecordValue('wecom.notifyTemplateId', ''),
@@ -502,13 +538,13 @@ export class ConfigService {
    * 获取当前配置（公开部分）
    */
   async getCurrentConfig(): Promise<AppConfig> {
-    // 只返回公开的配置
     const publicConfig: AppConfig = {
       ...this.currentConfig,
       wecom: {
         ...this.currentConfig.wecom,
-        corpId: '', // 隐藏敏感信息
-        agentId: 0,
+        corpSecret: '', // 隐藏敏感信息
+        agentSecret: '',
+        contactSecret: '',
       },
     };
     return publicConfig;
@@ -659,7 +695,10 @@ export class ConfigService {
 
     // 同步企微配置
     this.configRecords.find(r => r.key === 'wecom.corpId')!.value = config.wecom.corpId;
+    this.configRecords.find(r => r.key === 'wecom.corpSecret')!.value = config.wecom.corpSecret;
     this.configRecords.find(r => r.key === 'wecom.agentId')!.value = config.wecom.agentId;
+    this.configRecords.find(r => r.key === 'wecom.agentSecret')!.value = config.wecom.agentSecret;
+    this.configRecords.find(r => r.key === 'wecom.contactSecret')!.value = config.wecom.contactSecret;
     this.configRecords.find(r => r.key === 'wecom.syncInterval')!.value = config.wecom.syncInterval;
     this.configRecords.find(r => r.key === 'wecom.maxDepartments')!.value = config.wecom.maxDepartments;
     this.configRecords.find(r => r.key === 'wecom.notifyTemplateId')!.value = config.wecom.notifyTemplateId;
