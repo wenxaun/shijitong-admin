@@ -207,14 +207,18 @@ export default function OrgTreePage() {
 
       // 从配置管理器获取企业微信配置
       const { configManager } = await import('@/utils/configManager')
+      await configManager.loadConfig() // 确保配置已加载
       const config = configManager.getWecomConfig()
       const corpId = config?.corpId
+
+      console.log('[OrgTree] 企业微信配置:', { corpId, config })
 
       if (!corpId) {
         Taro.hideLoading()
         Taro.showToast({
-          title: '请先在企业微信配置中设置企业ID',
-          icon: 'none'
+          title: '请先在Web后台配置企业ID',
+          icon: 'none',
+          duration: 3000
         })
         return
       }
