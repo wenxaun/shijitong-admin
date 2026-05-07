@@ -24,6 +24,10 @@ RUN npm install -g @nestjs/cli
 RUN nest build
 RUN node fix-paths.js
 
+# Create data directory for persistent storage
+RUN mkdir -p /app/data/config
+VOLUME ["/app/data"]
+
 EXPOSE 3000
 
 CMD ["node", "dist/main.js"]
