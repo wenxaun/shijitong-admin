@@ -63,15 +63,6 @@ exports.main = async (event, context) => {
     // 构建查询条件数组
     const conditions = []
     
-    // 根据用户类型过滤（用户隔离）
-    // 注意：如果任务没有 user_type 字段，也应该显示（兼容旧数据）
-    if (user_type) {
-      conditions.push(_.or([
-        { user_type: user_type },
-        { user_type: _.exists(false) } // 兼容旧数据
-      ]))
-    }
-    
     // 根据视图类型筛选
     if (view_type === 'assigned') {
       // 我分配的任务（我是发布人）
