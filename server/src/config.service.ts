@@ -21,7 +21,26 @@ export class ConfigService {
   private currentConfig: AppConfig;
 
   constructor() {
-    this.configDir = path.join(process.cwd(), 'config-data');
+    // 优先使用持久化存储目录 /mnt/config-data，否则使用本地目录
+    const persistentDir = process.env.CONFIG_DIR || '/mnt/config-data';
+    const localDir = path.join(process.cwd(), 'config-data');
+    
+    // 检测持久化目录是否可用
+    try {
+      if (!fs.existsSync(persistentDir)) {
+        fs.mkdirSync(persistentDir, { recursive: true });
+      }
+      // 测试写入权限
+      const testFile = path.join(persistentDir, '.test');
+      fs.writeFileSync(testFile, 'test');
+      fs.unlinkSync(testFile);
+      this.configDir = persistentDir;
+      console.log('[ConfigService] 使用持久化存储目录:', persistentDir);
+    } catch (err) {
+      console.warn('[ConfigService] 持久化目录不可用，使用本地目录:', localDir, err.message);
+      this.configDir = localDir;
+    }
+    
     this.ensureConfigDir();
     this.loadConfigRecords();
     this.loadConfigVersions();
