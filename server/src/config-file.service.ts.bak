@@ -6,158 +6,120 @@ import {
   ConfigCategory,
   AppConfig
 } from './types/config';
+import * as fs from 'fs';
+import * as path from 'path';
 
 /**
- * 配置管理服务（云数据库版本）
- * 使用云开发数据库存储配置，自动持久化
+ * 配置管理服务
+ * 使用 JSON 文件存储配置（生产环境可升级为数据库）
  */
 @Injectable()
 export class ConfigService {
+  private configDir: string;
   private configRecords: ConfigRecord[] = [];
   private configVersions: ConfigVersion[] = [];
   private currentConfig: AppConfig;
-  private initialized = false;
 
   constructor() {
-    // 异步初始化，不阻塞构造函数
-    this.initialize().catch(err => {
-      console.error('[ConfigService] 初始化失败:', err);
-    });
-  }
-
-  /**
-   * 初始化配置服务
-   */
-  private async initialize() {
+    // 优先使用持久化存储目录 /mnt/config-data，否则使用本地目录
+    const persistentDir = process.env.CONFIG_DIR || '/mnt/config-data';
+    const localDir = path.join(process.cwd(), 'config-data');
+    
+    // 检测持久化目录是否可用
     try {
-      await this.loadConfigFromDB();
-      this.initialized = true;
-      console.log('[ConfigService] 初始化完成');
+      if (!fs.existsSync(persistentDir)) {
+        fs.mkdirSync(persistentDir, { recursive: true });
+      }
+      // 测试写入权限
+      const testFile = path.join(persistentDir, '.test');
+      fs.writeFileSync(testFile, 'test');
+      fs.unlinkSync(testFile);
+      this.configDir = persistentDir;
+      console.log('[ConfigService] 使用持久化存储目录:', persistentDir);
     } catch (err) {
-      console.error('[ConfigService] 初始化失败，使用默认配置:', err);
-      this.initDefaultConfigRecords();
-      this.currentConfig = this.buildConfigFromRecords();
-      this.initialized = true;
+      console.warn('[ConfigService] 持久化目录不可用，使用本地目录:', localDir, err.message);
+      this.configDir = localDir;
+    }
+    
+    this.ensureConfigDir();
+    this.loadConfigRecords();
+    this.loadConfigVersions();
+    this.loadCurrentConfig();
+  }
+
+  /**
+   * 确保配置目录存在
+   */
+  private ensureConfigDir() {
+    if (!fs.existsSync(this.configDir)) {
+      fs.mkdirSync(this.configDir, { recursive: true });
     }
   }
 
   /**
-   * 等待初始化完成
+   * 加载配置记录
    */
-  private async waitForInit() {
-    if (this.initialized) return;
-    
-    // 最多等待 5 秒
-    for (let i = 0; i < 50; i++) {
-      if (this.initialized) return;
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-    throw new Error('配置服务初始化超时');
-  }
-
-  /**
-   * 获取云开发数据库实例
-   */
-  private getDB() {
-    const envId = process.env.TCB_ENV_ID;
-    const secretId = process.env.TENCENT_SECRET_ID;
-    const secretKey = process.env.TENCENT_SECRET_KEY;
-    
-    if (!secretId || !secretKey || !envId) {
-      return null;
-    }
-    
-    const cloudbase = require('@cloudbase/node-sdk');
-    const app = cloudbase.init({ env: envId, secretId, secretKey });
-    return app.database();
-  }
-
-  /**
-   * 从数据库加载配置
-   */
-  private async loadConfigFromDB() {
-    const db = this.getDB();
-    
-    if (!db) {
-      console.log('[ConfigService] 云数据库不可用，使用本地默认配置');
-      this.initDefaultConfigRecords();
-      this.currentConfig = this.buildConfigFromRecords();
-      return;
-    }
-
-    // 加载配置记录
-    const recordsRes = await db.collection('config_records').limit(1000).get();
-    if (recordsRes.data && recordsRes.data.length > 0) {
-      this.configRecords = recordsRes.data;
-      console.log('[ConfigService] 从数据库加载配置记录:', this.configRecords.length, '条');
+  private loadConfigRecords() {
+    const filePath = path.join(this.configDir, 'records.json');
+    if (fs.existsSync(filePath)) {
+      const data = fs.readFileSync(filePath, 'utf-8');
+      this.configRecords = JSON.parse(data);
     } else {
       // 初始化默认配置
       this.initDefaultConfigRecords();
-      await this.saveConfigRecordsToDB();
-      console.log('[ConfigService] 初始化默认配置记录');
-    }
-
-    // 加载配置版本
-    try {
-      const versionsRes = await db.collection('config_versions').orderBy('createdAt', 'desc').limit(100).get();
-      if (versionsRes.data) {
-        this.configVersions = versionsRes.data;
-      }
-    } catch (err) {
-      console.warn('[ConfigService] 加载配置版本失败:', err.message);
-    }
-
-    // 构建当前配置
-    this.currentConfig = this.buildConfigFromRecords();
-  }
-
-  /**
-   * 保存配置记录到数据库
-   */
-  private async saveConfigRecordsToDB() {
-    const db = this.getDB();
-    if (!db) return;
-
-    try {
-      // 先清空旧记录
-      const oldRecords = await db.collection('config_records').get();
-      for (const record of oldRecords.data || []) {
-        await db.collection('config_records').doc(record._id).remove();
-      }
-      
-      // 批量插入新记录
-      for (const record of this.configRecords) {
-        await db.collection('config_records').add({ data: record });
-      }
-    } catch (err) {
-      console.error('[ConfigService] 保存配置记录失败:', err.message);
+      this.saveConfigRecords();
     }
   }
 
   /**
-   * 保存配置版本到数据库
+   * 加载配置版本
    */
-  private async saveConfigVersionsToDB() {
-    const db = this.getDB();
-    if (!db) return;
-
-    try {
-      // 只保存最新的 10 个版本
-      const recentVersions = this.configVersions.slice(0, 10);
-      
-      // 清空旧版本
-      const oldVersions = await db.collection('config_versions').get();
-      for (const version of oldVersions.data || []) {
-        await db.collection('config_versions').doc(version._id).remove();
-      }
-      
-      // 批量插入新版本
-      for (const version of recentVersions) {
-        await db.collection('config_versions').add({ data: version });
-      }
-    } catch (err) {
-      console.error('[ConfigService] 保存配置版本失败:', err.message);
+  private loadConfigVersions() {
+    const filePath = path.join(this.configDir, 'versions.json');
+    if (fs.existsSync(filePath)) {
+      const data = fs.readFileSync(filePath, 'utf-8');
+      this.configVersions = JSON.parse(data);
     }
+  }
+
+  /**
+   * 加载当前配置
+   */
+  private loadCurrentConfig() {
+    const filePath = path.join(this.configDir, 'current.json');
+    if (fs.existsSync(filePath)) {
+      const data = fs.readFileSync(filePath, 'utf-8');
+      this.currentConfig = JSON.parse(data);
+    } else {
+      // 创建初始配置
+      this.currentConfig = this.buildConfigFromRecords();
+      this.saveCurrentConfig();
+      this.createConfigVersion('初始配置', 'system');
+    }
+  }
+
+  /**
+   * 保存配置记录
+   */
+  private saveConfigRecords() {
+    const filePath = path.join(this.configDir, 'records.json');
+    fs.writeFileSync(filePath, JSON.stringify(this.configRecords, null, 2));
+  }
+
+  /**
+   * 保存配置版本
+   */
+  private saveConfigVersions() {
+    const filePath = path.join(this.configDir, 'versions.json');
+    fs.writeFileSync(filePath, JSON.stringify(this.configVersions, null, 2));
+  }
+
+  /**
+   * 保存当前配置
+   */
+  private saveCurrentConfig() {
+    const filePath = path.join(this.configDir, 'current.json');
+    fs.writeFileSync(filePath, JSON.stringify(this.currentConfig, null, 2));
   }
 
   /**
@@ -180,7 +142,7 @@ export class ConfigService {
       {
         id: 'system-environment',
         key: 'system.environment',
-        value: 'production',
+        value: 'dev',
         description: '环境标识',
         category: ConfigCategory.SYSTEM,
         dataType: 'string',
@@ -216,7 +178,7 @@ export class ConfigService {
         id: 'feature-taskReview',
         key: 'features.taskReview',
         value: true,
-        description: '任务复盘',
+        description: '任务审核功能',
         category: ConfigCategory.FEATURE,
         dataType: 'boolean',
         isPublic: true,
@@ -227,7 +189,7 @@ export class ConfigService {
         id: 'feature-orgSync',
         key: 'features.orgSync',
         value: true,
-        description: '组织同步',
+        description: '组织架构同步',
         category: ConfigCategory.FEATURE,
         dataType: 'boolean',
         isPublic: true,
@@ -238,7 +200,7 @@ export class ConfigService {
         id: 'feature-wecomNotify',
         key: 'features.wecomNotify',
         value: true,
-        description: '企业微信通知',
+        description: '企微消息推送',
         category: ConfigCategory.FEATURE,
         dataType: 'boolean',
         isPublic: true,
@@ -260,7 +222,7 @@ export class ConfigService {
         id: 'feature-taskTransfer',
         key: 'features.taskTransfer',
         value: true,
-        description: '任务转办',
+        description: '任务流转',
         category: ConfigCategory.FEATURE,
         dataType: 'boolean',
         isPublic: true,
@@ -282,7 +244,7 @@ export class ConfigService {
         id: 'feature-statistics',
         key: 'features.statistics',
         value: true,
-        description: '统计分析',
+        description: '统计功能',
         category: ConfigCategory.FEATURE,
         dataType: 'boolean',
         isPublic: true,
@@ -290,7 +252,7 @@ export class ConfigService {
         updatedBy: 'system'
       },
 
-      // 企业微信配置
+      // 企微配置
       {
         id: 'wecom-corpId',
         key: 'wecom.corpId',
@@ -391,31 +353,7 @@ export class ConfigService {
         updatedBy: 'system'
       },
 
-      // 文本配置
-      {
-        id: 'texts-appName',
-        key: 'texts.appName',
-        value: '任务管理系统',
-        description: '应用名称',
-        category: ConfigCategory.TEXTS,
-        dataType: 'string',
-        isPublic: true,
-        updatedAt: new Date(),
-        updatedBy: 'system'
-      },
-      {
-        id: 'texts-welcomeText',
-        key: 'texts.welcomeText',
-        value: '欢迎使用任务管理系统',
-        description: '欢迎文案',
-        category: ConfigCategory.TEXTS,
-        dataType: 'string',
-        isPublic: true,
-        updatedAt: new Date(),
-        updatedBy: 'system'
-      },
-
-      // 业务规则配置
+      // 业务规则
       {
         id: 'business-maxTasksPerDay',
         key: 'business.maxTasksPerDay',
@@ -431,7 +369,7 @@ export class ConfigService {
         id: 'business-maxSubtasksPerTask',
         key: 'business.maxSubtasksPerTask',
         value: 50,
-        description: '单个任务最大子任务数',
+        description: '每个任务最大子任务数',
         category: ConfigCategory.BUSINESS,
         dataType: 'number',
         isPublic: true,
@@ -464,9 +402,33 @@ export class ConfigService {
         id: 'business-taskAutoCloseHours',
         key: 'business.taskAutoCloseHours',
         value: 168,
-        description: '任务自动关闭小时数',
+        description: '任务自动关闭时间（小时）',
         category: ConfigCategory.BUSINESS,
         dataType: 'number',
+        isPublic: true,
+        updatedAt: new Date(),
+        updatedBy: 'system'
+      },
+
+      // 文案配置
+      {
+        id: 'text-appName',
+        key: 'texts.appName',
+        value: '任务管理系统',
+        description: '应用名称',
+        category: ConfigCategory.TEXT,
+        dataType: 'string',
+        isPublic: true,
+        updatedAt: new Date(),
+        updatedBy: 'system'
+      },
+      {
+        id: 'text-welcomeText',
+        key: 'texts.welcomeText',
+        value: '欢迎使用任务管理系统',
+        description: '欢迎文案',
+        category: ConfigCategory.TEXT,
+        dataType: 'string',
         isPublic: true,
         updatedAt: new Date(),
         updatedBy: 'system'
@@ -480,7 +442,7 @@ export class ConfigService {
   private buildConfigFromRecords(): AppConfig {
     const getRecordValue = (key: string, defaultValue: any): any => {
       const record = this.configRecords.find(r => r.key === key);
-      return record ? record.value : defaultValue;
+      return record !== undefined ? record.value : defaultValue;
     };
 
     return {
@@ -529,134 +491,6 @@ export class ConfigService {
   }
 
   /**
-   * 获取当前配置（公开部分）
-   */
-  async getCurrentConfig(): Promise<AppConfig> {
-    await this.waitForInit();
-    
-    const publicConfig: AppConfig = {
-      ...this.currentConfig,
-      wecom: {
-        ...this.currentConfig.wecom,
-        corpSecret: '', // 隐藏敏感信息
-        agentSecret: '',
-        contactSecret: '',
-      },
-    };
-    return publicConfig;
-  }
-
-  /**
-   * 获取完整配置（包含敏感信息）
-   */
-  async getFullConfig(): Promise<AppConfig> {
-    await this.waitForInit();
-    return this.currentConfig;
-  }
-
-  /**
-   * 获取配置记录列表
-   */
-  async getConfigRecords(category?: ConfigCategory): Promise<ConfigRecord[]> {
-    await this.waitForInit();
-    
-    if (category) {
-      return this.configRecords.filter(r => r.category === category);
-    }
-    return this.configRecords;
-  }
-
-  /**
-   * 获取单个配置记录
-   */
-  async getConfigRecord(id: string): Promise<ConfigRecord | null> {
-    await this.waitForInit();
-    return this.configRecords.find(r => r.id === id) || null;
-  }
-
-  /**
-   * 更新配置记录
-   */
-  async updateConfigRecord(
-    id: string,
-    value: any,
-    operator: string
-  ): Promise<{ success: boolean; message?: string }> {
-    await this.waitForInit();
-    
-    const record = this.configRecords.find(r => r.id === id);
-    if (!record) {
-      return { success: false, message: '配置记录不存在' };
-    }
-
-    const oldValue = record.value;
-    record.value = value;
-    record.updatedAt = new Date();
-    record.updatedBy = operator;
-
-    await this.saveConfigRecordsToDB();
-
-    // 重新构建配置并创建版本
-    const newConfig = this.buildConfigFromRecords();
-    const change: ConfigChange = {
-      key: record.key,
-      oldValue,
-      newValue: value,
-      timestamp: new Date(),
-      operator,
-    };
-    
-    this.currentConfig = newConfig;
-    const version = this.createConfigVersion(`更新配置: ${record.key}`, operator);
-    version.changes = [change];
-    await this.saveConfigVersionsToDB();
-
-    return { success: true };
-  }
-
-  /**
-   * 批量更新配置
-   */
-  async batchUpdateConfig(
-    updates: Array<{ id: string; value: any }>,
-    operator: string
-  ): Promise<{ success: boolean; message?: string }> {
-    await this.waitForInit();
-    
-    for (const update of updates) {
-      const record = this.configRecords.find(r => r.id === update.id);
-      if (record) {
-        record.value = update.value;
-        record.updatedAt = new Date();
-        record.updatedBy = operator;
-      }
-    }
-
-    await this.saveConfigRecordsToDB();
-
-    // 重新构建完整配置
-    const newConfig = this.buildConfigFromRecords();
-    const changes = this.compareConfig(this.currentConfig, newConfig);
-
-    if (changes.length > 0) {
-      this.currentConfig = newConfig;
-      const version = this.createConfigVersion('批量更新配置', operator);
-      version.changes = changes;
-      await this.saveConfigVersionsToDB();
-    }
-
-    return { success: true };
-  }
-
-  /**
-   * 获取配置版本列表
-   */
-  async getConfigVersions(): Promise<ConfigVersion[]> {
-    await this.waitForInit();
-    return this.configVersions;
-  }
-
-  /**
    * 创建配置版本
    */
   private createConfigVersion(comment: string, operator: string): ConfigVersion {
@@ -671,6 +505,8 @@ export class ConfigService {
     };
 
     this.configVersions.unshift(newVersion);
+    this.saveConfigVersions();
+
     return newVersion;
   }
 
@@ -691,29 +527,220 @@ export class ConfigService {
    */
   private compareConfig(oldConfig: any, newConfig: any, path: string = ''): ConfigChange[] {
     const changes: ConfigChange[] = [];
-    
-    for (const key in newConfig) {
-      const currentPath = path ? `${path}.${key}` : key;
-      
-      if (!(key in oldConfig)) {
-        changes.push({
-          key: currentPath,
-          oldValue: undefined,
-          newValue: newConfig[key],
-          timestamp: new Date(),
-        });
-      } else if (typeof newConfig[key] === 'object' && newConfig[key] !== null && !Array.isArray(newConfig[key])) {
-        changes.push(...this.compareConfig(oldConfig[key], newConfig[key], currentPath));
-      } else if (oldConfig[key] !== newConfig[key]) {
-        changes.push({
-          key: currentPath,
-          oldValue: oldConfig[key],
-          newValue: newConfig[key],
-          timestamp: new Date(),
-        });
+
+    const oldKeys = Object.keys(oldConfig || {});
+    const newKeys = Object.keys(newConfig || {});
+    const allKeys = new Set([...oldKeys, ...newKeys]);
+
+    for (const key of allKeys) {
+      const fullPath = path ? `${path}.${key}` : key;
+      const oldValue = oldConfig?.[key];
+      const newValue = newConfig?.[key];
+
+      if (oldValue === undefined && newValue !== undefined) {
+        changes.push({ key: fullPath, oldValue, newValue, type: 'added' });
+      } else if (oldValue !== undefined && newValue === undefined) {
+        changes.push({ key: fullPath, oldValue, newValue, type: 'deleted' });
+      } else if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+        if (typeof oldValue === 'object' && typeof newValue === 'object') {
+          changes.push(...this.compareConfig(oldValue, newValue, fullPath));
+        } else {
+          changes.push({ key: fullPath, oldValue, newValue, type: 'modified' });
+        }
       }
     }
-    
+
     return changes;
+  }
+
+  /**
+   * 获取当前配置（公开部分）
+   */
+  async getCurrentConfig(): Promise<AppConfig> {
+    const publicConfig: AppConfig = {
+      ...this.currentConfig,
+      wecom: {
+        ...this.currentConfig.wecom,
+        corpSecret: '', // 隐藏敏感信息
+        agentSecret: '',
+        contactSecret: '',
+      },
+    };
+    return publicConfig;
+  }
+
+  /**
+   * 获取配置记录列表
+   */
+  async getConfigRecords(category?: ConfigCategory): Promise<ConfigRecord[]> {
+    if (category) {
+      return this.configRecords.filter(r => r.category === category);
+    }
+    return this.configRecords;
+  }
+
+  /**
+   * 获取单个配置记录
+   */
+  async getConfigRecord(id: string): Promise<ConfigRecord | null> {
+    return this.configRecords.find(r => r.id === id) || null;
+  }
+
+  /**
+   * 更新配置记录
+   */
+  async updateConfigRecord(
+    id: string,
+    value: any,
+    operator: string
+  ): Promise<{ success: boolean; message?: string }> {
+    const record = this.configRecords.find(r => r.id === id);
+    if (!record) {
+      return { success: false, message: '配置记录不存在' };
+    }
+
+    // 保存旧值
+    const oldValue = record.value;
+
+    // 更新值
+    record.value = value;
+    record.updatedAt = new Date();
+    record.updatedBy = operator;
+
+    // 保存
+    this.saveConfigRecords();
+
+    // 重新构建完整配置
+    const newConfig = this.buildConfigFromRecords();
+    const changes = this.compareConfig(this.currentConfig, newConfig);
+
+    // 如果有变更，创建新版本
+    if (changes.length > 0) {
+      this.currentConfig = newConfig;
+      this.saveCurrentConfig();
+      const version = this.createConfigVersion(`更新配置: ${record.key}`, operator);
+      version.changes = changes;
+      this.saveConfigVersions();
+    }
+
+    return { success: true };
+  }
+
+  /**
+   * 批量更新配置
+   */
+  async batchUpdateConfig(
+    updates: Array<{ id: string; value: any }>,
+    operator: string
+  ): Promise<{ success: boolean; message?: string }> {
+    for (const update of updates) {
+      const record = this.configRecords.find(r => r.id === update.id);
+      if (record) {
+        record.value = update.value;
+        record.updatedAt = new Date();
+        record.updatedBy = operator;
+      }
+    }
+
+    this.saveConfigRecords();
+
+    // 重新构建完整配置
+    const newConfig = this.buildConfigFromRecords();
+    const changes = this.compareConfig(this.currentConfig, newConfig);
+
+    if (changes.length > 0) {
+      this.currentConfig = newConfig;
+      this.saveCurrentConfig();
+      const version = this.createConfigVersion('批量更新配置', operator);
+      version.changes = changes;
+      this.saveConfigVersions();
+    }
+
+    return { success: true };
+  }
+
+  /**
+   * 获取配置版本列表
+   */
+  async getConfigVersions(): Promise<ConfigVersion[]> {
+    return this.configVersions;
+  }
+
+  /**
+   * 回滚到指定版本
+   */
+  async rollbackToVersion(
+    versionId: string,
+    operator: string
+  ): Promise<{ success: boolean; message?: string }> {
+    const version = this.configVersions.find(v => v.id === versionId);
+    if (!version) {
+      return { success: false, message: '版本不存在' };
+    }
+
+    // 恢复配置
+    this.currentConfig = JSON.parse(JSON.stringify(version.configSnapshot));
+    this.saveCurrentConfig();
+
+    // 从恢复的配置更新配置记录
+    this.syncRecordsFromConfig();
+
+    // 创建回滚版本
+    this.createConfigVersion(`回滚到版本 ${version.version}`, operator);
+
+    return { success: true };
+  }
+
+  /**
+   * 从完整配置同步到配置记录
+   */
+  private syncRecordsFromConfig() {
+    const config = this.currentConfig;
+
+    // 同步系统配置
+    this.configRecords.find(r => r.key === 'system.version')!.value = config.system.version;
+    this.configRecords.find(r => r.key === 'system.environment')!.value = config.system.environment;
+    this.configRecords.find(r => r.key === 'system.apiTimeout')!.value = config.system.apiTimeout;
+    this.configRecords.find(r => r.key === 'system.cacheTimeout')!.value = config.system.cacheTimeout;
+
+    // 同步功能开关
+    this.configRecords.find(r => r.key === 'features.taskReview')!.value = config.features.taskReview;
+    this.configRecords.find(r => r.key === 'features.orgSync')!.value = config.features.orgSync;
+    this.configRecords.find(r => r.key === 'features.wecomNotify')!.value = config.features.wecomNotify;
+    this.configRecords.find(r => r.key === 'features.voiceInput')!.value = config.features.voiceInput;
+    this.configRecords.find(r => r.key === 'features.taskTransfer')!.value = config.features.taskTransfer;
+    this.configRecords.find(r => r.key === 'features.aiAnalysis')!.value = config.features.aiAnalysis;
+    this.configRecords.find(r => r.key === 'features.statistics')!.value = config.features.statistics;
+
+    // 同步企微配置
+    this.configRecords.find(r => r.key === 'wecom.corpId')!.value = config.wecom.corpId;
+    this.configRecords.find(r => r.key === 'wecom.corpSecret')!.value = config.wecom.corpSecret;
+    this.configRecords.find(r => r.key === 'wecom.agentId')!.value = config.wecom.agentId;
+    this.configRecords.find(r => r.key === 'wecom.agentSecret')!.value = config.wecom.agentSecret;
+    this.configRecords.find(r => r.key === 'wecom.contactSecret')!.value = config.wecom.contactSecret;
+    this.configRecords.find(r => r.key === 'wecom.syncInterval')!.value = config.wecom.syncInterval;
+    this.configRecords.find(r => r.key === 'wecom.maxDepartments')!.value = config.wecom.maxDepartments;
+    this.configRecords.find(r => r.key === 'wecom.notifyTemplateId')!.value = config.wecom.notifyTemplateId;
+    this.configRecords.find(r => r.key === 'wecom.autoSync')!.value = config.wecom.autoSync;
+
+    // 同步业务规则
+    this.configRecords.find(r => r.key === 'business.maxTasksPerDay')!.value = config.business.maxTasksPerDay;
+    this.configRecords.find(r => r.key === 'business.maxSubtasksPerTask')!.value = config.business.maxSubtasksPerTask;
+    this.configRecords.find(r => r.key === 'business.taskAutoArchiveDays')!.value = config.business.taskAutoArchiveDays;
+    this.configRecords.find(r => r.key === 'business.maxTeamMembers')!.value = config.business.maxTeamMembers;
+    this.configRecords.find(r => r.key === 'business.taskAutoCloseHours')!.value = config.business.taskAutoCloseHours;
+
+    // 同步文案配置
+    this.configRecords.find(r => r.key === 'texts.appName')!.value = config.texts.appName;
+    this.configRecords.find(r => r.key === 'texts.welcomeText')!.value = config.texts.welcomeText;
+
+    this.saveConfigRecords();
+  }
+
+  /**
+   * 获取配置变更详情
+   */
+  async getVersionChanges(versionId: string): Promise<ConfigVersion | null> {
+    return this.configVersions.find(v => v.id === versionId) || null;
   }
 }
