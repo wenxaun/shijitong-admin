@@ -649,6 +649,15 @@ export class ConfigService {
   }
 
   /**
+   * 重新加载配置（从数据库）
+   */
+  async reloadConfig(): Promise<void> {
+    console.log('[ConfigService] 重新加载配置...');
+    await this.loadConfigFromDB();
+    console.log('[ConfigService] 配置重新加载完成, wecom.corpId:', this.currentConfig?.wecom?.corpId);
+  }
+
+  /**
    * 获取配置版本列表
    */
   async getConfigVersions(): Promise<ConfigVersion[]> {

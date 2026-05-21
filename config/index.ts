@@ -12,6 +12,12 @@ import pkg from '../package.json';
 
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 
+console.log('=== Build Config ===');
+console.log('PROJECT_DOMAIN from env:', process.env.PROJECT_DOMAIN);
+console.log('COZE_PROJECT_DOMAIN_DEFAULT:', process.env.COZE_PROJECT_DOMAIN_DEFAULT);
+console.log('Final PROJECT_DOMAIN:', process.env.PROJECT_DOMAIN || process.env.COZE_PROJECT_DOMAIN_DEFAULT || 'https://shijitong-admin-252051-7-1414730907.sh.run.tcloudbase.com');
+console.log('===================');
+
 // 为每个页面生成空的 wxss 文件（解决微信开发者工具编译错误）
 const generateEmptyPageWxss = (outputRoot: string) => {
   const pagesDir = path.resolve(__dirname, '..', outputRoot, 'pages');
@@ -112,7 +118,7 @@ export default defineConfig<'vite'>(async (merge, _env) => {
       PROJECT_DOMAIN: JSON.stringify(
         process.env.PROJECT_DOMAIN ||
           process.env.COZE_PROJECT_DOMAIN_DEFAULT ||
-          '',
+          'https://shijitong-admin-252051-7-1414730907.sh.run.tcloudbase.com',
       ),
       TARO_ENV: JSON.stringify(process.env.TARO_ENV),
     },

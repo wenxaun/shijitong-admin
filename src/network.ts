@@ -1,5 +1,7 @@
 import Taro from '@tarojs/taro'
 
+const DOMAIN = 'https://shijitong-admin-252051-7-1414730907.sh.run.tcloudbase.com'
+
 /**
  * 网络请求模块
  * 封装 Taro.request、Taro.uploadFile、Taro.downloadFile，自动添加项目域名前缀
@@ -13,7 +15,7 @@ export namespace Network {
         if (url.startsWith('http://') || url.startsWith('https://')) {
             return url
         }
-        return `${PROJECT_DOMAIN}${url}`
+        return `${DOMAIN}${url}`
     }
 
     export const request: typeof Taro.request = option => {

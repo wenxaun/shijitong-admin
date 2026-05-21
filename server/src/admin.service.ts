@@ -263,6 +263,7 @@ export class AdminService {
 
   async updateConfig(config: any) {
     try {
+      console.log('[Admin] 更新配置:', JSON.stringify(config, null, 2));
       const updates: Array<{ id: string; value: any }> = [];
       
       if (config.role_config) {
@@ -277,9 +278,14 @@ export class AdminService {
         if (config.wecom.contactSecret !== undefined) updates.push({ id: 'wecom-contactSecret', value: config.wecom.contactSecret });
       }
       
+      console.log('[Admin] 配置更新项:', updates);
+      
       if (updates.length > 0) {
         await this.configService.batchUpdateConfig(updates, 'admin');
       }
+      
+      const updatedConfig = await this.configService.getCurrentConfig();
+      console.log('[Admin] 更新后的 wecom.corpId:', updatedConfig.wecom?.corpId);
       
       return { code: 200, msg: 'success' };
     } catch (error: any) {
@@ -290,6 +296,21 @@ export class AdminService {
 
   async syncConfigToCloud() {
     return { code: 200, msg: 'success' };
+  }
+
+  async reloadConfig() {
+    try {
+      await this.configService.reloadConfig();
+      const config = await this.configService.getCurrentConfig();
+      return { 
+        code: 200, 
+        msg: 'success', 
+        data: { corpId: config.wecom?.corpId || '' } 
+      };
+    } catch (error: any) {
+      console.error('[Admin] 重新加载配置失败:', error.message);
+      return { code: 500, msg: '重新加载配置失败: ' + error.message };
+    }
   }
 
   async getUserPermissions(openid: string) {
