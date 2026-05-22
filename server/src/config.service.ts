@@ -397,7 +397,7 @@ export class ConfigService {
         key: 'texts.appName',
         value: '任务管理系统',
         description: '应用名称',
-        category: ConfigCategory.TEXTS,
+        category: ConfigCategory.TEXT,
         dataType: 'string',
         isPublic: true,
         updatedAt: new Date(),
@@ -408,7 +408,7 @@ export class ConfigService {
         key: 'texts.welcomeText',
         value: '欢迎使用任务管理系统',
         description: '欢迎文案',
-        category: ConfigCategory.TEXTS,
+        category: ConfigCategory.TEXT,
         dataType: 'string',
         isPublic: true,
         updatedAt: new Date(),
@@ -724,5 +724,34 @@ export class ConfigService {
     }
     
     return changes;
+  }
+
+  /**
+   * 获取配置变更详情
+   */
+  async getVersionChanges(versionId: string): Promise<ConfigVersion | null> {
+    await this.waitForInit();
+    return this.configVersions.find(v => v.id === versionId) || null;
+  }
+
+  /**
+   * 回滚到指定版本
+   */
+  async rollbackToVersion(versionId: string, operator: string): Promise<{ success: boolean; message?: string }> {
+    await this.waitForInit();
+    
+    const version = this.configVersions.find(v => v.id === versionId);
+    if (!version) {
+      return { success: false, message: '版本不存在' };
+    }
+
+    this.currentConfig = version.configSnapshot as AppConfig;
+    await this.saveConfigRecordsToDB();
+
+    const newVersion = this.createConfigVersion(`回滚到版本 ${version.version}`, operator);
+    newVersion.changes = version.changes;
+    await this.saveConfigVersionsToDB();
+
+    return { success: true };
   }
 }

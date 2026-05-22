@@ -43,4 +43,6 @@ export interface ConfigChange {
   oldValue: any
   newValue: any
   type: 'added' | 'modified' | 'deleted'
+  timestamp?: Date
+  operator?: string
 }
