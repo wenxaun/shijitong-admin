@@ -602,6 +602,7 @@ export class ConfigService {
       key: record.key,
       oldValue,
       newValue: value,
+      type: 'modified',
       timestamp: new Date(),
       operator,
     };
@@ -709,6 +710,7 @@ export class ConfigService {
           key: currentPath,
           oldValue: undefined,
           newValue: newConfig[key],
+          type: 'added',
           timestamp: new Date(),
         });
       } else if (typeof newConfig[key] === 'object' && newConfig[key] !== null && !Array.isArray(newConfig[key])) {
@@ -718,6 +720,7 @@ export class ConfigService {
           key: currentPath,
           oldValue: oldConfig[key],
           newValue: newConfig[key],
+          type: 'modified',
           timestamp: new Date(),
         });
       }
